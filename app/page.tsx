@@ -5,14 +5,18 @@ import { PLAN, Week, Session } from "@/lib/plan";
 import { Outcome } from "@/components/Outcome";
 import { Icon } from "@/components/Icon";
 import { Trends } from "@/components/Trends";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { useToast } from "@/components/Toast";
 import {
-  SavedSession, saveSession, allSessions, deleteSession, uuid, getMeta, setMeta,
+  SavedSession, SessionInput, saveSession, allSessions, deleteSession, restoreSession, uuid,
+  getMeta, setMeta, delMeta,
 } from "@/lib/db";
 import { solidPct } from "@/lib/stats";
+import { doneFx } from "@/lib/haptics";
 
 type Tab = "home" | "session" | "trends";
 
-// live counters for the session in progress
+// live counters for the session in progress (new session or an edit)
 type Live = {
   weekId: string; sessionLabel: string; date: string; notes: string;
   fairway: number; left: number; right: number;
@@ -29,6 +33,41 @@ function emptyLive(weekId: string, sessionLabel: string): Live {
   };
 }
 
+function toLive(s: SavedSession): Live {
+  return {
+    weekId: s.weekId, sessionLabel: s.sessionLabel, date: s.date, notes: s.notes,
+    fairway: s.driving.fairway, left: s.driving.left, right: s.driving.right,
+    solid: s.irons.solid, fat: s.irons.fat, thin: s.irons.thin,
+    bestClub: s.chipping.bestClub, on: s.chipping.on, off: s.chipping.off,
+    in: s.putting.in, out: s.putting.out,
+  };
+}
+
+function fromLive(l: Live) {
+  return {
+    weekId: l.weekId, sessionLabel: l.sessionLabel, date: l.date, notes: l.notes,
+    driving: { fairway: l.fairway, left: l.left, right: l.right },
+    irons: { solid: l.solid, fat: l.fat, thin: l.thin },
+    chipping: { bestClub: l.bestClub, on: l.on, off: l.off },
+    putting: { in: l.in, out: l.out },
+  };
+}
+
+function anyLogged(l: Live) {
+  return l.fairway + l.left + l.right + l.solid + l.fat + l.thin +
+    l.on + l.off + l.in + l.out > 0 || !!l.bestClub || !!l.notes.trim();
+}
+
+// find the plan position of a saved session by weekId + label
+function locate(weekId: string, label: string): { week: number; session: number } | null {
+  for (let w = 0; w < PLAN.length; w++) {
+    if (PLAN[w].id !== weekId) continue;
+    const si = PLAN[w].sessions.findIndex((s) => s.label === label);
+    if (si >= 0) return { week: w, session: si };
+  }
+  return null;
+}
+
 const AREAS = [
   ["Chipping", "swipe_up"], ["Irons", "golf_course"],
   ["Driving", "sports_golf"], ["Putting", "adjust"],
@@ -39,59 +78,140 @@ export default function Page() {
   const [history, setHistory] = useState<SavedSession[]>([]);
   const [cursor, setCursor] = useState<{ week: number; session: number }>({ week: 0, session: 0 });
   const [live, setLive] = useState<Live | null>(null);
+  const [editOrig, setEditOrig] = useState<SavedSession | null>(null);
+  const [ready, setReady] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
-    allSessions().then(setHistory);
-    getMeta<{ week: number; session: number }>("cursor").then((c) => c && setCursor(c));
+    (async () => {
+      setHistory(await allSessions());
+      const draft = await getMeta<Live>("draft");
+      if (draft) {
+        setLive(draft);
+        const loc = locate(draft.weekId, draft.sessionLabel);
+        if (loc) setCursor(loc);
+      } else {
+        const c = await getMeta<{ week: number; session: number }>("cursor");
+        if (c) setCursor(c);
+      }
+      setReady(true);
+    })();
   }, []);
+
+  // persist the working session as a draft (but never while editing a saved one)
+  useEffect(() => {
+    if (live && !editOrig) setMeta("draft", live);
+  }, [live, editOrig]);
 
   const week = PLAN[cursor.week];
   const session = week.sessions[cursor.session];
+  const isDraft = !!live && !editOrig;
+  const draftHere = isDraft && live!.weekId === week.id && live!.sessionLabel === session.label;
 
   function startSession() {
-    setLive((l) => l ?? emptyLive(week.id, session.label));
+    if (isDraft) {
+      if (draftHere) { setTab("session"); return; }
+      const other = live!.sessionLabel;
+      if (!confirm(`Discard your unfinished "${other}" and start ${session.label}?`)) {
+        resumeDraft();
+        return;
+      }
+    }
+    setLive(emptyLive(week.id, session.label));
+    setTab("session");
+  }
+
+  function resumeDraft() {
+    if (!live) return;
+    const loc = locate(live.weekId, live.sessionLabel);
+    if (loc) setCursor(loc);
+    setTab("session");
+  }
+
+  function editSession(s: SavedSession) {
+    if (isDraft) {
+      alert("Finish or discard your current session before editing a past one.");
+      return;
+    }
+    setEditOrig(s);
+    setLive(toLive(s));
+    const loc = locate(s.weekId, s.sessionLabel);
+    if (loc) setCursor(loc);
     setTab("session");
   }
 
   async function finishSession() {
     if (!live) return;
-    const rec: SavedSession = {
-      id: uuid(), weekId: live.weekId, sessionLabel: live.sessionLabel,
-      date: live.date, notes: live.notes,
-      driving: { fairway: live.fairway, left: live.left, right: live.right },
-      irons: { solid: live.solid, fat: live.fat, thin: live.thin },
-      chipping: { bestClub: live.bestClub, on: live.on, off: live.off },
-      putting: { in: live.in, out: live.out },
-      createdAt: Date.now(),
+    const wasEdit = !!editOrig;
+    const rec: SessionInput = {
+      id: editOrig?.id ?? uuid(),
+      createdAt: editOrig?.createdAt ?? Date.now(),
+      ...fromLive(live),
     };
     await saveSession(rec);
-    // advance cursor to the next session
-    let w = cursor.week, s = cursor.session + 1;
-    if (s >= PLAN[w].sessions.length) { s = 0; w = Math.min(w + 1, PLAN.length - 1); }
-    const nc = { week: w, session: s };
-    setCursor(nc); await setMeta("cursor", nc);
+    await delMeta("draft");
+
+    if (!wasEdit) {
+      let w = cursor.week, s = cursor.session + 1;
+      if (s >= PLAN[w].sessions.length) { s = 0; w = Math.min(w + 1, PLAN.length - 1); }
+      const nc = { week: w, session: s };
+      setCursor(nc); await setMeta("cursor", nc);
+    }
+
     setHistory(await allSessions());
     setLive(null);
-    setTab("home");
+    setEditOrig(null);
+    setTab(wasEdit ? "trends" : "home");
+    doneFx();
+    toast.show(wasEdit ? "Changes saved" : "Session saved");
+  }
+
+  async function discard() {
+    const wasEdit = !!editOrig;
+    if (!wasEdit && live && anyLogged(live)) {
+      if (!confirm("Discard this session? Your tallies won't be saved.")) return;
+    }
+    await delMeta("draft");
+    setLive(null);
+    setEditOrig(null);
+    setTab(wasEdit ? "trends" : "home");
   }
 
   async function onDelete(id: string) {
     await deleteSession(id);
     setHistory(await allSessions());
+    toast.show("Session deleted", {
+      label: "Undo",
+      run: async () => {
+        await restoreSession(id);
+        setHistory(await allSessions());
+      },
+    });
+  }
+
+  if (!ready) {
+    return (
+      <div className="boot"><Icon name="sports_golf" size={44} fill /></div>
+    );
   }
 
   return (
     <>
-      {tab === "home" && (
-        <Home week={week} session={session} cursor={cursor} setCursor={setCursor}
-              history={history} onStart={startSession} />
-      )}
-      {tab === "session" && live && (
-        <SessionScreen week={week} session={session} live={live} setLive={setLive} onFinish={finishSession} />
-      )}
-      {tab === "trends" && (
-        <Trends history={history} onDelete={onDelete} onStart={startSession} />
-      )}
+      <div className="tabview" key={tab}>
+        {tab === "home" && (
+          <Home week={week} cursor={cursor} setCursor={setCursor} history={history}
+                onStart={startSession} draftLabel={isDraft ? live!.sessionLabel : null}
+                draftHere={draftHere} onResume={resumeDraft} />
+        )}
+        {tab === "session" && live && (
+          <SessionScreen week={week} session={session} live={live} setLive={setLive}
+                         editMode={!!editOrig} onFinish={finishSession} onDiscard={discard} />
+        )}
+        {tab === "trends" && (
+          <Trends history={history} onDelete={onDelete} onEdit={editSession}
+                  onStart={startSession} onImported={async () => setHistory(await allSessions())} />
+        )}
+      </div>
 
       <nav className="nav">
         <button className={`nav-item${tab === "home" ? " active" : ""}`} onClick={() => setTab("home")}>
@@ -99,7 +219,11 @@ export default function Page() {
         </button>
         <button className={`nav-item${tab === "session" ? " active" : ""}`}
                 onClick={() => (live ? setTab("session") : startSession())}>
-          <Icon name="sports_golf" size={24} fill={tab === "session"} />Log
+          <span className="nav-glyph">
+            <Icon name="sports_golf" size={24} fill={tab === "session"} />
+            {isDraft && <span className="nav-dot" />}
+          </span>
+          Log
         </button>
         <button className={`nav-item${tab === "trends" ? " active" : ""}`} onClick={() => setTab("trends")}>
           <Icon name="show_chart" size={24} fill={tab === "trends"} />Trends
@@ -110,18 +234,23 @@ export default function Page() {
 }
 
 function Home({
-  week, cursor, setCursor, history, onStart,
+  week, cursor, setCursor, history, onStart, draftLabel, draftHere, onResume,
 }: {
-  week: Week; session: Session;
+  week: Week;
   cursor: { week: number; session: number };
   setCursor: (c: { week: number; session: number }) => void;
   history: SavedSession[];
   onStart: () => void;
+  draftLabel: string | null;
+  draftHere: boolean;
+  onResume: () => void;
 }) {
   const flat = PLAN.flatMap((w, wi) =>
-    w.sessions.map((s, si) => ({ wi, si, id: w.id, test: /test/i.test(s.label) }))
+    w.sessions.map((s, si) => ({ wi, si, id: w.id, label: s.label, test: /test/i.test(s.label) }))
   );
   const curIdx = flat.findIndex((f) => f.wi === cursor.week && f.si === cursor.session);
+  const loggedSlots = new Set(history.map((s) => `${s.weekId}|${s.sessionLabel}`));
+  const loggedCount = flat.filter((f) => loggedSlots.has(`${f.id}|${f.label}`)).length;
   const done = history.length;
   const lastSolid = history.length ? solidPct(history[history.length - 1]) : null;
 
@@ -133,11 +262,19 @@ function Home({
             <div className="hdr-title">Week {cursor.week + 1} · {week.title}</div>
             <div className="hdr-sub">Session {cursor.session + 1} of {week.sessions.length}</div>
           </div>
-          <button className="icon-btn" aria-label="Plan overview"><Icon name="golf_course" size={22} /></button>
+          <ThemeToggle />
         </div>
       </header>
 
       <div className="screen">
+        {draftLabel && !draftHere && (
+          <button className="draft-banner" onClick={onResume}>
+            <Icon name="pending_actions" size={18} />
+            <span>Unfinished — {draftLabel}</span>
+            <b>Resume</b>
+          </button>
+        )}
+
         <div className="tiles">
           <div className="tile">
             <Icon name="event_available" size={20} color="var(--icon-muted)" />
@@ -163,13 +300,18 @@ function Home({
         </div>
 
         <div className="grp">
-          <div className="grp-lbl">Jump to a session</div>
+          <div className="grp-lbl grp-lbl-row">
+            <span>Jump to a session</span>
+            <span className="num">{loggedCount} of {flat.length} logged</span>
+          </div>
           <div className="sgrid">
             {flat.map((f, i) => {
               const cls = i < curIdx ? "past" : i === curIdx ? "cur" : "";
+              const isDone = loggedSlots.has(`${f.id}|${f.label}`);
               return (
-                <button key={f.id + f.si} className={`spill ${cls}`}
+                <button key={f.id + f.si} className={`spill ${cls}${isDone ? " done" : ""}`}
                         onClick={() => setCursor({ week: f.wi, session: f.si })}>
+                  {isDone && <Icon name="check" size={13} className="spill-check" />}
                   <span>W{f.wi + 1}</span>
                   <span className={`s${f.test ? " test" : ""}`}>{f.test ? "Test" : `S${f.si + 1}`}</span>
                 </button>
@@ -180,7 +322,8 @@ function Home({
 
         <div className="grp" style={{ paddingTop: 4 }}>
           <button className="cta" onClick={onStart}>
-            <Icon name="play_arrow" size={22} fill />Start this session
+            <Icon name={draftHere ? "play_arrow" : "play_arrow"} size={22} fill />
+            {draftHere ? "Resume session" : "Start this session"}
           </button>
           <div className="arealist">
             {AREAS.map(([n, ic]) => <span key={n}><Icon name={ic} size={15} />{n}</span>)}
@@ -192,10 +335,13 @@ function Home({
 }
 
 function SessionScreen({
-  week, session, live, setLive, onFinish,
+  week, session, live, setLive, editMode, onFinish, onDiscard,
 }: {
   week: Week; session: Session; live: Live;
-  setLive: (l: Live) => void; onFinish: () => void;
+  setLive: (l: Live) => void;
+  editMode: boolean;
+  onFinish: () => void;
+  onDiscard: () => void;
 }) {
   const [open, setOpen] = useState<Record<string, boolean>>({ chip: true, iron: false, drive: false, putt: false });
   const set = (patch: Partial<Live>) => setLive({ ...live, ...patch });
@@ -215,7 +361,10 @@ function SessionScreen({
       <header className="hdr">
         <div className="hdr-row">
           <div>
-            <div className="hdr-title sm">{week.short} · {session.label.replace(/ —.*/, "")}</div>
+            <div className="hdr-title sm">
+              {editMode && <span className="tag">Edit</span>}
+              {week.short} · {session.label.replace(/ —.*/, "")}
+            </div>
             <div className="hdr-sub sm">{week.title} block · 4 areas</div>
           </div>
           <div className="chip"><Icon name="check_circle" size={16} fill={logged === 4} />{logged}/4</div>
@@ -303,11 +452,21 @@ function SessionScreen({
         </Block>
 
         <div className="grp" style={{ paddingTop: 8 }}>
-          <div className="label-row"><Icon name="edit_note" size={16} />Session notes</div>
+          <div className="label-row"><Icon name="event" size={16} />Session date</div>
+          <input className="datefield num" type="date" value={live.date}
+                 max={new Date().toISOString().slice(0, 10)}
+                 onChange={(e) => set({ date: e.target.value })} />
+          <div className="label-row" style={{ marginTop: 4 }}><Icon name="edit_note" size={16} />Session notes</div>
           <textarea className="notes" value={live.notes}
                     onChange={(e) => set({ notes: e.target.value })}
                     placeholder="Conditions, feels, what clicked…" />
-          <button className="cta" onClick={onFinish}><Icon name="done_all" size={22} />Finish session</button>
+          <button className="cta" onClick={onFinish}>
+            <Icon name={editMode ? "save" : "done_all"} size={22} />
+            {editMode ? "Save changes" : "Finish session"}
+          </button>
+          <button className="btn-ghost" onClick={onDiscard}>
+            {editMode ? "Cancel" : "Discard session"}
+          </button>
         </div>
       </div>
     </>

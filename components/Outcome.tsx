@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import { Icon } from "./Icon";
+import { tapFx, bumpFx } from "@/lib/haptics";
 
 type Tone = "good" | "sand" | "clay";
 
@@ -23,6 +24,7 @@ export function Outcome({
     held.current = false;
     timer.current = window.setTimeout(() => {
       held.current = true;
+      bumpFx();
       onDec();
     }, 450);
   };
@@ -42,9 +44,10 @@ export function Outcome({
       onPointerCancel={stop}
       onClick={() => {
         if (held.current) { held.current = false; return; }
+        tapFx();
         onInc();
       }}
-      onContextMenu={(e) => { e.preventDefault(); onDec(); }}
+      onContextMenu={(e) => { e.preventDefault(); bumpFx(); onDec(); }}
       aria-label={`${label}: ${count}. Tap to add, long-press or right-click to subtract.`}
     >
       <span className="outcome-count num">{count}</span>

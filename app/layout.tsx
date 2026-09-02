@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { ToastProvider } from "@/components/Toast";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { RegisterSW } from "@/components/RegisterSW";
 import { SmoothScroll } from "@/components/SmoothScroll";
@@ -29,14 +30,20 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
+// Sync theme before first paint so a forced light/dark choice doesn't flash.
+const themeScript = `try{var t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <div className="app">{children}</div>
-        <InstallPrompt />
-        <RegisterSW />
-        <SmoothScroll />
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <ToastProvider>
+          <div className="app">{children}</div>
+          <InstallPrompt />
+          <RegisterSW />
+          <SmoothScroll />
+        </ToastProvider>
       </body>
     </html>
   );

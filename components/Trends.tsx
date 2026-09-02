@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { SavedSession } from "@/lib/db";
+import { useRef, useState } from "react";
+import { SavedSession, exportBackup, importBackup } from "@/lib/db";
 import { PLAN } from "@/lib/plan";
 import { solidPct, fairwayPct, puttPct } from "@/lib/stats";
+import { useCountUp } from "@/lib/useCountUp";
 import { Icon } from "./Icon";
 
 const fmtDate = (iso: string) => {
@@ -17,14 +18,61 @@ const sLabel = (l: string) => {
   return "S" + n[0] + (/test/i.test(l) ? " Test" : "");
 };
 
+function downloadText(name: string, text: string) {
+  const url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 export function Trends({
-  history, onDelete, onStart,
+  history, onDelete, onEdit, onStart, onImported,
 }: {
   history: SavedSession[];
   onDelete: (id: string) => void;
+  onEdit: (s: SavedSession) => void;
   onStart: () => void;
+  onImported: () => void;
 }) {
   const [showAll, setShowAll] = useState(false);
+  const [showData, setShowData] = useState(false);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [wkFilter, setWkFilter] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function doExport() {
+    downloadText(`rangecard-${new Date().toISOString().slice(0, 10)}.json`, await exportBackup());
+    setShowData(false);
+  }
+
+  async function doImport(file: File) {
+    try {
+      const n = await importBackup(await file.text());
+      onImported();
+      setShowData(false);
+      alert(`Imported ${n} session${n === 1 ? "" : "s"}.`);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Could not read that file.");
+    }
+  }
+
+  const fileInput = (
+    <input
+      ref={fileRef}
+      type="file"
+      accept="application/json,.json"
+      hidden
+      onChange={(e) => {
+        const f = e.target.files?.[0];
+        e.target.value = "";
+        if (f) doImport(f);
+      }}
+    />
+  );
 
   if (history.length === 0) {
     const s = PLAN[0].sessions[0];
@@ -65,6 +113,10 @@ export function Trends({
               <div><Icon name="door_sliding" size={18} color="var(--blue)" />{s.chip.name}</div>
             </div>
           </div>
+          <button className="btn-ghost" onClick={() => fileRef.current?.click()}>
+            <Icon name="upload" size={17} />Restore from a backup
+          </button>
+          {fileInput}
         </div>
       </>
     );
@@ -73,7 +125,16 @@ export function Trends({
   const solid = history.map(solidPct);
   const fair = history.map(fairwayPct);
   const putt = history.map(puttPct);
-  const shown = showAll ? history : history.slice(-4);
+
+  const weeks = PLAN.filter((w) => history.some((s) => s.weekId === w.id));
+  const histRows = wkFilter ? history.filter((s) => s.weekId === wkFilter) : history;
+  const shown = showAll ? histRows : histRows.slice(-4);
+
+  // baseline (first logged session) vs Test day — or vs latest if the test isn't logged yet
+  const baseline = history[0];
+  const testIdx = history.findIndex((s) => s.weekId === "week4" && /test/i.test(s.sessionLabel));
+  const target = testIdx >= 0 ? history[testIdx] : history[history.length - 1];
+  const showCompare = history.length >= 2 && baseline.id !== target.id;
 
   return (
     <>
@@ -85,39 +146,115 @@ export function Trends({
               {history.length} {history.length === 1 ? "session" : "sessions"} · weeks 1–4
             </div>
           </div>
-          <button className="icon-btn" aria-label="Filter"><Icon name="tune" size={22} /></button>
+          <button
+            className={"icon-btn" + (showData ? " on" : "")}
+            aria-label="Data & backup"
+            aria-expanded={showData}
+            onClick={() => setShowData((v) => !v)}
+          >
+            <Icon name="tune" size={22} />
+          </button>
         </div>
       </header>
 
       <div className="screen">
+        {showData && (
+          <div className="datamenu">
+            <button onClick={doExport}>
+              <Icon name="download" size={19} color="var(--icon-muted)" />
+              <span><b>Export backup</b><small>{history.length} sessions → .json file</small></span>
+            </button>
+            <button onClick={() => fileRef.current?.click()}>
+              <Icon name="upload" size={19} color="var(--icon-muted)" />
+              <span><b>Import backup</b><small>Merge sessions from a .json file</small></span>
+            </button>
+          </div>
+        )}
+        {fileInput}
+
+        {showCompare && (
+          <Compare baseline={baseline} target={target} isTest={testIdx >= 0} />
+        )}
+
         <ChartCard title="Solid strike %" icon="sports_golf" data={solid} />
         <ChartCard title="Fairways found %" icon="golf_course" data={fair} />
         <ChartCard title="Putts made %" icon="adjust" data={putt} />
 
+        <MissPatterns history={history} />
+
         <div className="grp" style={{ paddingTop: 8 }}>
           <div className="label-row"><Icon name="history" size={16} />History</div>
+          {weeks.length > 1 && (
+            <div className="chips">
+              <button className={"chip-btn" + (wkFilter === null ? " on" : "")}
+                      onClick={() => setWkFilter(null)}>All</button>
+              {weeks.map((w) => (
+                <button key={w.id}
+                        className={"chip-btn" + (wkFilter === w.id ? " on" : "")}
+                        onClick={() => { setWkFilter(w.id); setShowAll(true); }}>
+                  W{wkNum(w.id)}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="hist">
-            {shown.slice().reverse().map((r) => (
-              <div className="hist-row" key={r.id}>
-                <div className="hist-l">
-                  <div className="wk">W{wkNum(r.weekId)} · {sLabel(r.sessionLabel)}</div>
-                  <div className="dt">{fmtDate(r.date)}</div>
+            {shown.slice().reverse().map((r) => {
+              const open = openId === r.id;
+              return (
+                <div className="hist-item" key={r.id}>
+                  <div className="hist-row">
+                    <button
+                      className="hist-open"
+                      aria-expanded={open}
+                      onClick={() => setOpenId(open ? null : r.id)}
+                    >
+                      <div className="hist-l">
+                        <div className="wk">
+                          W{wkNum(r.weekId)} · {sLabel(r.sessionLabel)}
+                          {r.notes && <Icon name="edit_note" size={14} color="var(--icon-muted)" />}
+                        </div>
+                        <div className="dt">{fmtDate(r.date)}</div>
+                      </div>
+                    </button>
+                    <div className="hist-r">
+                      <div className="hist-solid num">{solidPct(r)}%</div>
+                      <button
+                        className="hist-del"
+                        aria-label="Delete session"
+                        onClick={() => onDelete(r.id)}
+                      >
+                        <Icon name="delete" size={19} />
+                      </button>
+                      <Icon name="expand_more" size={20} color="var(--icon-muted)"
+                            className={"hist-chev" + (open ? " open" : "")} />
+                    </div>
+                  </div>
+                  {open && (
+                    <div className="hist-detail">
+                      <div className="hist-tallies num">
+                        <span><b>Driving</b> {r.driving.fairway}/{r.driving.left}/{r.driving.right}</span>
+                        <span><b>Irons</b> {r.irons.solid}/{r.irons.fat}/{r.irons.thin}</span>
+                        <span><b>Chipping</b> {r.chipping.on}/{r.chipping.off}
+                          {r.chipping.bestClub ? ` · ${r.chipping.bestClub}` : ""}</span>
+                        <span><b>Putting</b> {r.putting.in}/{r.putting.out}</span>
+                      </div>
+                      <div className={"hist-note" + (r.notes ? "" : " empty")}>
+                        {r.notes || "No notes for this session"}
+                      </div>
+                      <button className="btn-ghost sm" onClick={() => onEdit(r)}>
+                        <Icon name="edit" size={16} />Edit session
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <div className="hist-r">
-                  <div className="hist-solid num">{solidPct(r)}%</div>
-                  <button
-                    className="hist-del"
-                    aria-label="Delete session"
-                    onClick={() => { if (confirm("Delete this session?")) onDelete(r.id); }}
-                  >
-                    <Icon name="delete" size={19} />
-                  </button>
-                </div>
-              </div>
-            ))}
-            {history.length > 4 && (
+              );
+            })}
+            {shown.length === 0 && (
+              <div className="hist-empty">No sessions in this week yet.</div>
+            )}
+            {histRows.length > 4 && (
               <button className="hist-more" onClick={() => setShowAll(!showAll)}>
-                {showAll ? "Show fewer" : `Show all ${history.length} sessions`}
+                {showAll ? "Show fewer" : `Show all ${histRows.length} sessions`}
                 <Icon name={showAll ? "expand_less" : "expand_more"} size={18} />
               </button>
             )}
@@ -125,6 +262,111 @@ export function Trends({
         </div>
       </div>
     </>
+  );
+}
+
+function MissPatterns({ history }: { history: SavedSession[] }) {
+  const sum = (fn: (s: SavedSession) => number) => history.reduce((a, s) => a + fn(s), 0);
+  const drove = history.some((s) => s.driving.fairway + s.driving.left + s.driving.right > 0);
+  const ironed = history.some((s) => s.irons.solid + s.irons.fat + s.irons.thin > 0);
+  if (!drove && !ironed) return null;
+
+  return (
+    <div className="chart">
+      <div className="chart-t"><Icon name="explore" size={18} color="var(--icon-muted)" />Miss patterns</div>
+      {drove && (
+        <MissBar label="Driving" leftName="Left" rightName="Right"
+                 left={sum((s) => s.driving.left)} right={sum((s) => s.driving.right)} />
+      )}
+      {ironed && (
+        <MissBar label="Irons" leftName="Fat" rightName="Thin"
+                 left={sum((s) => s.irons.fat)} right={sum((s) => s.irons.thin)} />
+      )}
+    </div>
+  );
+}
+
+function MissBar({
+  label, leftName, rightName, left, right,
+}: {
+  label: string; leftName: string; rightName: string; left: number; right: number;
+}) {
+  const total = left + right;
+  const lPct = total ? Math.round((left / total) * 100) : 0;
+  const rPct = total ? 100 - lPct : 0;
+  const lead = !total ? null : lPct >= 65 ? leftName : rPct >= 65 ? rightName : null;
+
+  return (
+    <div className="miss">
+      <div className="miss-head">
+        <span className="miss-title">{label}</span>
+        <span className="miss-counts num">
+          {total
+            ? `${left} ${leftName.toLowerCase()} · ${right} ${rightName.toLowerCase()}`
+            : "no misses logged"}
+        </span>
+      </div>
+      {total ? (
+        <>
+          <div className="bias-track">
+            <span className="l" style={{ width: `${lPct}%` }} />
+            <span className="r" style={{ width: `${rPct}%` }} />
+          </div>
+          <div className="bias-ends"><span>{leftName}</span><span>{rightName}</span></div>
+        </>
+      ) : (
+        <div className="miss-clean"><Icon name="check_circle" size={15} />Clean strikes only</div>
+      )}
+      {lead && <div className="miss-take">Leaning {lead.toLowerCase()}</div>}
+    </div>
+  );
+}
+
+function Compare({
+  baseline, target, isTest,
+}: {
+  baseline: SavedSession;
+  target: SavedSession;
+  isTest: boolean;
+}) {
+  const rows: { name: string; fn: (s: SavedSession) => number }[] = [
+    { name: "Solid strike", fn: solidPct },
+    { name: "Fairways found", fn: fairwayPct },
+    { name: "Putts made", fn: puttPct },
+  ];
+  const tag = (s: SavedSession) => `W${wkNum(s.weekId)}·${sLabel(s.sessionLabel)}`;
+
+  return (
+    <div className="compare">
+      <div className="compare-head">
+        <div className="chart-t">
+          <Icon name="flag" size={18} color="var(--icon-muted)" />
+          Baseline → {isTest ? "Test day" : "Latest"}
+        </div>
+        <div className="compare-sub">
+          {tag(baseline)} · {fmtDate(baseline.date)} &nbsp;→&nbsp; {tag(target)} · {fmtDate(target.date)}
+        </div>
+      </div>
+      {rows.map(({ name, fn }) => {
+        const from = fn(baseline);
+        const to = fn(target);
+        const d = to - from;
+        const tone = d > 0 ? "up" : d < 0 ? "down" : "flat";
+        return (
+          <div className="compare-row" key={name}>
+            <div className="compare-label">{name}</div>
+            <div className="compare-nums num">
+              <span className="from">{from}%</span>
+              <Icon name="arrow_forward" size={14} color="var(--icon-muted)" />
+              <span className="to">{to}%</span>
+            </div>
+            <div className={"compare-delta " + tone}>
+              {d > 0 ? "+" : d < 0 ? "−" : "±"}{Math.abs(d)}
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -138,6 +380,7 @@ function ChartCard({
   const n = data.length;
   const last = data[n - 1];
   const delta = n > 1 ? last - data[n - 2] : null;
+  const shownVal = useCountUp(last);
 
   const X = (i: number) => (n <= 1 ? 150 : 10 + i * (280 / (n - 1)));
   const Y = (v: number) => 78 - (v / 100) * 64;
@@ -157,7 +400,7 @@ function ChartCard({
             </div>
           )}
         </div>
-        <div className="chart-val num">{last}<span className="u">%</span></div>
+        <div className="chart-val num">{shownVal}<span className="u">%</span></div>
       </div>
       <svg viewBox="0 0 300 86">
         <defs>
