@@ -1,4 +1,4 @@
-# ScoreCard — Golf Range Tracker (Next.js PWA)
+# RangeCard — Golf Range Tracker (Next.js PWA)
 
 A phone-installable app for logging range sessions from your 4-week training plan
 and tracking progress over time. Works offline, stores everything on your device,
