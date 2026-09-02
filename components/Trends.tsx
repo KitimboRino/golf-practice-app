@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { SavedSession, exportBackup, importBackup } from "@/lib/db";
 import { PLAN } from "@/lib/plan";
 import { solidPct, fairwayPct, puttPct } from "@/lib/stats";
+import { detectFaults } from "@/lib/faults";
 import { useCountUp } from "@/lib/useCountUp";
 import { Icon } from "./Icon";
 
@@ -171,6 +172,19 @@ export function Trends({
           </div>
         )}
         {fileInput}
+
+        {detectFaults(history[history.length - 1]).map((h, i) => (
+          <div className="coach" key={`${h.fault.id}-${i}`}>
+            <Icon name="near_me" size={18} color="var(--blue-icon)" style={{ marginTop: 1 }} />
+            <div className="coach-body">
+              <div className="coach-h">{h.fault.pattern}</div>
+              <div className="coach-note">{h.note}</div>
+              <div className="coach-fix">
+                <b>Fix</b>{h.fault.fix}
+              </div>
+            </div>
+          </div>
+        ))}
 
         {showCompare && (
           <Compare baseline={baseline} target={target} isTest={testIdx >= 0} />

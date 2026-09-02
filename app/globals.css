@@ -343,6 +343,30 @@ html.lenis, html.lenis body { height: auto; }
 .stick-b { font-size: 14px; line-height: 1.5; color: var(--blue-text); }
 .stick-b b { font-weight: 700; color: var(--blue-strong); }
 
+/* ---------- Fixes reference ---------- */
+.fault-note {
+  display: flex; align-items: flex-start; gap: 9px;
+  background: var(--inset); border: 1px solid var(--border); border-radius: 14px;
+  padding: 13px 15px; font-size: 13px; line-height: 1.5; color: var(--muted); text-wrap: pretty;
+}
+.fault-note .msr { margin-top: 1px; }
+.fault {
+  background: var(--card); border: 1px solid var(--border); border-radius: 18px;
+  padding: 15px 16px; display: flex; flex-direction: column; gap: 8px; box-shadow: var(--card-shadow);
+}
+.fault-pat { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+.fault-line { font-size: 13.5px; line-height: 1.55; color: var(--text-2); text-wrap: pretty; }
+.fault-k { font-weight: 700; color: var(--muted); margin-right: 6px; }
+.fault-k.fix { color: var(--green); }
+
+/* ---------- reactive coaching callout (Trends) ---------- */
+.coach { display: flex; gap: 11px; border-left: 2px solid var(--blue); background: var(--blue-note-bg); border-radius: 0 14px 14px 0; padding: 14px 16px; }
+.coach-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.coach-h { font-size: 14px; font-weight: 700; color: var(--blue-strong); letter-spacing: -0.01em; }
+.coach-note { font-size: 13px; line-height: 1.5; color: var(--blue-text); text-wrap: pretty; }
+.coach-fix { font-size: 13px; line-height: 1.5; color: var(--blue-text); margin-top: 5px; text-wrap: pretty; }
+.coach-fix b { color: var(--blue-strong); font-weight: 700; margin-right: 6px; }
+
 /* ---------- fields ---------- */
 .field {
   height: 58px; background: var(--inset); border: 1px solid var(--border); border-radius: 16px;
@@ -368,7 +392,7 @@ html.lenis, html.lenis body { height: auto; }
 .nav {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
   max-width: 430px; margin: 0 auto;
-  display: grid; grid-template-columns: repeat(3, 1fr);
+  display: grid; grid-template-columns: repeat(4, 1fr);
   background: var(--bg); border-top: 1px solid var(--hairline);
   padding: 0 0 env(safe-area-inset-bottom);
 }

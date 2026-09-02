@@ -5,6 +5,7 @@ import { PLAN, Week, Session } from "@/lib/plan";
 import { Outcome } from "@/components/Outcome";
 import { Icon } from "@/components/Icon";
 import { Trends } from "@/components/Trends";
+import { Fixes } from "@/components/Fixes";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useToast } from "@/components/Toast";
 import {
@@ -14,7 +15,7 @@ import {
 import { solidPct } from "@/lib/stats";
 import { doneFx } from "@/lib/haptics";
 
-type Tab = "home" | "session" | "trends";
+type Tab = "home" | "session" | "trends" | "fixes";
 
 // live counters for the session in progress (new session or an edit)
 type Live = {
@@ -211,6 +212,7 @@ export default function Page() {
           <Trends history={history} onDelete={onDelete} onEdit={editSession}
                   onStart={startSession} onImported={async () => setHistory(await allSessions())} />
         )}
+        {tab === "fixes" && <Fixes />}
       </div>
 
       <nav className="nav">
@@ -227,6 +229,9 @@ export default function Page() {
         </button>
         <button className={`nav-item${tab === "trends" ? " active" : ""}`} onClick={() => setTab("trends")}>
           <Icon name="show_chart" size={24} fill={tab === "trends"} />Trends
+        </button>
+        <button className={`nav-item${tab === "fixes" ? " active" : ""}`} onClick={() => setTab("fixes")}>
+          <Icon name="build" size={24} fill={tab === "fixes"} />Fixes
         </button>
       </nav>
     </>
