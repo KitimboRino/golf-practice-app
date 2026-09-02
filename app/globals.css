@@ -341,4 +341,15 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .empty-drills { display: flex; flex-direction: column; gap: 11px; font-size: 15px; color: var(--text-2); }
 .empty-drills div { display: flex; gap: 10px; align-items: center; }
 
+/* ---------- install prompt ---------- */
+.install { position: fixed; left: 0; right: 0; bottom: calc(84px + env(safe-area-inset-bottom)); z-index: 25; max-width: 430px; margin: 0 auto; padding: 0 14px; }
+.install-card { display: flex; align-items: center; gap: 12px; background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 12px 12px 12px 14px; box-shadow: 0 14px 34px -14px rgba(0,0,0,0.55); }
+.install-txt { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.install-txt b { font-size: 14px; font-weight: 700; letter-spacing: -0.01em; }
+.install-txt span { font-size: 12px; color: var(--muted); line-height: 1.35; }
+.install-go { flex: none; height: 40px; padding: 0 16px; border-radius: 12px; background: var(--green); color: var(--on-green); font-size: 14px; font-weight: 700; }
+.install-go:hover { background: var(--green-hover); }
+.install-x { flex: none; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: var(--icon-muted); }
+.install-x:hover { background: var(--inset); }
+
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }

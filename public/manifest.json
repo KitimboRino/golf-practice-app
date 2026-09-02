@@ -1,14 +1,20 @@
 {
-  "name": "ScoreCard — Golf Range Tracker",
-  "short_name": "ScoreCard",
-  "description": "Log range sessions from the 4-week plan and track your progress.",
+  "id": "/",
+  "name": "RangeCard — Golf Range Tracker",
+  "short_name": "RangeCard",
+  "description": "Log range sessions from the 4-week plan and track your progress. Works offline.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait",
   "background_color": "#0B1013",
   "theme_color": "#0B1013",
+  "categories": ["sports", "health", "lifestyle"],
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
