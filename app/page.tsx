@@ -30,8 +30,8 @@ function emptyLive(weekId: string, sessionLabel: string): Live {
 }
 
 const AREAS = [
-  ["Driving", "sports_golf"], ["Irons", "golf_course"],
-  ["Chipping", "swipe_up"], ["Putting", "adjust"],
+  ["Chipping", "swipe_up"], ["Irons", "golf_course"],
+  ["Driving", "sports_golf"], ["Putting", "adjust"],
 ] as const;
 
 export default function Page() {
@@ -197,7 +197,7 @@ function SessionScreen({
   week: Week; session: Session; live: Live;
   setLive: (l: Live) => void; onFinish: () => void;
 }) {
-  const [open, setOpen] = useState<Record<string, boolean>>({ drive: true, iron: false, chip: false, putt: false });
+  const [open, setOpen] = useState<Record<string, boolean>>({ chip: true, iron: false, drive: false, putt: false });
   const set = (patch: Partial<Live>) => setLive({ ...live, ...patch });
   const clamp = (v: number) => Math.max(0, v);
   const toggle = (k: string) => setOpen({ ...open, [k]: !open[k] });
@@ -224,44 +224,6 @@ function SessionScreen({
       </header>
 
       <div className="screen log">
-        <Block id="drive" name="Driving" icon="sports_golf" logged={areas.drive}
-               tally={`${live.fairway}/${live.left}/${live.right}`}
-               open={open.drive} toggle={() => toggle("drive")}>
-          <div className="drline">
-            <Icon name="near_me" size={17} color="var(--blue)" style={{ marginTop: 1 }} />{session.drive.name}
-          </div>
-          <div className="outcomes">
-            <Outcome tone="good" icon="check" label="Fairway" count={live.fairway}
-                     onInc={() => set({ fairway: live.fairway + 1 })} onDec={() => set({ fairway: clamp(live.fairway - 1) })} />
-            <Outcome tone="sand" icon="west" label="Left" count={live.left}
-                     onInc={() => set({ left: live.left + 1 })} onDec={() => set({ left: clamp(live.left - 1) })} />
-            <Outcome tone="clay" icon="east" label="Right" count={live.right}
-                     onInc={() => set({ right: live.right + 1 })} onDec={() => set({ right: clamp(live.right - 1) })} />
-          </div>
-          <div className="hint"><Icon name="touch_app" size={14} />Tap to add · hold to subtract</div>
-          <DrillCard how={session.drive.how} />
-          {session.drive.sticks && <Stick text={session.drive.sticks} />}
-        </Block>
-
-        <Block id="iron" name="Irons" icon="golf_course" logged={areas.iron}
-               tally={`${live.solid}/${live.fat}/${live.thin}`}
-               open={open.iron} toggle={() => toggle("iron")}>
-          <div className="drline">
-            <Icon name="stacked_line_chart" size={17} color="var(--blue)" style={{ marginTop: 1 }} />{session.iron.name}
-          </div>
-          <div className="outcomes">
-            <Outcome tone="good" icon="check" label="Solid" count={live.solid}
-                     onInc={() => set({ solid: live.solid + 1 })} onDec={() => set({ solid: clamp(live.solid - 1) })} />
-            <Outcome tone="sand" icon="south_east" label="Fat" count={live.fat}
-                     onInc={() => set({ fat: live.fat + 1 })} onDec={() => set({ fat: clamp(live.fat - 1) })} />
-            <Outcome tone="clay" icon="north_east" label="Thin" count={live.thin}
-                     onInc={() => set({ thin: live.thin + 1 })} onDec={() => set({ thin: clamp(live.thin - 1) })} />
-          </div>
-          <div className="hint"><Icon name="touch_app" size={14} />Tap to add · hold to subtract</div>
-          <DrillCard how={session.iron.how} />
-          {session.iron.sticks && <Stick text={session.iron.sticks} />}
-        </Block>
-
         <Block id="chip" name="Chipping" icon="swipe_up" logged={areas.chip}
                tally={live.bestClub ? `${live.bestClub} · ${live.on}/${live.off}` : `${live.on}/${live.off}`}
                open={open.chip} toggle={() => toggle("chip")}>
@@ -284,6 +246,44 @@ function SessionScreen({
           </div>
           <DrillCard how={session.chip.how} />
           {session.chip.sticks && <Stick text={session.chip.sticks} />}
+        </Block>
+
+        <Block id="iron" name="Irons" icon="golf_course" logged={areas.iron}
+               tally={`${live.solid}/${live.fat}/${live.thin}`}
+               open={open.iron} toggle={() => toggle("iron")}>
+          <div className="drline">
+            <Icon name="stacked_line_chart" size={17} color="var(--blue)" style={{ marginTop: 1 }} />{session.iron.name}
+          </div>
+          <div className="outcomes">
+            <Outcome tone="good" icon="check" label="Solid" count={live.solid}
+                     onInc={() => set({ solid: live.solid + 1 })} onDec={() => set({ solid: clamp(live.solid - 1) })} />
+            <Outcome tone="sand" icon="south_east" label="Fat" count={live.fat}
+                     onInc={() => set({ fat: live.fat + 1 })} onDec={() => set({ fat: clamp(live.fat - 1) })} />
+            <Outcome tone="clay" icon="north_east" label="Thin" count={live.thin}
+                     onInc={() => set({ thin: live.thin + 1 })} onDec={() => set({ thin: clamp(live.thin - 1) })} />
+          </div>
+          <div className="hint"><Icon name="touch_app" size={14} />Tap to add · hold to subtract</div>
+          <DrillCard how={session.iron.how} />
+          {session.iron.sticks && <Stick text={session.iron.sticks} />}
+        </Block>
+
+        <Block id="drive" name="Driving" icon="sports_golf" logged={areas.drive}
+               tally={`${live.fairway}/${live.left}/${live.right}`}
+               open={open.drive} toggle={() => toggle("drive")}>
+          <div className="drline">
+            <Icon name="near_me" size={17} color="var(--blue)" style={{ marginTop: 1 }} />{session.drive.name}
+          </div>
+          <div className="outcomes">
+            <Outcome tone="good" icon="check" label="Fairway" count={live.fairway}
+                     onInc={() => set({ fairway: live.fairway + 1 })} onDec={() => set({ fairway: clamp(live.fairway - 1) })} />
+            <Outcome tone="sand" icon="west" label="Left" count={live.left}
+                     onInc={() => set({ left: live.left + 1 })} onDec={() => set({ left: clamp(live.left - 1) })} />
+            <Outcome tone="clay" icon="east" label="Right" count={live.right}
+                     onInc={() => set({ right: live.right + 1 })} onDec={() => set({ right: clamp(live.right - 1) })} />
+          </div>
+          <div className="hint"><Icon name="touch_app" size={14} />Tap to add · hold to subtract</div>
+          <DrillCard how={session.drive.how} />
+          {session.drive.sticks && <Stick text={session.drive.sticks} />}
         </Block>
 
         <Block id="putt" name="Putting" icon="adjust" logged={areas.putt}
