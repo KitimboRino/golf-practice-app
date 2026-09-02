@@ -141,7 +141,7 @@ html.lenis, html.lenis body { height: auto; }
   max-width: 430px;
   margin: 0 auto;
   min-height: 100dvh;
-  padding-bottom: calc(78px + env(safe-area-inset-bottom));
+  padding-bottom: calc(58px + env(safe-area-inset-bottom));
   position: relative;
 }
 
@@ -308,9 +308,9 @@ html.lenis, html.lenis body { height: auto; }
   max-width: 430px; margin: 0 auto;
   display: grid; grid-template-columns: repeat(3, 1fr);
   background: var(--bg); border-top: 1px solid var(--hairline);
-  padding: 6px 0 calc(16px + env(safe-area-inset-bottom));
+  padding: 0 0 env(safe-area-inset-bottom);
 }
-.nav-item { height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--icon-muted); font-size: 11px; font-weight: 600; }
+.nav-item { height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--icon-muted); font-size: 10px; font-weight: 600; }
 .nav-item.active { color: var(--green); font-weight: 700; }
 
 /* ---------- charts ---------- */
@@ -349,7 +349,7 @@ html.lenis, html.lenis body { height: auto; }
 .empty-drills div { display: flex; gap: 10px; align-items: center; }
 
 /* ---------- install prompt ---------- */
-.install { position: fixed; left: 0; right: 0; bottom: calc(84px + env(safe-area-inset-bottom)); z-index: 25; max-width: 430px; margin: 0 auto; padding: 0 14px; }
+.install { position: fixed; left: 0; right: 0; bottom: calc(64px + env(safe-area-inset-bottom)); z-index: 25; max-width: 430px; margin: 0 auto; padding: 0 14px; }
 .install-card { display: flex; align-items: center; gap: 12px; background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 12px 12px 12px 14px; box-shadow: 0 14px 34px -14px rgba(0,0,0,0.55); }
 .install-txt { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
 .install-txt b { font-size: 14px; font-weight: 700; letter-spacing: -0.01em; }
