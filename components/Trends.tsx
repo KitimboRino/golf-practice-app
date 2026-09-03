@@ -5,6 +5,7 @@ import { SavedSession, exportBackup, importBackup } from "@/lib/db";
 import { PLAN } from "@/lib/plan";
 import { solidPct, fairwayPct, puttPct, pitchPct } from "@/lib/stats";
 import { detectFaults } from "@/lib/faults";
+import { verdict, areaMoves } from "@/lib/verdict";
 import { useCountUp } from "@/lib/useCountUp";
 import { Icon } from "./Icon";
 
@@ -189,6 +190,8 @@ export function Trends({
         )}
         {fileInput}
 
+        <VerdictCard history={history} />
+
         {detectFaults(history[history.length - 1]).map((h, i) => (
           <div className="coach" key={`${h.fault.id}-${i}`}>
             <Icon name="conversion_path" size={18} color="var(--blue-icon)" style={{ marginTop: 1 }} />
@@ -297,6 +300,44 @@ export function Trends({
           </div>
         </div>
       </div>
+    </>
+  );
+}
+
+function VerdictCard({ history }: { history: SavedSession[] }) {
+  const v = verdict(history);
+  if (!v) return null;
+  const { gaining, slipping } = areaMoves(history);
+  const bars = Math.round((v.confidence / 4) * 4);
+  return (
+    <>
+      <div className={"verdict " + v.tone}>
+        <div className="eyebrow"><Icon name="verified" size={15} />Verdict</div>
+        <div className="verdict-h">{v.headline}</div>
+        <div className="verdict-detail">{v.detail}</div>
+        <div className="verdict-bars">
+          {[0, 1, 2, 3].map((i) => <span key={i} className={i < bars ? "on" : ""} />)}
+        </div>
+        <div className="verdict-conf">{v.note}</div>
+      </div>
+      {(gaining || slipping) && (
+        <div className="moves">
+          {gaining && (
+            <div className="move up">
+              <div className="eyebrow"><Icon name="arrow_upward" size={15} />Gaining</div>
+              <div className="move-area">{gaining.label}</div>
+              <div className="move-note">{gaining.note}</div>
+            </div>
+          )}
+          {slipping && (
+            <div className="move down">
+              <div className="eyebrow"><Icon name="arrow_downward" size={15} />Slipping</div>
+              <div className="move-area">{slipping.label}</div>
+              <div className="move-note">{slipping.note}</div>
+            </div>
+          )}
+        </div>
+      )}
     </>
   );
 }

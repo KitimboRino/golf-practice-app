@@ -1,5 +1,18 @@
 import Dexie, { Table } from "dexie";
 
+// Per-ball outcome keys, in tap order, for the shot strip. Counts are derived from these.
+export type Strips = {
+  driving: string[];   // "fairway" | "left" | "right"
+  irons: string[];     // "solid" | "fat" | "thin"
+  chipping: string[];  // "on" | "off"
+  pitching: string[];  // "close" | "short" | "long"
+  putting: string[];   // "in" | "out"
+};
+
+export const emptyStrips = (): Strips => ({
+  driving: [], irons: [], chipping: [], pitching: [], putting: [],
+});
+
 // A saved session record. Scores are stored as tallies so trends can compute rates.
 export type SavedSession = {
   id: string;                 // uuid — also the Supabase row id once sync lands
@@ -12,10 +25,21 @@ export type SavedSession = {
   chipping: { bestClub: string; on: number; off: number };
   pitching: { close: number; short: number; long: number };
   putting: { in: number; out: number };
+  strips?: Strips;            // v3 — per-ball order for the shot strip
+  startedAt?: number;         // v3 — when logging began, for session duration
   createdAt: number;
   updatedAt: number;          // last local write — drives last-write-wins on sync
   deleted?: boolean;          // soft delete so removals propagate to the server
 };
+
+export const countIn = (arr: string[] | undefined, key: string) =>
+  (arr ?? []).reduce((n, x) => (x === key ? n + 1 : n), 0);
+
+// A drill swapped in from the Library for a given area — held in meta ("drillOverrides"),
+// applied to the current/next session's focus drill. Not synced (a local preference).
+export type AreaKey = "driving" | "irons" | "chipping" | "pitching" | "putting";
+export type DrillOverride = { name: string; how: string };
+export type DrillOverrides = Partial<Record<AreaKey, DrillOverride>>;
 
 // Convenience input type for writers — updatedAt/deleted are stamped by saveSession.
 export type SessionInput = Omit<SavedSession, "updatedAt" | "deleted"> & {
@@ -55,6 +79,13 @@ class RangeCardDB extends Dexie {
           if (!s.pitching) s.pitching = { close: 0, short: 0, long: 0 };
         });
       });
+
+    // v3 — per-ball shot strips + session start time. Both optional; store keys
+    // unchanged, so this is a no-op migration that just registers the version.
+    this.version(3).stores({
+      sessions: "id, date, weekId, updatedAt",
+      meta: "",
+    });
   }
 }
 
@@ -137,6 +168,8 @@ export async function importBackup(text: string): Promise<{ added: number; skipp
     typeof v === "number" && isFinite(v) ? Math.max(0, Math.min(999, Math.round(v))) : 0;
   const str = (v: unknown, max: number, fallback = "") =>
     typeof v === "string" ? v.slice(0, max) : fallback;
+  const strip = (v: unknown) =>
+    Array.isArray(v) ? v.filter((x) => typeof x === "string").slice(0, 999) : [];
   const isDate = (s: unknown) =>
     typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(Date.parse(s));
   const ts = (v: unknown) =>
@@ -158,6 +191,12 @@ export async function importBackup(text: string): Promise<{ added: number; skipp
       chipping: { bestClub: str(r.chipping?.bestClub, 40), on: cnt(r.chipping?.on), off: cnt(r.chipping?.off) },
       pitching: { close: cnt(r.pitching?.close), short: cnt(r.pitching?.short), long: cnt(r.pitching?.long) },
       putting: { in: cnt(r.putting?.in), out: cnt(r.putting?.out) },
+      strips: r.strips && typeof r.strips === "object" ? {
+        driving: strip(r.strips.driving), irons: strip(r.strips.irons),
+        chipping: strip(r.strips.chipping), pitching: strip(r.strips.pitching),
+        putting: strip(r.strips.putting),
+      } : undefined,
+      startedAt: typeof r.startedAt === "number" && isFinite(r.startedAt) ? r.startedAt : undefined,
       createdAt: ts(r.createdAt),
       updatedAt: ts(r.updatedAt),
       deleted: !!r.deleted,

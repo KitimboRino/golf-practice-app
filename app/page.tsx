@@ -15,13 +15,17 @@ import { Welcome } from "@/components/Welcome";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useToast } from "@/components/Toast";
 import {
-  SavedSession, SessionInput, saveSession, allSessions, deleteSession, restoreSession, uuid,
+  SavedSession, SessionInput, Strips, emptyStrips, countIn,
+  DrillOverride, DrillOverrides,
+  saveSession, allSessions, deleteSession, restoreSession, uuid,
   getMeta, setMeta, delMeta,
 } from "@/lib/db";
 import { solidPct } from "@/lib/stats";
+import { todaysOneThing, weekStreak } from "@/lib/verdict";
+import { SessionReceipt } from "@/components/SessionReceipt";
 import { doneFx } from "@/lib/haptics";
 
-type Tab = "home" | "session" | "trends" | "more" | "warmup" | "welcome";
+type Tab = "home" | "session" | "trends" | "more" | "warmup" | "welcome" | "receipt";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -42,57 +46,70 @@ function greeting(name: string, history: SavedSession[]): string {
   return name ? `${tod}, ${name}` : tod;
 }
 
-// live counters for the session in progress (new session or an edit)
+// the session in progress (new session or an edit). Per-ball taps live in `strips`;
+// every tally is derived from them so the two never drift.
 type Live = {
   weekId: string; sessionLabel: string; date: string; notes: string;
-  fairway: number; left: number; right: number;
-  solid: number; fat: number; thin: number;
-  bestClub: string; on: number; off: number;
-  pClose: number; pShort: number; pLong: number;
-  in: number; out: number;
+  bestClub: string; startedAt: number;
+  strips: Strips;
 };
 
-type NumKey = { [K in keyof Live]: Live[K] extends number ? K : never }[keyof Live];
+const STRIP_TOTAL = (s: Strips) =>
+  s.driving.length + s.irons.length + s.chipping.length +
+  s.pitching.length + s.putting.length;
 
 function emptyLive(weekId: string, sessionLabel: string): Live {
   return {
     weekId, sessionLabel, date: new Date().toISOString().slice(0, 10), notes: "",
-    fairway: 0, left: 0, right: 0, solid: 0, fat: 0, thin: 0,
-    bestClub: "", on: 0, off: 0, pClose: 0, pShort: 0, pLong: 0, in: 0, out: 0,
+    bestClub: "", startedAt: Date.now(), strips: emptyStrips(),
+  };
+}
+
+// rebuild strips from tallies when editing a pre-v3 session (tap order is lost)
+function stripsFrom(s: SavedSession): Strips {
+  if (s.strips) return {
+    driving: [...s.strips.driving], irons: [...s.strips.irons], chipping: [...s.strips.chipping],
+    pitching: [...s.strips.pitching], putting: [...s.strips.putting],
+  };
+  const rep = (k: string, n: number) => Array(Math.max(0, n)).fill(k);
+  const p = s.pitching ?? { close: 0, short: 0, long: 0 };
+  return {
+    driving: [...rep("fairway", s.driving.fairway), ...rep("left", s.driving.left), ...rep("right", s.driving.right)],
+    irons: [...rep("solid", s.irons.solid), ...rep("fat", s.irons.fat), ...rep("thin", s.irons.thin)],
+    chipping: [...rep("on", s.chipping.on), ...rep("off", s.chipping.off)],
+    pitching: [...rep("close", p.close), ...rep("short", p.short), ...rep("long", p.long)],
+    putting: [...rep("in", s.putting.in), ...rep("out", s.putting.out)],
   };
 }
 
 function toLive(s: SavedSession): Live {
-  const p = s.pitching ?? { close: 0, short: 0, long: 0 };
   return {
     weekId: s.weekId, sessionLabel: s.sessionLabel, date: s.date, notes: s.notes,
-    fairway: s.driving.fairway, left: s.driving.left, right: s.driving.right,
-    solid: s.irons.solid, fat: s.irons.fat, thin: s.irons.thin,
-    bestClub: s.chipping.bestClub, on: s.chipping.on, off: s.chipping.off,
-    pClose: p.close, pShort: p.short, pLong: p.long,
-    in: s.putting.in, out: s.putting.out,
+    bestClub: s.chipping.bestClub, startedAt: s.startedAt ?? Date.now(),
+    strips: stripsFrom(s),
   };
 }
 
 const isDate = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(Date.parse(s));
 
 function fromLive(l: Live) {
+  const c = l.strips;
   return {
     weekId: l.weekId, sessionLabel: l.sessionLabel,
     date: isDate(l.date) ? l.date : today(),
     notes: l.notes.slice(0, 2000),
-    driving: { fairway: l.fairway, left: l.left, right: l.right },
-    irons: { solid: l.solid, fat: l.fat, thin: l.thin },
-    chipping: { bestClub: l.bestClub, on: l.on, off: l.off },
-    pitching: { close: l.pClose, short: l.pShort, long: l.pLong },
-    putting: { in: l.in, out: l.out },
+    driving: { fairway: countIn(c.driving, "fairway"), left: countIn(c.driving, "left"), right: countIn(c.driving, "right") },
+    irons: { solid: countIn(c.irons, "solid"), fat: countIn(c.irons, "fat"), thin: countIn(c.irons, "thin") },
+    chipping: { bestClub: l.bestClub, on: countIn(c.chipping, "on"), off: countIn(c.chipping, "off") },
+    pitching: { close: countIn(c.pitching, "close"), short: countIn(c.pitching, "short"), long: countIn(c.pitching, "long") },
+    putting: { in: countIn(c.putting, "in"), out: countIn(c.putting, "out") },
+    strips: c,
+    startedAt: l.startedAt,
   };
 }
 
 function anyLogged(l: Live) {
-  return l.fairway + l.left + l.right + l.solid + l.fat + l.thin +
-    l.on + l.off + l.pClose + l.pShort + l.pLong + l.in + l.out > 0
-    || !!l.bestClub || !!l.notes.trim();
+  return STRIP_TOTAL(l.strips) > 0 || !!l.bestClub || !!l.notes.trim();
 }
 
 // find the plan position of a saved session by weekId + label
@@ -106,7 +123,7 @@ function locate(weekId: string, label: string): { week: number; session: number 
 }
 
 const AREAS = [
-  ["Chipping", "swipe_up"], ["Irons", "golf_course"],
+  ["Chipping", "swipe_up"], ["Pitching", "arrow_outward"], ["Irons", "golf_course"],
   ["Driving", "sports_golf"], ["Putting", "adjust"],
 ] as const;
 
@@ -119,12 +136,19 @@ export default function Page() {
   const [ready, setReady] = useState(false);
   const [name, setName] = useState("");
   const [onboardedAt, setOnboardedAt] = useState<string | null>(null);
+  const [plannedMiss, setPlannedMiss] = useState<string>("");
+  const [overrides, setOverrides] = useState<DrillOverrides>({});
+  const [receipt, setReceipt] = useState<
+    { session: SavedSession; history: SavedSession[]; nextCursor: { week: number; session: number } } | null
+  >(null);
   const toast = useToast();
 
   useEffect(() => {
     (async () => {
       setHistory(await allSessions());
       setName((await getMeta<string>("name")) ?? "");
+      setPlannedMiss((await getMeta<string>("plannedMiss")) ?? "");
+      setOverrides((await getMeta<DrillOverrides>("drillOverrides")) ?? {});
       const ob = (await getMeta<string>("onboardedAt")) ?? null;
       setOnboardedAt(ob);
       const draft = await getMeta<Live>("draft");
@@ -143,14 +167,24 @@ export default function Page() {
 
   const cleanName = (n: string) => n.replace(/\s+/g, " ").trim().slice(0, 24);
 
-  async function finishOnboarding(n: string) {
+  async function finishOnboarding(n: string, miss: string) {
     const nm = cleanName(n);
     const now = new Date().toISOString();
     setName(nm);
+    setPlannedMiss(miss);
     setOnboardedAt(now);
     await setMeta("name", nm);
+    await setMeta("plannedMiss", miss);
     await setMeta("onboardedAt", now);
     setTab("home");
+  }
+
+  async function swapDrill(area: keyof DrillOverrides, drill: DrillOverride | null) {
+    const next: DrillOverrides = { ...overrides };
+    if (drill) next[area] = drill;
+    else delete next[area];
+    setOverrides(next);
+    await setMeta("drillOverrides", next);
   }
 
   async function saveName(n: string) {
@@ -231,20 +265,32 @@ export default function Page() {
     };
     await saveSession(rec);
     await delMeta("draft");
+    if (!wasEdit && Object.keys(overrides).length) {
+      setOverrides({});
+      await delMeta("drillOverrides");
+    }
 
+    let nextCursor = cursor;
     if (!wasEdit) {
       let w = cursor.week, s = cursor.session + 1;
       if (s >= PLAN[w].sessions.length) { s = 0; w = Math.min(w + 1, PLAN.length - 1); }
-      const nc = { week: w, session: s };
-      setCursor(nc); await setMeta("cursor", nc);
+      nextCursor = { week: w, session: s };
+      setCursor(nextCursor); await setMeta("cursor", nextCursor);
     }
 
-    setHistory(await allSessions());
+    const all = await allSessions();
+    setHistory(all);
     setLive(null);
     setEditOrig(null);
-    setTab(wasEdit ? "trends" : "home");
     doneFx();
-    toast.show(wasEdit ? "Changes saved" : "Session saved");
+
+    if (wasEdit) {
+      setTab("trends");
+      toast.show("Changes saved");
+    } else {
+      setReceipt({ session: all.find((x) => x.id === rec.id) ?? (rec as SavedSession), history: all, nextCursor });
+      setTab("receipt");
+    }
   }
 
   async function discard() {
@@ -278,9 +324,22 @@ export default function Page() {
 
   if (tab === "welcome") {
     return onboardedAt ? (
-      <Welcome isEdit name={name} onDone={saveName} onCancel={() => setTab("home")} />
+      <Welcome isEdit name={name} onDone={(n) => saveName(n)} onCancel={() => setTab("home")} />
     ) : (
       <Welcome onDone={finishOnboarding} />
+    );
+  }
+
+  if (tab === "receipt" && receipt) {
+    return (
+      <SessionReceipt
+        session={receipt.session}
+        history={receipt.history}
+        nextWeek={PLAN[receipt.nextCursor.week]}
+        nextSession={PLAN[receipt.nextCursor.week].sessions[receipt.nextCursor.session]}
+        onDone={() => { setReceipt(null); setTab("home"); }}
+        onNext={() => { setReceipt(null); startSession(); }}
+      />
     );
   }
 
@@ -288,13 +347,15 @@ export default function Page() {
     <>
       <div className="tabview" key={tab}>
         {tab === "home" && (
-          <Home week={week} cursor={cursor} setCursor={setCursor} history={history}
+          <Home week={week} cursor={cursor} setCursor={setCursor} history={history} name={name}
                 greeting={greeting(name, history)} onEditName={() => setTab("welcome")}
+                oneThing={todaysOneThing(history, plannedMiss)} streak={weekStreak(history)}
                 onStart={startSession} draftLabel={isDraft ? live!.sessionLabel : null}
                 draftHere={draftHere} onResume={resumeDraft} />
         )}
         {tab === "session" && live && (
           <SessionScreen week={week} session={session} pitchFocus={pitchFocus} live={live} setLive={setLive}
+                         overrides={overrides} onRestoreDrill={(a) => swapDrill(a, null)}
                          editMode={!!editOrig} onFinish={finishSession} onDiscard={discard} />
         )}
         {tab === "trends" && (
@@ -304,7 +365,9 @@ export default function Page() {
         {tab === "warmup" && (
           <Warmup onSkip={dismissWarmup} onReady={dismissWarmup} />
         )}
-        {tab === "more" && <More />}
+        {tab === "more" && (
+          <More history={history} plannedMiss={plannedMiss} overrides={overrides} onSwap={swapDrill} />
+        )}
       </div>
 
       <nav className="nav">
@@ -330,11 +393,27 @@ export default function Page() {
   );
 }
 
-function More() {
+function More({ history, plannedMiss, overrides, onSwap }: {
+  history: SavedSession[];
+  plannedMiss: string;
+  overrides: DrillOverrides;
+  onSwap: (area: keyof DrillOverrides, drill: DrillOverride | null) => void;
+}) {
   const [view, setView] = useState<"menu" | "prep" | "library" | "fixes">("menu");
+  const [libFocus, setLibFocus] = useState<import("@/lib/faults").Fault | null>(null);
+  const openLibrary = (f: import("@/lib/faults").Fault | null) => { setLibFocus(f); setView("library"); };
   if (view === "prep") return <Prep onBack={() => setView("menu")} />;
-  if (view === "library") return <Library onBack={() => setView("menu")} />;
-  if (view === "fixes") return <Fixes onBack={() => setView("menu")} />;
+  if (view === "library")
+    return (
+      <Library onBack={() => { setLibFocus(null); setView("menu"); }}
+               history={history} plannedMiss={plannedMiss}
+               overrides={overrides} onSwap={onSwap} focusFault={libFocus} />
+    );
+  if (view === "fixes")
+    return (
+      <Fixes onBack={() => setView("menu")} history={history} plannedMiss={plannedMiss}
+             onPractice={openLibrary} />
+    );
   return (
     <>
       <header className="hdr">
@@ -368,15 +447,18 @@ function More() {
 }
 
 function Home({
-  week, cursor, setCursor, history, greeting, onEditName,
+  week, cursor, setCursor, history, name, greeting, onEditName, oneThing, streak,
   onStart, draftLabel, draftHere, onResume,
 }: {
   week: Week;
   cursor: { week: number; session: number };
   setCursor: (c: { week: number; session: number }) => void;
   history: SavedSession[];
+  name: string;
   greeting: string;
   onEditName: () => void;
+  oneThing: import("@/lib/verdict").OneThing | null;
+  streak: number;
   onStart: () => void;
   draftLabel: string | null;
   draftHere: boolean;
@@ -394,19 +476,29 @@ function Home({
     ? solidPct(history[history.length - 1]) - solidPct(history[history.length - 2])
     : null;
   const donePct = Math.min(100, Math.round((done / flat.length) * 100));
+  const firstRun = done === 0;
 
   return (
     <>
       <header className="hdr">
         <div className="hdr-row">
           <div>
-            <button className="greeting" onClick={onEditName} aria-label="Edit your name">
-              <span>{greeting}</span><Icon name="edit" size={13} />
-            </button>
+            {!firstRun && (
+              <button className="greeting" onClick={onEditName} aria-label="Edit your name">
+                <span>{greeting}</span><Icon name="edit" size={13} />
+              </button>
+            )}
             <div className="hdr-title">Week {cursor.week + 1} · {week.title}</div>
             <div className="hdr-sub">Session {cursor.session + 1} of {week.sessions.length}</div>
           </div>
-          <ThemeToggle />
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flex: "none" }}>
+            {streak > 1 && (
+              <div className="chip" style={{ color: "var(--sand)", background: "var(--sand-face)", borderColor: "var(--sand-border)" }}>
+                <Icon name="local_fire_department" size={15} fill />{streak} wk
+              </div>
+            )}
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 
@@ -419,6 +511,41 @@ function Home({
           </button>
         )}
 
+        {firstRun && (
+          <div className="home-hero">
+            <div className="eyebrow">
+              <span className="icon-tile sm"><Icon name="sports_golf" size={15} /></span>
+              Session one
+            </div>
+            <button className="home-hero-h" onClick={onEditName} aria-label="Edit your name">
+              {name ? `Welcome, ${name}.` : "Welcome."}
+              <Icon name="edit" size={15} />
+            </button>
+            <p className="home-hero-p">
+              Let&apos;s get your baseline down — one honest pass through all five areas.
+              No targets to hit today, just the truth about where your game is.
+            </p>
+            <div className="home-hero-meta">
+              <span><Icon name="format_list_bulleted" size={15} />5 areas</span>
+              <span><Icon name="sports_golf" size={15} />~10 balls each</span>
+              <span><Icon name="schedule" size={15} />about 40 min</span>
+            </div>
+          </div>
+        )}
+
+        {oneThing && (
+          <div className="onething">
+            <div className="lbl">
+              <span className="icon-tile sm"><Icon name="target" size={15} /></span>
+              <span className="eyebrow">Today&apos;s one thing</span>
+            </div>
+            <div className="onething-title">{oneThing.title}</div>
+            <div className="onething-body">{oneThing.body}</div>
+            <div className="onething-src"><Icon name="auto_awesome" size={15} />{oneThing.source}</div>
+          </div>
+        )}
+
+        {!firstRun && (
         <div className="tiles">
           <div className="tile">
             <div className="tile-head">
@@ -449,6 +576,7 @@ function Home({
             </div>
           </div>
         </div>
+        )}
 
         <div className="focuscard">
           <div className="lbl">
@@ -503,13 +631,86 @@ function Home({
   );
 }
 
+type AreaKey = "chipping" | "irons" | "driving" | "pitching" | "putting";
+type Tone = "good" | "sand" | "clay";
+type StepDef = {
+  id: string; area: AreaKey; name: string; icon: string; drillIcon: string; target: number;
+  outcomes: { key: string; tone: Tone; icon: string; label: string }[];
+};
+
+const STEPS: StepDef[] = [
+  { id: "chip", area: "chipping", name: "Chipping", icon: "swipe_up", drillIcon: "crop_square", target: 10,
+    outcomes: [
+      { key: "on", tone: "good", icon: "check", label: "On towel" },
+      { key: "off", tone: "clay", icon: "close", label: "Off towel" },
+    ] },
+  { id: "pitch", area: "pitching", name: "Pitching", icon: "arrow_outward", drillIcon: "flag", target: 10,
+    outcomes: [
+      { key: "close", tone: "good", icon: "check", label: "Close" },
+      { key: "short", tone: "sand", icon: "arrow_downward", label: "Short" },
+      { key: "long", tone: "clay", icon: "arrow_upward", label: "Long" },
+    ] },
+  { id: "iron", area: "irons", name: "Irons", icon: "golf_course", drillIcon: "stacked_line_chart", target: 9,
+    outcomes: [
+      { key: "solid", tone: "good", icon: "check", label: "Solid" },
+      { key: "fat", tone: "sand", icon: "south_east", label: "Fat" },
+      { key: "thin", tone: "clay", icon: "north_east", label: "Thin" },
+    ] },
+  { id: "drive", area: "driving", name: "Driving", icon: "sports_golf", drillIcon: "near_me", target: 10,
+    outcomes: [
+      { key: "fairway", tone: "good", icon: "check", label: "On line" },
+      { key: "left", tone: "sand", icon: "west", label: "Left" },
+      { key: "right", tone: "clay", icon: "east", label: "Right" },
+    ] },
+  { id: "putt", area: "putting", name: "Putting", icon: "adjust", drillIcon: "door_sliding", target: 10,
+    outcomes: [
+      { key: "in", tone: "good", icon: "golf_course", label: "In" },
+      { key: "out", tone: "clay", icon: "close", label: "Out" },
+    ] },
+];
+
+function liveNote(area: AreaKey, strip: string[]): string {
+  const n = strip.length;
+  if (n < 3) return "The pattern tells you more than the total — keep going.";
+  const c = (k: string) => strip.reduce((a, x) => (x === k ? a + 1 : a), 0);
+  const good = area === "driving" ? "fairway" : area === "irons" ? "solid"
+    : area === "chipping" ? "on" : area === "pitching" ? "close" : "in";
+  const goodRate = c(good) / n;
+  if (area === "driving") {
+    if (c("right") >= c("left") + 2) return "Leaking right — set your feet left and let it be.";
+    if (c("left") >= c("right") + 2) return "Pulling left — your shoulders are probably closed at address.";
+    if (goodRate >= 0.7) return "Best start-line run of the day. Change nothing.";
+    return "Misses go both ways — that's timing, not aim.";
+  }
+  if (area === "irons") {
+    if (c("fat") >= c("thin") + 2) return "Heavy — feel the low point ahead of the ball.";
+    if (c("thin") >= c("fat") + 2) return "Thin — you're standing up out of it. Chest stays down.";
+    if (goodRate >= 0.7) return "Flushing it. Same swing, next ball.";
+    return "Contact's mixed — settle your tempo before the next one.";
+  }
+  if (area === "chipping") {
+    if (goodRate >= 0.6) return "Landing zone dialled. Trust it.";
+    return "Short of the towel? Commit to a firmer, shorter stroke.";
+  }
+  if (area === "pitching") {
+    if (c("short") >= c("long") + 2) return "Coming up short — take one more club-length of backswing.";
+    if (c("long") >= c("short") + 2) return "Flying it long — quieten the hit through impact.";
+    if (goodRate >= 0.6) return "Distance control is there today.";
+    return "Distances scattered — pick one number and groove it.";
+  }
+  if (goodRate >= 0.7) return "Stroke's holding. Keep the same routine.";
+  return "Misses creeping in — slow the takeaway on the next few.";
+}
+
 function SessionScreen({
-  week, session, pitchFocus, live, setLive, editMode, onFinish, onDiscard,
+  week, session, pitchFocus, live, setLive, overrides, onRestoreDrill, editMode, onFinish, onDiscard,
 }: {
   week: Week; session: Session;
   pitchFocus: { name: string; how: string; sticks: string | null };
   live: Live;
   setLive: (l: Live) => void;
+  overrides: DrillOverrides;
+  onRestoreDrill: (area: AreaKey) => void;
   editMode: boolean;
   onFinish: () => void;
   onDiscard: () => void;
@@ -520,22 +721,42 @@ function SessionScreen({
   const set = (patch: Partial<Live>) => setLive({ ...live, ...patch });
   const toggle = (k: string) => setOpen({ ...open, [k]: !open[k] });
 
-  // outcome counters: 0–99, so a stuck tap or bad import can't produce nonsense
-  const CAP = 99;
-  const adj = (key: NumKey, delta: number) =>
-    set({ [key]: Math.max(0, Math.min(CAP, live[key] + delta)) } as Partial<Live>);
-  const inc = (key: NumKey) => () => adj(key, 1);
-  const dec = (key: NumKey) => () => adj(key, -1);
-
-  const areas = {
-    drive: live.fairway + live.left + live.right > 0,
-    iron: live.solid + live.fat + live.thin > 0,
-    chip: live.on + live.off > 0 || !!live.bestClub.trim(),
-    pitch: live.pClose + live.pShort + live.pLong > 0,
-    putt: live.in + live.out > 0,
+  const push = (area: AreaKey, key: string) => {
+    const arr = live.strips[area];
+    if (arr.length >= 60) return;
+    set({ strips: { ...live.strips, [area]: [...arr, key] } });
   };
-  const logged = Object.values(areas).filter(Boolean).length;
+  const popType = (area: AreaKey, key: string) => {
+    const arr = [...live.strips[area]];
+    for (let i = arr.length - 1; i >= 0; i--) { if (arr[i] === key) { arr.splice(i, 1); break; } }
+    set({ strips: { ...live.strips, [area]: arr } });
+  };
+  const popLast = (area: AreaKey) => {
+    if (!live.strips[area].length) return;
+    set({ strips: { ...live.strips, [area]: live.strips[area].slice(0, -1) } });
+  };
+
+  const areaLogged = (a: AreaKey) => live.strips[a].length > 0 || (a === "chipping" && !!live.bestClub.trim());
+  const logged = STEPS.filter((s) => areaLogged(s.area)).length;
   const canFinish = editMode || logged > 0;
+
+  const drillFor = (step: StepDef): { line: string; cards: { how: string; name?: string }[]; sticks: string[]; swapped?: boolean } => {
+    const ov = editMode ? undefined : overrides[step.area];
+    if (ov) {
+      return step.area === "pitching"
+        ? { line: PITCHING_DRILL, cards: [{ how: ov.how, name: ov.name }], sticks: [], swapped: true }
+        : { line: ov.name, cards: [{ how: ov.how }], sticks: [], swapped: true };
+    }
+    if (step.area === "chipping") return { line: session.chip.name, cards: [{ how: session.chip.how }], sticks: session.chip.sticks ? [session.chip.sticks] : [] };
+    if (step.area === "irons") return { line: session.iron.name, cards: [{ how: session.iron.how }], sticks: session.iron.sticks ? [session.iron.sticks] : [] };
+    if (step.area === "driving") return { line: session.drive.name, cards: [{ how: session.drive.how }], sticks: session.drive.sticks ? [session.drive.sticks] : [] };
+    if (step.area === "pitching") return { line: PITCHING_DRILL, cards: [{ how: pitchFocus.how, name: pitchFocus.name }], sticks: pitchFocus.sticks ? [pitchFocus.sticks] : [] };
+    return {
+      line: session.putts[0]?.name ?? "",
+      cards: session.putts.map((p) => ({ how: p.how })),
+      sticks: session.putts.map((p) => p.sticks).filter((x): x is string => !!x),
+    };
+  };
 
   return (
     <>
@@ -564,103 +785,92 @@ function SessionScreen({
           </ol>
         </details>
 
-        <Block id="chip" name="Chipping" icon="swipe_up" logged={areas.chip}
-               tally={live.bestClub ? `${live.bestClub} · ${live.on}/${live.off}` : `${live.on}/${live.off}`}
-               open={open.chip} toggle={() => toggle("chip")}>
-          <div className="drline">
-            <Icon name="crop_square" size={17} color="var(--blue)" style={{ marginTop: 1 }} />{session.chip.name}
-          </div>
-          <div className="grp" style={{ gap: 8 }}>
-            <div className="grp-lbl">Best club today</div>
-            <div className="field">
-              <Icon name="sports_golf" size={19} color="var(--icon-muted)" />
-              <input value={live.bestClub} maxLength={40}
-                     onChange={(e) => set({ bestClub: e.target.value })}
-                     placeholder="e.g. 54° wedge" />
-            </div>
-          </div>
-          <div className="outcomes">
-            <Outcome tone="good" icon="check" label="On towel" count={live.on}
-                     onInc={inc("on")} onDec={dec("on")} />
-            <Outcome tone="clay" icon="close" label="Off towel" count={live.off}
-                     onInc={inc("off")} onDec={dec("off")} />
-          </div>
-          <DrillCard how={session.chip.how} />
-          {session.chip.sticks && <Stick text={session.chip.sticks} />}
-        </Block>
+        {STEPS.map((step) => {
+          const strip = live.strips[step.area];
+          const done = areaLogged(step.area);
+          const d = drillFor(step);
+          const good = step.outcomes[0].key;
+          const goodN = strip.reduce((a, x) => (x === good ? a + 1 : a), 0);
+          const tallyKeys = step.outcomes.map((o) => strip.reduce((a, x) => (x === o.key ? a + 1 : a), 0));
+          return (
+            <Block key={step.id} id={step.id} name={step.name} icon={step.icon} logged={done}
+                   tally={tallyKeys.join("/")}
+                   open={open[step.id]} toggle={() => toggle(step.id)}>
+              <div className="drline">
+                <Icon name={step.drillIcon} size={17} color="var(--blue)" style={{ marginTop: 1 }} />{d.line}
+              </div>
+              {d.swapped && (
+                <div className="drswap">
+                  <Icon name="swap_horiz" size={13} />
+                  <span>Swapped in from the Library</span>
+                  <button onClick={() => onRestoreDrill(step.area)}>Restore planned</button>
+                </div>
+              )}
 
-        <Block id="iron" name="Irons" icon="golf_course" logged={areas.iron}
-               tally={`${live.solid}/${live.fat}/${live.thin}`}
-               open={open.iron} toggle={() => toggle("iron")}>
-          <div className="drline">
-            <Icon name="stacked_line_chart" size={17} color="var(--blue)" style={{ marginTop: 1 }} />{session.iron.name}
-          </div>
-          <div className="outcomes">
-            <Outcome tone="good" icon="check" label="Solid" count={live.solid}
-                     onInc={inc("solid")} onDec={dec("solid")} />
-            <Outcome tone="sand" icon="south_east" label="Fat" count={live.fat}
-                     onInc={inc("fat")} onDec={dec("fat")} />
-            <Outcome tone="clay" icon="north_east" label="Thin" count={live.thin}
-                     onInc={inc("thin")} onDec={dec("thin")} />
-          </div>
-          <div className="hint"><Icon name="touch_app" size={14} />Tap to add · hold to subtract</div>
-          <DrillCard how={session.iron.how} />
-          {session.iron.sticks && <Stick text={session.iron.sticks} />}
-        </Block>
+              {step.area === "chipping" && (
+                <div className="grp" style={{ gap: 8 }}>
+                  <div className="grp-lbl">Best club today</div>
+                  <div className="field">
+                    <Icon name="sports_golf" size={19} color="var(--icon-muted)" />
+                    <input value={live.bestClub} maxLength={40}
+                           onChange={(e) => set({ bestClub: e.target.value })}
+                           placeholder="e.g. 54° wedge" />
+                  </div>
+                </div>
+              )}
 
-        <Block id="drive" name="Driving" icon="sports_golf" logged={areas.drive}
-               tally={`${live.fairway}/${live.left}/${live.right}`}
-               open={open.drive} toggle={() => toggle("drive")}>
-          <div className="drline">
-            <Icon name="near_me" size={17} color="var(--blue)" style={{ marginTop: 1 }} />{session.drive.name}
-          </div>
-          <div className="outcomes">
-            <Outcome tone="good" icon="check" label="Fairway" count={live.fairway}
-                     onInc={inc("fairway")} onDec={dec("fairway")} />
-            <Outcome tone="sand" icon="west" label="Left" count={live.left}
-                     onInc={inc("left")} onDec={dec("left")} />
-            <Outcome tone="clay" icon="east" label="Right" count={live.right}
-                     onInc={inc("right")} onDec={dec("right")} />
-          </div>
-          <div className="hint"><Icon name="touch_app" size={14} />Tap to add · hold to subtract</div>
-          <DrillCard how={session.drive.how} />
-          {session.drive.sticks && <Stick text={session.drive.sticks} />}
-        </Block>
+              <div className="shotstrip">
+                <div className="shotstrip-head">
+                  <span className="eyebrow dim">Ball {Math.min(step.target, strip.length + 1)} of {step.target}</span>
+                  {strip.length > 0 && (
+                    <span className="shotstrip-rate" style={{ color: goodN / strip.length >= 0.5 ? "var(--green)" : "var(--sand)" }}>
+                      <Icon name="insights" size={14} />{Math.round((goodN / strip.length) * 100)}% on line
+                    </span>
+                  )}
+                </div>
+                <div className="shotstrip-dots">
+                  {Array.from({ length: step.target }).map((_, i) => {
+                    const k = strip[i];
+                    const o = step.outcomes.find((x) => x.key === k);
+                    return (
+                      <span key={i} className={"strip-dot" + (o ? " " + o.tone : "")}>
+                        {o && <Icon name={o.icon} size={13} />}
+                      </span>
+                    );
+                  })}
+                  {strip.slice(step.target).map((k, i) => {
+                    const o = step.outcomes.find((x) => x.key === k);
+                    return <span key={"x" + i} className={"strip-dot" + (o ? " " + o.tone : "")}>{o && <Icon name={o.icon} size={13} />}</span>;
+                  })}
+                </div>
+                {strip.length >= 3 && (
+                  <div className="shotstrip-note">
+                    <Icon name="lightbulb" size={16} color="var(--blue-icon)" />{liveNote(step.area, strip)}
+                  </div>
+                )}
+              </div>
 
-        <Block id="pitch" name="Pitching" icon="arrow_outward" logged={areas.pitch}
-               tally={`${live.pClose}/${live.pShort}/${live.pLong}`}
-               open={open.pitch} toggle={() => toggle("pitch")}>
-          <div className="drline">
-            <Icon name="flag" size={17} color="var(--blue)" style={{ marginTop: 1 }} />{PITCHING_DRILL}
-          </div>
-          <div className="outcomes">
-            <Outcome tone="good" icon="check" label="Close" count={live.pClose}
-                     onInc={inc("pClose")} onDec={dec("pClose")} />
-            <Outcome tone="sand" icon="arrow_downward" label="Short" count={live.pShort}
-                     onInc={inc("pShort")} onDec={dec("pShort")} />
-            <Outcome tone="clay" icon="arrow_upward" label="Long" count={live.pLong}
-                     onInc={inc("pLong")} onDec={dec("pLong")} />
-          </div>
-          <div className="hint"><Icon name="touch_app" size={14} />Tap to add · hold to subtract</div>
-          <DrillCard name={pitchFocus.name} how={pitchFocus.how} />
-          {pitchFocus.sticks && <Stick text={pitchFocus.sticks} />}
-        </Block>
+              <div className="outcomes">
+                {step.outcomes.map((o) => (
+                  <Outcome key={o.key} tone={o.tone} icon={o.icon} label={o.label}
+                           count={strip.reduce((a, x) => (x === o.key ? a + 1 : a), 0)}
+                           onInc={() => push(step.area, o.key)}
+                           onDec={() => popType(step.area, o.key)} />
+                ))}
+              </div>
 
-        <Block id="putt" name="Putting" icon="adjust" logged={areas.putt}
-               tally={`${live.in}/${live.out}`}
-               open={open.putt} toggle={() => toggle("putt")}>
-          <div className="drline">
-            <Icon name="door_sliding" size={17} color="var(--blue)" style={{ marginTop: 1 }} />{session.putts[0]?.name}
-          </div>
-          <div className="outcomes">
-            <Outcome tone="good" icon="golf_course" label="In" count={live.in}
-                     onInc={inc("in")} onDec={dec("in")} />
-            <Outcome tone="clay" icon="close" label="Out" count={live.out}
-                     onInc={inc("out")} onDec={dec("out")} />
-          </div>
-          {session.putts.map((p, i) => <DrillCard key={i} how={p.how} />)}
-          {session.putts.map((p, i) => (p.sticks ? <Stick key={i} text={p.sticks} /> : null))}
-        </Block>
+              <div className="strip-actions">
+                <button className="btn-ghost sm" onClick={() => popLast(step.area)} disabled={!strip.length}>
+                  <Icon name="undo" size={16} />Undo last
+                </button>
+                <span className="hint" style={{ margin: 0 }}>hold a count to subtract</span>
+              </div>
+
+              {d.cards.map((c, i) => <DrillCard key={i} how={c.how} name={c.name} />)}
+              {d.sticks.map((s, i) => <Stick key={i} text={s} />)}
+            </Block>
+          );
+        })}
 
         <div className="grp" style={{ paddingTop: 8 }}>
           <div className="label-row"><Icon name="event" size={16} />Session date</div>
@@ -675,9 +885,7 @@ function SessionScreen({
             <Icon name={editMode ? "save" : "done_all"} size={22} />
             {editMode ? "Save changes" : "Finish session"}
           </button>
-          {!canFinish && (
-            <div className="hint">Log at least one area to finish.</div>
-          )}
+          {!canFinish && <div className="hint">Log at least one area to finish.</div>}
           <button className="btn-ghost" onClick={onDiscard}>
             {editMode ? "Cancel" : "Discard session"}
           </button>

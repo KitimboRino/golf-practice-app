@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { CATALOG, Area } from "@/lib/faults";
+import { CATALOG, Area, Fault, detectFaults } from "@/lib/faults";
+import { SavedSession } from "@/lib/db";
 import { Icon } from "./Icon";
 
 const GROUPS: { area: Area; label: string; icon: string }[] = [
@@ -10,9 +11,40 @@ const GROUPS: { area: Area; label: string; icon: string }[] = [
   { area: "chipping", label: "Chipping", icon: "swipe_up" },
 ];
 
-export function Fixes({ onBack }: { onBack?: () => void }) {
-  const [filter, setFilter] = useState<Area | null>(null);
-  const groups = GROUPS.filter((g) => !filter || g.area === filter);
+const MISS_TO_FAULT: Record<string, string> = { right: "slice", left: "hook", strike: "fat" };
+
+function yourMiss(history: SavedSession[], plannedMiss: string): { fault: Fault; context: string | null } | null {
+  const latest = history[history.length - 1];
+  if (latest) {
+    const hits = detectFaults(latest);
+    if (hits.length) {
+      const d = latest.driving;
+      const total = d.fairway + d.left + d.right;
+      const missed = d.left + d.right;
+      const context = total >= 4 && missed
+        ? `${missed} of ${total} tee shots missed ${d.right >= d.left ? "right" : "left"} last session`
+        : null;
+      return { fault: hits[0].fault, context };
+    }
+  }
+  const id = MISS_TO_FAULT[plannedMiss];
+  const f = id && CATALOG.find((x) => x.id === id);
+  return f ? { fault: f, context: "From your setup answer" } : null;
+}
+
+export function Fixes({
+  onBack, history = [], plannedMiss = "", onPractice,
+}: {
+  onBack?: () => void;
+  history?: SavedSession[];
+  plannedMiss?: string;
+  onPractice?: (fault: Fault) => void;
+}) {
+  const [selected, setSelected] = useState<Fault | null>(null);
+  const mine = yourMiss(history, plannedMiss);
+  const hero = selected ?? mine?.fault ?? null;
+  const heroContext = selected ? null : mine?.context ?? null;
+  const rest = CATALOG.filter((f) => f.id !== hero?.id);
 
   return (
     <>
@@ -26,34 +58,42 @@ export function Fixes({ onBack }: { onBack?: () => void }) {
           <div style={{ flex: 1 }}>
             <div className="hdr-eyebrow">Field guide</div>
             <div className="hdr-title">Fixes</div>
-            <div className="hdr-sub">Common miss patterns and the first thing to try</div>
           </div>
         </div>
       </header>
 
       <div className="screen">
+        {hero ? (
+          <div className="fault-hero">
+            <div className="eyebrow" style={{ color: "var(--clay)" }}>
+              <Icon name="my_location" size={15} />
+              {heroContext ?? "Your miss"}
+            </div>
+            <div className="fault-hero-pat">{hero.pattern}</div>
+            <div className="fault-hero-lines">
+              <div className="fault-line"><span className="fault-k">Likely</span>{hero.fault}</div>
+              <div className="fault-line"><span className="fault-k fix">Fix</span>{hero.fix}</div>
+            </div>
+            {onPractice && (
+              <button className="fault-hero-go" onClick={() => onPractice(hero)}>
+                <Icon name="sports_golf" size={16} />Practice this fix now
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="fault-note">
+            <span className="icon-tile sm dim"><Icon name="info" size={15} /></span>
+            <span>Log a session and the pattern you&apos;re fighting shows up here with the fix ready.</span>
+          </div>
+        )}
+
         <div className="fault-note">
           <span className="icon-tile sm dim"><Icon name="info" size={15} /></span>
-          <span>
-            A miss pattern points to the most likely fault, not a certain one — try it
-            first, but a lesson beats a table.
-          </span>
+          <span>A miss pattern points to the most likely fault, not a certain one — try it first, but a lesson beats a table.</span>
         </div>
 
-        <div className="chips">
-          <button className={"chip-btn" + (filter === null ? " on" : "")} onClick={() => setFilter(null)}>
-            All ({CATALOG.length})
-          </button>
-          {GROUPS.map((g) => (
-            <button key={g.area} className={"chip-btn" + (filter === g.area ? " on" : "")}
-                    onClick={() => setFilter(g.area)}>
-              {g.label}
-            </button>
-          ))}
-        </div>
-
-        {groups.map((g) => {
-          const rows = CATALOG.filter((f) => f.area === g.area);
+        {GROUPS.map((g) => {
+          const rows = rest.filter((f) => f.area === g.area);
           if (!rows.length) return null;
           return (
             <div className="grp" key={g.area}>
@@ -62,17 +102,17 @@ export function Fixes({ onBack }: { onBack?: () => void }) {
                 <h3>{g.label}</h3>
                 <span className="count-pill">{rows.length}</span>
               </div>
-              {rows.map((f) => (
-                <div className="fault" key={f.id}>
-                  <div className="fault-pat">{f.pattern}</div>
-                  <div className="fault-line">
-                    <span className="fault-k">Likely</span>{f.fault}
-                  </div>
-                  <div className="fault-line">
-                    <span className="fault-k fix">Fix</span>{f.fix}
-                  </div>
-                </div>
-              ))}
+              <div className="hist">
+                {rows.map((f) => (
+                  <button key={f.id} className="fault-row" onClick={() => setSelected(f)}>
+                    <span>
+                      <b>{f.pattern}</b>
+                      <small>{f.fault.split(" — ")[0]}</small>
+                    </span>
+                    <Icon name="chevron_right" size={20} color="var(--icon-muted)" />
+                  </button>
+                ))}
+              </div>
             </div>
           );
         })}

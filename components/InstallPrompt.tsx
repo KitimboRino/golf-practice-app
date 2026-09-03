@@ -60,18 +60,13 @@ export function InstallPrompt() {
   return (
     <div className="install">
       <div className="install-card">
-        <span className="msr" style={{ fontSize: 22, color: "var(--green)" }}>golf_course</span>
-        <div className="install-txt">
-          <b>Install RangeCard</b>
-          <span>
-            {deferred
-              ? "Add to your home screen — full-screen and offline-ready."
-              : "Tap Share, then “Add to Home Screen”."}
-          </span>
-        </div>
+        <span className="msr" style={{ fontSize: 19, color: "var(--green)" }}>install_mobile</span>
+        <span className="install-txt">
+          {deferred ? "Install RangeCard — offline, full-screen" : "Add to Home Screen from the Share menu"}
+        </span>
         {deferred && <button className="install-go" onClick={install}>Install</button>}
         <button className="install-x" onClick={close} aria-label="Dismiss">
-          <span className="msr" style={{ fontSize: 20 }}>close</span>
+          <span className="msr" style={{ fontSize: 18 }}>close</span>
         </button>
       </div>
     </div>
