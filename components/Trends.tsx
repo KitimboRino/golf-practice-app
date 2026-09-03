@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { SavedSession, exportBackup, importBackup } from "@/lib/db";
 import { PLAN } from "@/lib/plan";
-import { solidPct, fairwayPct, puttPct } from "@/lib/stats";
+import { solidPct, fairwayPct, puttPct, pitchPct } from "@/lib/stats";
 import { detectFaults } from "@/lib/faults";
 import { useCountUp } from "@/lib/useCountUp";
 import { Icon } from "./Icon";
@@ -51,11 +51,22 @@ export function Trends({
   }
 
   async function doImport(file: File) {
+    if (!/\.json$/i.test(file.name) && file.type && !/json/.test(file.type)) {
+      alert("Pick a .json backup file.");
+      return;
+    }
+    if (file.size > 8_000_000) {
+      alert("That file is too large to import.");
+      return;
+    }
     try {
-      const n = await importBackup(await file.text());
+      const { added, skipped } = await importBackup(await file.text());
       onImported();
       setShowData(false);
-      alert(`Imported ${n} session${n === 1 ? "" : "s"}.`);
+      alert(
+        `Imported ${added} session${added === 1 ? "" : "s"}` +
+        (skipped ? `, skipped ${skipped} invalid row${skipped === 1 ? "" : "s"}.` : "."),
+      );
     } catch (e) {
       alert(e instanceof Error ? e.message : "Could not read that file.");
     }
@@ -126,6 +137,11 @@ export function Trends({
   const solid = history.map(solidPct);
   const fair = history.map(fairwayPct);
   const putt = history.map(puttPct);
+  const pitch = history.map(pitchPct);
+  const pitchLogged = history.some((s) => {
+    const p = s.pitching ?? { close: 0, short: 0, long: 0 };
+    return p.close + p.short + p.long > 0;
+  });
 
   const weeks = PLAN.filter((w) => history.some((s) => s.weekId === w.id));
   const histRows = wkFilter ? history.filter((s) => s.weekId === wkFilter) : history;
@@ -192,6 +208,7 @@ export function Trends({
 
         <ChartCard title="Solid strike %" icon="sports_golf" data={solid} />
         <ChartCard title="Fairways found %" icon="golf_course" data={fair} />
+        {pitchLogged && <ChartCard title="Pitch accuracy %" icon="arrow_outward" data={pitch} />}
         <ChartCard title="Putts made %" icon="adjust" data={putt} />
 
         <MissPatterns history={history} />
@@ -281,9 +298,11 @@ export function Trends({
 
 function MissPatterns({ history }: { history: SavedSession[] }) {
   const sum = (fn: (s: SavedSession) => number) => history.reduce((a, s) => a + fn(s), 0);
+  const pit = (s: SavedSession) => s.pitching ?? { close: 0, short: 0, long: 0 };
   const drove = history.some((s) => s.driving.fairway + s.driving.left + s.driving.right > 0);
   const ironed = history.some((s) => s.irons.solid + s.irons.fat + s.irons.thin > 0);
-  if (!drove && !ironed) return null;
+  const pitched = history.some((s) => { const p = pit(s); return p.close + p.short + p.long > 0; });
+  if (!drove && !ironed && !pitched) return null;
 
   return (
     <div className="chart">
@@ -295,6 +314,10 @@ function MissPatterns({ history }: { history: SavedSession[] }) {
       {ironed && (
         <MissBar label="Irons" leftName="Fat" rightName="Thin"
                  left={sum((s) => s.irons.fat)} right={sum((s) => s.irons.thin)} />
+      )}
+      {pitched && (
+        <MissBar label="Pitching" leftName="Short" rightName="Long"
+                 left={sum((s) => pit(s).short)} right={sum((s) => pit(s).long)} />
       )}
     </div>
   );

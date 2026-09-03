@@ -10,6 +10,7 @@ export type SavedSession = {
   driving: { fairway: number; left: number; right: number };
   irons: { solid: number; fat: number; thin: number };
   chipping: { bestClub: string; on: number; off: number };
+  pitching: { close: number; short: number; long: number };
   putting: { in: number; out: number };
   createdAt: number;
   updatedAt: number;          // last local write — drives last-write-wins on sync
@@ -39,6 +40,19 @@ class RangeCardDB extends Dexie {
         await tx.table("sessions").toCollection().modify((s: any) => {
           if (s.updatedAt == null) s.updatedAt = s.createdAt ?? now;
           if (s.deleted == null) s.deleted = false;
+        });
+      });
+
+    // v2 — Pitching added as a fifth scored area. Store keys unchanged;
+    // backfill the new field so old records stay readable.
+    this.version(2)
+      .stores({
+        sessions: "id, date, weekId, updatedAt",
+        meta: "",
+      })
+      .upgrade(async (tx) => {
+        await tx.table("sessions").toCollection().modify((s: any) => {
+          if (!s.pitching) s.pitching = { close: 0, short: 0, long: 0 };
         });
       });
   }
@@ -103,36 +117,56 @@ export async function exportBackup(): Promise<string> {
 }
 
 // Accepts a full backup object or a bare array of sessions. Malformed fields are
-// coerced rather than rejected. Returns the number of rows written.
-export async function importBackup(text: string): Promise<number> {
-  const data = JSON.parse(text);
-  const rows: unknown[] = Array.isArray(data) ? data : data?.sessions;
+// coerced; unusable rows are skipped. Returns how many were written vs skipped.
+export async function importBackup(text: string): Promise<{ added: number; skipped: number }> {
+  let data: unknown;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error("That file isn't valid JSON.");
+  }
+  const rows: unknown[] = Array.isArray(data)
+    ? data
+    : (data as { sessions?: unknown[] })?.sessions ?? [];
   if (!Array.isArray(rows)) throw new Error("No sessions found in that file.");
+  if (rows.length > 5000) throw new Error("That file is too large to import.");
 
-  const num = (v: unknown) => (typeof v === "number" && isFinite(v) ? v : 0);
-  const str = (v: unknown, fallback = "") => (typeof v === "string" ? v : fallback);
+  const today = new Date().toISOString().slice(0, 10);
   const now = Date.now();
+  const cnt = (v: unknown) =>
+    typeof v === "number" && isFinite(v) ? Math.max(0, Math.min(999, Math.round(v))) : 0;
+  const str = (v: unknown, max: number, fallback = "") =>
+    typeof v === "string" ? v.slice(0, max) : fallback;
+  const isDate = (s: unknown) =>
+    typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(Date.parse(s));
+  const ts = (v: unknown) =>
+    typeof v === "number" && isFinite(v) && v > 0 && v < 4e12 ? v : now;
 
   const recs: SavedSession[] = [];
+  let skipped = 0;
   for (const raw of rows) {
     const r = raw as Record<string, any>;
-    if (!r || typeof r !== "object" || !r.id) continue;
+    if (!r || typeof r !== "object" || typeof r.id !== "string" || !r.id) { skipped++; continue; }
     recs.push({
-      id: String(r.id),
-      weekId: str(r.weekId),
-      sessionLabel: str(r.sessionLabel),
-      date: str(r.date, new Date().toISOString().slice(0, 10)),
-      notes: str(r.notes),
-      driving: { fairway: num(r.driving?.fairway), left: num(r.driving?.left), right: num(r.driving?.right) },
-      irons: { solid: num(r.irons?.solid), fat: num(r.irons?.fat), thin: num(r.irons?.thin) },
-      chipping: { bestClub: str(r.chipping?.bestClub), on: num(r.chipping?.on), off: num(r.chipping?.off) },
-      putting: { in: num(r.putting?.in), out: num(r.putting?.out) },
-      createdAt: num(r.createdAt) || now,
-      updatedAt: num(r.updatedAt) || now,
+      id: r.id,
+      weekId: str(r.weekId, 40),
+      sessionLabel: str(r.sessionLabel, 60),
+      date: isDate(r.date) ? r.date : today,
+      notes: str(r.notes, 2000),
+      driving: { fairway: cnt(r.driving?.fairway), left: cnt(r.driving?.left), right: cnt(r.driving?.right) },
+      irons: { solid: cnt(r.irons?.solid), fat: cnt(r.irons?.fat), thin: cnt(r.irons?.thin) },
+      chipping: { bestClub: str(r.chipping?.bestClub, 40), on: cnt(r.chipping?.on), off: cnt(r.chipping?.off) },
+      pitching: { close: cnt(r.pitching?.close), short: cnt(r.pitching?.short), long: cnt(r.pitching?.long) },
+      putting: { in: cnt(r.putting?.in), out: cnt(r.putting?.out) },
+      createdAt: ts(r.createdAt),
+      updatedAt: ts(r.updatedAt),
       deleted: !!r.deleted,
     });
   }
   if (!recs.length) throw new Error("No valid sessions found in that file.");
-  await db.sessions.bulkPut(recs);
-  return recs.length;
+
+  // de-dupe within the file (last one wins)
+  const byId = new Map(recs.map((r) => [r.id, r]));
+  await db.sessions.bulkPut([...byId.values()]);
+  return { added: byId.size, skipped: skipped + (recs.length - byId.size) };
 }

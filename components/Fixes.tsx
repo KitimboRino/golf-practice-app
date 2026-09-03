@@ -9,12 +9,17 @@ const GROUPS: { area: Area; label: string; icon: string }[] = [
   { area: "chipping", label: "Chipping", icon: "swipe_up" },
 ];
 
-export function Fixes() {
+export function Fixes({ onBack }: { onBack?: () => void }) {
   return (
     <>
       <header className="hdr">
-        <div className="hdr-row">
-          <div>
+        <div className="hdr-row" style={{ alignItems: "center" }}>
+          {onBack && (
+            <button className="icon-btn" onClick={onBack} aria-label="Back">
+              <Icon name="arrow_back" size={22} />
+            </button>
+          )}
+          <div style={{ flex: 1 }}>
             <div className="hdr-title">Fixes</div>
             <div className="hdr-sub">Common miss patterns and the first thing to try</div>
           </div>

@@ -21,3 +21,10 @@ export function puttPct(s: SavedSession): number {
   const total = s.putting.in + s.putting.out;
   return total ? Math.round((s.putting.in / total) * 100) : 0;
 }
+
+// pitch accuracy % = close / (close + short + long)
+export function pitchPct(s: SavedSession): number {
+  const p = s.pitching ?? { close: 0, short: 0, long: 0 };
+  const total = p.close + p.short + p.long;
+  return total ? Math.round((p.close / total) * 100) : 0;
+}

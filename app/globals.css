@@ -210,6 +210,11 @@ html.lenis, html.lenis body { height: auto; }
 .hdr-sub { font-size: 14px; color: var(--muted); margin-top: 5px; }
 .hdr-sub.sm { font-size: 13px; }
 
+.greeting { display: flex; align-items: center; gap: 5px; max-width: 100%; min-width: 0; margin-bottom: 6px; font-size: 13px; font-weight: 500; color: var(--muted); }
+.greeting > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.greeting .msr { flex: none; color: var(--icon-muted); opacity: 0.5; }
+.greeting:active { color: var(--text-2); }
+
 .icon-btn {
   width: 48px; height: 48px; border-radius: 16px;
   background: var(--card); border: 1px solid var(--border);
@@ -292,6 +297,8 @@ html.lenis, html.lenis body { height: auto; }
 }
 .cta:hover { background: var(--green-hover); }
 .cta:active { filter: brightness(0.97); }
+.cta:disabled { background: var(--inset); color: var(--hint); cursor: not-allowed; }
+.cta:disabled:hover { background: var(--inset); }
 
 .arealist { display: flex; align-items: center; justify-content: center; gap: 14px; font-size: 12px; color: var(--icon-muted); flex-wrap: wrap; }
 .arealist span { display: flex; align-items: center; gap: 5px; }
@@ -367,6 +374,62 @@ html.lenis, html.lenis body { height: auto; }
 .coach-note { font-size: 13px; line-height: 1.5; color: var(--blue-text); text-wrap: pretty; }
 .coach-fix { font-size: 13px; line-height: 1.5; color: var(--blue-text); margin-top: 5px; text-wrap: pretty; }
 .coach-fix b { color: var(--blue-strong); font-weight: 700; margin-right: 6px; }
+
+/* ---------- prep: warm-up / setup / flow ---------- */
+.link-btn { flex: none; font-size: 14px; font-weight: 600; color: var(--muted); padding: 8px 6px; }
+.link-btn:hover { color: var(--text); }
+
+.pitem { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pitem > b { font-size: 14px; font-weight: 700; letter-spacing: -0.01em; color: var(--text); }
+.pitem > span { font-size: 13px; line-height: 1.5; color: var(--muted); text-wrap: pretty; }
+
+.checklist { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 2px 16px; box-shadow: var(--card-shadow); }
+.check-row { display: flex; align-items: flex-start; gap: 12px; width: 100%; text-align: left; padding: 13px 0; }
+.check-row + .check-row { border-top: 1px solid var(--hairline); }
+.check-box {
+  flex: none; width: 22px; height: 22px; border-radius: 7px; margin-top: 1px;
+  border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center;
+  color: transparent; transition: background .15s ease-out, border-color .15s ease-out;
+}
+.check-row.on .check-box { background: var(--green); border-color: var(--green); color: var(--on-green); }
+
+.prep-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 4px 16px 14px; box-shadow: var(--card-shadow); }
+.prep-card .pitem { padding: 13px 0 0; }
+.prep-card .pitem + .pitem { border-top: 1px solid var(--hairline); padding-top: 13px; }
+.prep-sub { font-size: 12px; font-weight: 700; color: var(--muted); margin: 16px 0 9px; }
+
+.flow-list { margin: 14px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 9px; font-size: 13.5px; line-height: 1.5; color: var(--text-2); text-wrap: pretty; }
+.flow-list li { padding-left: 3px; }
+.flow-list li::marker { color: var(--green); font-weight: 700; }
+.bullet-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; font-size: 13px; line-height: 1.5; color: var(--muted); text-wrap: pretty; }
+
+.flowstrip { background: var(--recessed); border: 1px solid var(--border-recessed); border-radius: 14px; overflow: hidden; }
+.flowstrip > summary { list-style: none; display: flex; align-items: center; gap: 8px; padding: 13px 14px; font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; }
+.flowstrip > summary::-webkit-details-marker { display: none; }
+.flowstrip-chev { margin-left: auto; transition: transform .2s ease-out; }
+.flowstrip[open] .flowstrip-chev { transform: rotate(180deg); }
+.flowstrip .flow-list { margin: 0; padding: 0 16px 15px 36px; }
+
+/* ---------- drill library ---------- */
+.lib-sub { font-weight: 400; color: var(--hint); margin-left: 6px; }
+.lib {
+  background: var(--card); border: 1px solid var(--border); border-radius: 18px;
+  padding: 14px 16px; box-shadow: var(--card-shadow);
+}
+.lib-name { font-size: 14.5px; font-weight: 700; letter-spacing: -0.01em; }
+.lib-how { font-size: 13px; line-height: 1.5; color: var(--muted); margin-top: 5px; text-wrap: pretty; }
+
+/* ---------- More menu ---------- */
+.more-row {
+  display: flex; align-items: center; gap: 14px; width: 100%; text-align: left;
+  background: var(--card); border: 1px solid var(--border); border-radius: 18px;
+  padding: 16px; box-shadow: var(--card-shadow);
+}
+.more-row:hover { background: var(--inset); }
+.more-ic { flex: none; width: 40px; height: 40px; border-radius: 12px; background: var(--chip-bg); display: flex; align-items: center; justify-content: center; }
+.more-txt { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.more-txt > b { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+.more-txt > span { font-size: 12px; color: var(--muted); }
 
 /* ---------- fields ---------- */
 .field {
@@ -565,6 +628,15 @@ html.lenis, html.lenis body { height: auto; }
 /* ---------- screen transition ---------- */
 .tabview { animation: fade-in .2s ease-out; }
 @keyframes fade-in { from { opacity: 0; } }
+
+/* ---------- welcome ---------- */
+.welcome-wrap { min-height: 100dvh; display: flex; align-items: center; justify-content: center; padding: 32px 22px calc(32px + env(safe-area-inset-bottom)); }
+.welcome { width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 15px; }
+.welcome-mark { width: 58px; height: 58px; border-radius: 18px; background: var(--green); color: var(--on-green); display: flex; align-items: center; justify-content: center; box-shadow: var(--card-shadow); }
+.welcome-h { font-size: 24px; font-weight: 700; letter-spacing: -0.035em; line-height: 1.12; }
+.welcome-p { font-size: 15px; line-height: 1.55; color: var(--muted); text-wrap: pretty; }
+.welcome-field { margin-top: 5px; }
+.welcome-hint { font-size: 12px; color: var(--hint); margin-top: -7px; }
 
 /* ---------- boot splash ---------- */
 .boot { min-height: 100dvh; display: flex; align-items: center; justify-content: center; }
