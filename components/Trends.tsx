@@ -191,8 +191,9 @@ export function Trends({
 
         {detectFaults(history[history.length - 1]).map((h, i) => (
           <div className="coach" key={`${h.fault.id}-${i}`}>
-            <Icon name="near_me" size={18} color="var(--blue-icon)" style={{ marginTop: 1 }} />
+            <Icon name="conversion_path" size={18} color="var(--blue-icon)" style={{ marginTop: 1 }} />
             <div className="coach-body">
+              <div className="eyebrow" style={{ color: "var(--blue-icon)" }}>Coach note</div>
               <div className="coach-h">{h.fault.pattern}</div>
               <div className="coach-note">{h.note}</div>
               <div className="coach-fix">
@@ -214,7 +215,11 @@ export function Trends({
         <MissPatterns history={history} />
 
         <div className="grp" style={{ paddingTop: 8 }}>
-          <div className="label-row"><Icon name="history" size={16} />History</div>
+          <div className="sec-head">
+            <span className="icon-tile sm"><Icon name="history" size={15} /></span>
+            <h3>Session history</h3>
+            <span className="count-pill">{histRows.length}</span>
+          </div>
           {weeks.length > 1 && (
             <div className="chips">
               <button className={"chip-btn" + (wkFilter === null ? " on" : "")}
@@ -306,7 +311,11 @@ function MissPatterns({ history }: { history: SavedSession[] }) {
 
   return (
     <div className="chart">
-      <div className="chart-t"><Icon name="explore" size={18} color="var(--icon-muted)" />Miss patterns</div>
+      <div className="sec-head" style={{ marginBottom: 2 }}>
+        <span className="icon-tile sm"><Icon name="explore" size={15} /></span>
+        <h3>Miss patterns</h3>
+        <span className="count-pill">Bias</span>
+      </div>
       {drove && (
         <MissBar label="Driving" leftName="Left" rightName="Right"
                  left={sum((s) => s.driving.left)} right={sum((s) => s.driving.right)} />

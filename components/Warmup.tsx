@@ -21,14 +21,22 @@ export function Warmup({ onSkip, onReady }: { onSkip: () => void; onReady: () =>
       <header className="hdr">
         <div className="hdr-row">
           <div>
+            <div className="hdr-eyebrow">Pre-session</div>
             <div className="hdr-title">Warm up</div>
             <div className="hdr-sub">A few minutes now — never start cold</div>
           </div>
           <button className="link-btn" onClick={onSkip}>Skip</button>
         </div>
+        <div className="pbar"><span style={{ width: `${(done.size / WARMUP.length) * 100}%` }} /></div>
       </header>
 
       <div className="screen">
+        <div className="grp-lbl-row">
+          <span className="eyebrow dim">Mobility routine</span>
+          <span className="num" style={{ color: "var(--text-2)", fontWeight: 700 }}>
+            {done.size} of {WARMUP.length}
+          </span>
+        </div>
         <div className="checklist">
           {WARMUP.map((w, i) => {
             const on = done.has(i);

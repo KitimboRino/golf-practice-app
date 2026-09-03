@@ -340,6 +340,7 @@ function More() {
       <header className="hdr">
         <div className="hdr-row">
           <div>
+            <div className="hdr-eyebrow">Toolkit</div>
             <div className="hdr-title">More</div>
             <div className="hdr-sub">Reference &amp; guidance</div>
           </div>
@@ -389,6 +390,10 @@ function Home({
   const loggedCount = flat.filter((f) => loggedSlots.has(`${f.id}|${f.label}`)).length;
   const done = history.length;
   const lastSolid = history.length ? solidPct(history[history.length - 1]) : null;
+  const solidDelta = history.length >= 2
+    ? solidPct(history[history.length - 1]) - solidPct(history[history.length - 2])
+    : null;
+  const donePct = Math.min(100, Math.round((done / flat.length) * 100));
 
   return (
     <>
@@ -416,42 +421,67 @@ function Home({
 
         <div className="tiles">
           <div className="tile">
-            <Icon name="event_available" size={20} color="var(--icon-muted)" />
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              <div className="tile-val num">{done}</div>
-              <div className="tile-lbl">sessions logged</div>
+            <div className="tile-head">
+              <span className="eyebrow">Total logs</span>
+              <span className="icon-tile sm dim"><Icon name="event_available" size={15} /></span>
+            </div>
+            <div className="tile-val num">{done}<span className="frac">/{flat.length}</span></div>
+            <div className="tile-foot">
+              <span className="tile-lbl">sessions logged</span>
+              <span className="tile-lbl num">{donePct}%</span>
             </div>
           </div>
-          <div className="tile">
-            <Icon name="trending_up" size={20} color="var(--green)" />
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              <div className="tile-val num" style={{ color: "var(--green)" }}>
-                {lastSolid === null ? "—" : <>{lastSolid}<span className="u">%</span></>}
-              </div>
-              <div className="tile-lbl">last solid rate</div>
+          <div className="tile accent">
+            <div className="tile-head">
+              <span className="eyebrow">Solid rate</span>
+              <span className="icon-tile sm"><Icon name="trending_up" size={15} /></span>
+            </div>
+            <div className="tile-val num">
+              {lastSolid === null ? "—" : <>{lastSolid}<span className="u">%</span></>}
+            </div>
+            <div className="tile-foot">
+              <span className="tile-lbl">last solid rate</span>
+              {solidDelta !== null && solidDelta !== 0 && (
+                <span className={"delta" + (solidDelta < 0 ? " down" : "")}>
+                  {solidDelta > 0 ? "+" : "−"}{Math.abs(solidDelta)}
+                </span>
+              )}
             </div>
           </div>
         </div>
 
         <div className="focuscard">
-          <div className="lbl"><Icon name="target" size={17} color="var(--green)" />This week&apos;s focus</div>
+          <div className="lbl">
+            <span className="icon-tile sm"><Icon name="target" size={15} /></span>
+            <span className="eyebrow">This week&apos;s focus</span>
+          </div>
           <div className="body">{week.focus}</div>
         </div>
 
         <div className="grp">
-          <div className="grp-lbl grp-lbl-row">
-            <span>Jump to a session</span>
-            <span className="num">{loggedCount} of {flat.length} logged</span>
+          <div className="sec-head">
+            <span className="icon-tile sm"><Icon name="calendar_month" size={15} /></span>
+            <h3>Jump to a session</h3>
+            <span className={"count-pill" + (loggedCount === flat.length ? " go" : "")}>
+              {loggedCount} of {flat.length} logged
+            </span>
           </div>
           <div className="sgrid">
             {flat.map((f, i) => {
               const cls = i < curIdx ? "past" : i === curIdx ? "cur" : "";
               const isDone = loggedSlots.has(`${f.id}|${f.label}`);
               return (
-                <button key={f.id + f.si} className={`spill ${cls}${isDone ? " done" : ""}`}
+                <button key={f.id + f.si}
+                        className={`spill ${cls}${isDone ? " done" : ""}${f.test ? " test-pill" : ""}`}
                         onClick={() => setCursor({ week: f.wi, session: f.si })}>
-                  {isDone && <Icon name="check" size={13} className="spill-check" />}
-                  <span>W{f.wi + 1}</span>
+                  <span>
+                    W{f.wi + 1}
+                    {isDone
+                      ? <Icon name="check_circle" size={13} className="spill-check" fill />
+                      : cls === "cur"
+                        ? <span className="spill-now">Now</span>
+                        : null}
+                  </span>
                   <span className={`s${f.test ? " test" : ""}`}>{f.test ? "Test" : `S${f.si + 1}`}</span>
                 </button>
               );
@@ -512,8 +542,8 @@ function SessionScreen({
       <header className="hdr">
         <div className="hdr-row">
           <div>
+            <div className="hdr-eyebrow">{editMode ? "Editing session" : "Session log"}</div>
             <div className="hdr-title sm">
-              {editMode && <span className="tag">Edit</span>}
               {week.short} · {session.label.replace(/ —.*/, "")}
             </div>
             <div className="hdr-sub sm">{week.title} block · 5 areas</div>

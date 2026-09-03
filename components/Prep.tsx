@@ -16,6 +16,7 @@ export function Prep({ onBack }: { onBack?: () => void }) {
             </button>
           )}
           <div style={{ flex: 1 }}>
+            <div className="hdr-eyebrow">Protocol</div>
             <div className="hdr-title">Prep</div>
             <div className="hdr-sub">Warm-up, setup, and how to run a session</div>
           </div>
@@ -29,7 +30,11 @@ export function Prep({ onBack }: { onBack?: () => void }) {
         </div>
 
         <div className="grp">
-          <div className="label-row"><Icon name="self_improvement" size={16} />Warm-up</div>
+          <div className="sec-head">
+            <span className="icon-tile sm"><Icon name="self_improvement" size={15} /></span>
+            <h3>Warm-up</h3>
+            <span className="count-pill">{WARMUP.length} drills</span>
+          </div>
           <div className="prep-card">
             {WARMUP.map((w) => (
               <div className="pitem" key={w.name}><b>{w.name}</b><span>{w.how}</span></div>
@@ -38,7 +43,11 @@ export function Prep({ onBack }: { onBack?: () => void }) {
         </div>
 
         <div className="grp">
-          <div className="label-row"><Icon name="target" size={16} />Setup check</div>
+          <div className="sec-head">
+            <span className="icon-tile sm"><Icon name="target" size={15} /></span>
+            <h3>Setup check</h3>
+            <span className="count-pill">{SETUP_CHECK.length}</span>
+          </div>
           <div className="prep-card">
             {SETUP_CHECK.map((s) => (
               <div className="pitem" key={s.name}><b>{s.name}</b><span>{s.how}</span></div>
@@ -47,7 +56,10 @@ export function Prep({ onBack }: { onBack?: () => void }) {
         </div>
 
         <div className="grp">
-          <div className="label-row"><Icon name="checklist" size={16} />Session flow</div>
+          <div className="sec-head">
+            <span className="icon-tile sm"><Icon name="checklist" size={15} /></span>
+            <h3>Session flow</h3>
+          </div>
           <div className="prep-card">
             <ol className="flow-list">
               {SESSION_FLOW.map((s, i) => <li key={i}>{s}</li>)}
