@@ -799,18 +799,70 @@ html.lenis, html.lenis body { height: auto; }
 @keyframes fade-in { from { opacity: 0; } }
 
 /* ---------- welcome ---------- */
-.welcome-wrap { min-height: 100dvh; display: flex; align-items: center; justify-content: center; padding: 32px 22px calc(32px + env(safe-area-inset-bottom)); }
-.welcome { width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 15px; }
+.welcome-wrap {
+  min-height: 100dvh; display: flex; align-items: center; justify-content: center;
+  padding: 40px 22px calc(36px + env(safe-area-inset-bottom));
+  position: relative; overflow: hidden;
+}
+.welcome { width: 100%; max-width: 344px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; }
+.welcome.edit { gap: 12px; }
+
+.welcome-hero { position: relative; width: 100%; height: 148px; display: flex; align-items: center; justify-content: center; margin-bottom: 2px; }
+.welcome-arc { position: absolute; width: 118%; max-width: 400px; height: 170px; overflow: visible; pointer-events: none; }
+.welcome-arc-tip { filter: drop-shadow(0 0 6px var(--green)); animation: arc-pulse 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes arc-pulse { 0%, 100% { opacity: 0.75; } 50% { opacity: 1; } }
+
 .welcome-mark {
-  width: 60px; height: 60px; border-radius: 19px;
+  position: relative; z-index: 1;
+  width: 62px; height: 62px; border-radius: 20px;
   background: var(--cta-face); color: var(--on-green);
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 0 40px -4px var(--tile-glow), inset 0 1px 2px rgba(255,255,255,0.4);
+  box-shadow: 0 12px 26px -6px var(--tile-glow), inset 0 1px 2px rgba(255,255,255,0.4);
 }
-.welcome-h { font-size: 24px; font-weight: 700; letter-spacing: -0.035em; line-height: 1.12; }
-.welcome-p { font-size: 15px; line-height: 1.55; color: var(--muted); text-wrap: pretty; }
-.welcome-field { margin-top: 5px; }
-.welcome-hint { font-size: 12px; color: var(--hint); margin-top: -7px; }
+.welcome-mark::before {
+  content: ""; position: absolute; inset: -12px; border-radius: 28px;
+  background: var(--green); opacity: 0.18; filter: blur(16px); z-index: -1;
+}
+
+/* the install prompt shouldn't compete with onboarding or the splash */
+body:has(.welcome-wrap) .install,
+body:has(.boot) .install { display: none; }
+
+.welcome-h { font-size: 27px; font-weight: 800; letter-spacing: -0.045em; line-height: 1.08; text-wrap: balance; }
+.welcome.edit .welcome-h { font-size: 22px; letter-spacing: -0.035em; }
+.welcome-h .grad {
+  background: linear-gradient(100deg, var(--text) 8%, var(--green) 72%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.welcome-p { font-size: 14.5px; line-height: 1.55; color: var(--muted); text-wrap: pretty; max-width: 40ch; }
+
+.welcome-lbl {
+  align-self: flex-start; margin: 8px 0 -4px 2px;
+  font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+}
+.welcome-lbl span { color: var(--hint); }
+.welcome-field { width: 100%; margin-top: 4px; position: relative; transition: border-color .18s ease-out, box-shadow .18s ease-out, background .18s ease-out; }
+.welcome-field:focus-within { border-color: var(--edge-glow); box-shadow: 0 0 20px -4px var(--tile-glow); background: var(--inset); }
+.field-enter {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  font-size: 10px; font-weight: 700; letter-spacing: 0.06em; color: var(--green);
+  padding: 3px 7px; border-radius: 999px; background: var(--chip-bg); border: 1px solid var(--chip-border);
+  opacity: 0; transition: opacity .15s ease-out; pointer-events: none;
+}
+.welcome-field:focus-within .field-enter { opacity: 1; }
+
+.welcome-hint { display: flex; align-items: center; gap: 6px; align-self: flex-start; margin: -4px 0 0 2px; font-size: 12px; color: var(--hint); }
+.welcome .cta { margin-top: 6px; }
+.cta-arrow { transition: transform .18s ease-out; }
+.cta:hover .cta-arrow { transform: translateX(3px); }
+
+.welcome-badge {
+  display: flex; align-items: center; gap: 8px; margin-top: 8px;
+  padding: 6px 13px; border-radius: 999px;
+  background: var(--glass); border: 1px solid var(--edge);
+  font-size: 10px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
+}
+.welcome-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); flex: none; }
 
 /* ---------- boot splash ---------- */
 .boot { min-height: 100dvh; display: flex; align-items: center; justify-content: center; }

@@ -149,7 +149,7 @@ export const LIBRARY: LibArea[] = [
     ]
   },
   {
-    "area": "PITCHING (35\u2013110m)",
+    "area": "PITCHING (40\u2013120 yds)",
     "drills": [
       {
         "name": "Find the swing-arc bottom",
@@ -168,7 +168,7 @@ export const LIBRARY: LibArea[] = [
       },
       {
         "name": "Distance ladder",
-        "how": "Balls every 5m from 35\u2192110m; find your favourite distance.",
+        "how": "Balls every 5 yds from 40\u2192120 yds; find your favourite distance.",
         "ref": "p.83"
       },
       {
@@ -183,7 +183,7 @@ export const LIBRARY: LibArea[] = [
       },
       {
         "name": "Hit the bucket",
-        "how": "Pitch to land in a bucket ~30m out \u2014 target + authority.",
+        "how": "Pitch to land in a bucket ~35 yds out \u2014 target + authority.",
         "ref": "p.86"
       },
       {
@@ -203,7 +203,7 @@ export const LIBRARY: LibArea[] = [
     "drills": [
       {
         "name": "Match backswing to distance",
-        "how": "6m putt with a tiny then long backswing; find the matched length.",
+        "how": "20-foot putt with a tiny then long backswing; find the matched length.",
         "ref": "p.136"
       },
       {
@@ -213,7 +213,7 @@ export const LIBRARY: LibArea[] = [
       },
       {
         "name": "Avoid excess wrist",
-        "how": "Trap a ball at the wrist; hit 8m putts keeping it in place.",
+        "how": "Trap a ball at the wrist; hit 25-foot putts keeping it in place.",
         "ref": "p.138"
       },
       {
@@ -284,7 +284,7 @@ export const PITCH_FOCUS: Focus[] = [
   },
   {
     "name": "Distance ladder",
-    "how": "Drop balls every 5m from ~35m out to ~110m. Work from the shortest back, pitching each to the flag. The gaps force a slightly different swing each time and reveal your favourite pitching distance.",
+    "how": "Drop balls every 5 yds from ~40 yds out to ~120 yds. Work from the shortest back, pitching each to the flag. The gaps force a slightly different swing each time and reveal your favourite pitching distance.",
     "sticks": null
   },
   {
@@ -299,7 +299,7 @@ export const PITCH_FOCUS: Focus[] = [
   },
   {
     "name": "Hit the bucket for accuracy",
-    "how": "Put a bucket ~30m away and pitch to land balls in it without a bounce first. Forces a specific target and an authoritative strike, not just anywhere on the green.",
+    "how": "Put a bucket ~35 yds away and pitch to land balls in it without a bounce first. Forces a specific target and an authoritative strike, not just anywhere on the green.",
     "sticks": null
   },
   {
@@ -310,6 +310,6 @@ export const PITCH_FOCUS: Focus[] = [
 ];
 
 // New scored area to add to the logger, matching the others:
-//   Pitching — 10 balls to a ~30–60m target, tally CLOSE / SHORT / LONG.
+//   Pitching — 10 balls to a ~35–65 yd target, tally CLOSE / SHORT / LONG.
 export const PITCHING_DRILL =
-  "Target Pitch — 10 balls to a chosen target ~30–60m. Tally CLOSE (within ~3 steps), SHORT, or LONG.";
+  "Target Pitch — 10 balls to a chosen target ~35–65 yds. Tally CLOSE (within ~3 steps), SHORT, or LONG.";

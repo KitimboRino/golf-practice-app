@@ -21,7 +21,7 @@ export const WARMUP: PrepItem[] = [
 
 export const SETUP_CHECK: PrepItem[] = [
   { name: "Grip", how: "One consistent grip. Overlapping suits longer fingers and balances the hands; interlocking suits shorter or thicker fingers; the 10-finger grip suits weaker hands." },
-  { name: "Aim", how: "Feet run parallel to the ball-to-target line. Pick a spot up to a metre ahead of the ball on that line and align to it. Leading edge of the clubface square to the target." },
+  { name: "Aim", how: "Feet run parallel to the ball-to-target line. Pick a spot up to a yard ahead of the ball on that line and align to it. Leading edge of the clubface square to the target." },
   { name: "Shoulders", how: "Parallel to the target line — shoulder alignment often decides the downswing path of the hands and club." },
   { name: "Balance", how: "Weight ~50% on each foot, and within each foot split evenly between heel and ball. Test it: feet slightly apart, eyes closed, feel where the weight sits." },
   { name: "Watch the ball", how: "With lots to think about, the thing most often forgotten is simply watching the ball — often the single most valuable point." },
