@@ -1293,6 +1293,31 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
 }
 .welcome-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); flex: none; }
 
+/* ---------- about ---------- */
+.about-id {
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px;
+  padding: 10px 0 6px;
+}
+.about-mark {
+  width: 60px; height: 60px; border-radius: 19px; margin-bottom: 2px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--cta-face); color: var(--on-green);
+  box-shadow: 0 12px 26px -6px var(--tile-glow), inset 0 1px 2px rgba(255,255,255,0.4);
+}
+.about-name { font-size: 24px; font-weight: 800; letter-spacing: -0.04em; }
+.about-ver { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
+.about-ver .tag { margin: 0; }
+.about-p { font-size: 15px; line-height: 1.55; color: var(--text-2); text-wrap: pretty; text-align: center; max-width: 40ch; margin: 0 auto; }
+.about-danger { margin-top: 4px; }
+.about-danger .btn-ghost { border-color: var(--clay-border); color: var(--clay); }
+.about-danger .btn-ghost:active { background: var(--clay-face); }
+.about-foot {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  margin-top: 6px; font-size: 11.5px; line-height: 1.6; color: var(--hint); text-align: center;
+}
+.about-foot a { color: var(--green); font-weight: 700; text-decoration: none; }
+.about-foot a:active { opacity: 0.7; }
+
 /* ---------- 404 ---------- */
 .notfound {
   min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center;

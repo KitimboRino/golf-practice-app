@@ -25,6 +25,8 @@ import {
 import { solidPct } from "@/lib/stats";
 import { todaysOneThing, weekStreak } from "@/lib/verdict";
 import { SessionReceipt } from "@/components/SessionReceipt";
+import { About } from "@/components/About";
+import { APP_VERSION } from "@/lib/version";
 import { doneFx } from "@/lib/haptics";
 
 type Tab = "home" | "session" | "trends" | "more" | "warmup" | "welcome" | "receipt" | "quickpick";
@@ -604,8 +606,9 @@ function More({ history, plannedMiss, overrides, onSwap, onPracticeFix }: {
   onSwap: (area: keyof DrillOverrides, drill: DrillOverride | null) => void;
   onPracticeFix: (fault: import("@/lib/faults").Fault) => void;
 }) {
-  const [view, setView] = useState<"menu" | "prep" | "library" | "fixes">("menu");
+  const [view, setView] = useState<"menu" | "prep" | "library" | "fixes" | "about">("menu");
   const [libFocus, setLibFocus] = useState<import("@/lib/faults").Fault | null>(null);
+  if (view === "about") return <About onBack={() => setView("menu")} />;
   if (view === "prep") return <Prep onBack={() => setView("menu")} />;
   if (view === "library")
     return (
@@ -644,6 +647,13 @@ function More({ history, plannedMiss, overrides, onSwap, onPracticeFix }: {
         <button className="more-row" onClick={() => setView("fixes")}>
           <span className="more-ic"><Icon name="build" size={22} color="var(--green)" /></span>
           <span className="more-txt"><b>Fixes</b><span>Miss patterns and the first fix to try</span></span>
+          <Icon name="chevron_right" size={20} color="var(--icon-muted)" />
+        </button>
+        <button className="more-row" onClick={() => setView("about")}>
+          <span className="more-ic"><Icon name="info" size={22} color="var(--green)" /></span>
+          <span className="more-txt">
+            <b>About</b><span>Version {APP_VERSION} · your data &amp; how it works</span>
+          </span>
           <Icon name="chevron_right" size={20} color="var(--icon-muted)" />
         </button>
 

@@ -122,6 +122,14 @@ export async function purgeDeleted() {
   await db.sessions.filter((s) => !!s.deleted).delete();
 }
 
+// Wipe everything — sessions and settings. Used by the "Reset app" action.
+export async function wipeAll() {
+  await db.transaction("rw", db.sessions, db.meta, async () => {
+    await db.sessions.clear();
+    await db.meta.clear();
+  });
+}
+
 export async function getMeta<T = any>(key: string): Promise<T | undefined> {
   return db.meta.get(key);
 }
