@@ -1,17 +1,32 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { manrope, materialSymbols } from "./fonts";
 import { ToastProvider } from "@/components/Toast";
+import { ConfirmProvider } from "@/components/Confirm";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { RegisterSW } from "@/components/RegisterSW";
 import { SmoothScroll } from "@/components/SmoothScroll";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
   applicationName: "RangeCard",
   title: "RangeCard — Golf Range Tracker",
   description: "Log range sessions from the 4-week plan and track your progress. Works offline.",
   manifest: "/manifest.json",
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "RangeCard" },
   other: { "mobile-web-app-capable": "yes" },
+  openGraph: {
+    title: "RangeCard",
+    description: "Log range sessions from the 4-week plan and track your progress. Works offline.",
+    type: "website",
+    images: [{ url: "/icon-512.png", width: 512, height: 512, alt: "RangeCard" }],
+  },
+  twitter: {
+    card: "summary",
+    title: "RangeCard",
+    description: "Log range sessions from the 4-week plan and track your progress. Works offline.",
+    images: ["/icon-512.png"],
+  },
   icons: {
     icon: [
       { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
@@ -36,14 +51,17 @@ const themeScript = `try{var t=localStorage.getItem('theme');if(t==='light'||t==
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${manrope.variable} ${materialSymbols.variable}`}>
       <body>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <a href="#main" className="skip-link">Skip to content</a>
         <ToastProvider>
-          <div className="app">{children}</div>
-          <InstallPrompt />
-          <RegisterSW />
-          <SmoothScroll />
+          <ConfirmProvider>
+            <div className="app">{children}</div>
+            <InstallPrompt />
+            <RegisterSW />
+            <SmoothScroll />
+          </ConfirmProvider>
         </ToastProvider>
       </body>
     </html>

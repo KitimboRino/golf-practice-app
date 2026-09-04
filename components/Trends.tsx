@@ -7,6 +7,7 @@ import { solidPct, fairwayPct, puttPct, pitchPct } from "@/lib/stats";
 import { detectFaults } from "@/lib/faults";
 import { verdict, areaMoves } from "@/lib/verdict";
 import { useCountUp } from "@/lib/useCountUp";
+import { useToast } from "./Toast";
 import { Icon } from "./Icon";
 
 const fmtDate = (iso: string) => {
@@ -45,6 +46,7 @@ export function Trends({
   const [openId, setOpenId] = useState<string | null>(null);
   const [wkFilter, setWkFilter] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const toast = useToast();
 
   async function doExport() {
     downloadText(`rangecard-${new Date().toISOString().slice(0, 10)}.json`, await exportBackup());
@@ -53,23 +55,23 @@ export function Trends({
 
   async function doImport(file: File) {
     if (!/\.json$/i.test(file.name) && file.type && !/json/.test(file.type)) {
-      alert("Pick a .json backup file.");
+      toast.show("Pick a .json backup file");
       return;
     }
     if (file.size > 8_000_000) {
-      alert("That file is too large to import.");
+      toast.show("That file is too large to import");
       return;
     }
     try {
       const { added, skipped } = await importBackup(await file.text());
       onImported();
       setShowData(false);
-      alert(
+      toast.show(
         `Imported ${added} session${added === 1 ? "" : "s"}` +
-        (skipped ? `, skipped ${skipped} invalid row${skipped === 1 ? "" : "s"}.` : "."),
+        (skipped ? `, skipped ${skipped} invalid row${skipped === 1 ? "" : "s"}` : ""),
       );
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Could not read that file.");
+      toast.show(e instanceof Error ? e.message : "Could not read that file");
     }
   }
 
@@ -294,7 +296,7 @@ export function Trends({
             {histRows.length > 4 && (
               <button className="hist-more" onClick={() => setShowAll(!showAll)}>
                 {showAll ? "Show fewer" : `Show all ${histRows.length} sessions`}
-                <Icon name={showAll ? "expand_less" : "expand_more"} size={18} />
+                <Icon name="expand_more" size={18} className={"rot-chev" + (showAll ? " open" : "")} />
               </button>
             )}
           </div>

@@ -59,7 +59,8 @@ export function Prep({ onBack }: { onBack?: () => void }) {
                             color={open ? "var(--green)" : "var(--icon-muted)"} />
                       {s.name}
                     </span>
-                    <Icon name={open ? "expand_less" : "expand_more"} size={22} color="var(--icon-muted)" />
+                    <Icon name="expand_more" size={22} color="var(--icon-muted)"
+                          className={"rot-chev" + (open ? " open" : "")} />
                   </button>
                   {open && <div className="prep-acc-body">{s.how}</div>}
                 </div>

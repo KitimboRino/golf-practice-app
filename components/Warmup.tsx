@@ -33,7 +33,7 @@ export function Warmup({ onSkip, onReady }: { onSkip: () => void; onReady: () =>
               {done.length} of {WARMUP.length}
             </span>
           </div>
-          <div className="pbar"><span style={{ width: `${(done.length / WARMUP.length) * 100}%` }} /></div>
+          <div className="pbar"><span style={{ transform: `scaleX(${done.length / WARMUP.length})` }} /></div>
         </div>
       </header>
 

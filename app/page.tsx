@@ -14,6 +14,7 @@ import { Warmup } from "@/components/Warmup";
 import { Welcome } from "@/components/Welcome";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useToast } from "@/components/Toast";
+import { useConfirm } from "@/components/Confirm";
 import {
   SavedSession, SessionInput, Strips, emptyStrips, countIn,
   DrillOverride, DrillOverrides,
@@ -142,6 +143,7 @@ export default function Page() {
     { session: SavedSession; history: SavedSession[]; nextCursor: { week: number; session: number } } | null
   >(null);
   const toast = useToast();
+  const { confirm } = useConfirm();
 
   useEffect(() => {
     (async () => {
@@ -206,20 +208,21 @@ export default function Page() {
   const isDraft = !!live && !editOrig;
   const draftHere = isDraft && live!.weekId === week.id && live!.sessionLabel === session.label;
 
-  function startSession() {
+  async function startSession() {
     if (isDraft) {
       if (draftHere) { setTab("session"); return; }
-      const other = live!.sessionLabel;
-      if (!confirm(`Discard your unfinished "${other}" and start ${session.label}?`)) {
-        resumeDraft();
-        return;
-      }
+      const ok = await confirm({
+        title: `Discard "${live!.sessionLabel}"?`,
+        body: `You have an unfinished session. Starting ${session.label} will discard what you logged there.`,
+        confirmLabel: "Discard & start",
+        tone: "danger",
+      });
+      if (!ok) { resumeDraft(); return; }
     }
     // fresh start — offer the warm-up once per calendar day
-    getMeta<string>("warmupShown").then((shown) => {
-      if (shown === today()) openLog();
-      else setTab("warmup");
-    });
+    const shown = await getMeta<string>("warmupShown");
+    if (shown === today()) openLog();
+    else setTab("warmup");
   }
 
   function openLog() {
@@ -241,7 +244,7 @@ export default function Page() {
 
   function editSession(s: SavedSession) {
     if (isDraft) {
-      alert("Finish or discard your current session before editing a past one.");
+      toast.show("Finish or discard your current session first");
       return;
     }
     setEditOrig(s);
@@ -296,7 +299,13 @@ export default function Page() {
   async function discard() {
     const wasEdit = !!editOrig;
     if (!wasEdit && live && anyLogged(live)) {
-      if (!confirm("Discard this session? Your tallies won't be saved.")) return;
+      const ok = await confirm({
+        title: "Discard this session?",
+        body: "What you logged won't be saved.",
+        confirmLabel: "Discard",
+        tone: "danger",
+      });
+      if (!ok) return;
     }
     await delMeta("draft");
     setLive(null);
@@ -345,7 +354,7 @@ export default function Page() {
 
   return (
     <>
-      <div className="tabview" key={tab}>
+      <main id="main" className="tabview" tabIndex={-1} key={tab}>
         {tab === "home" && (
           <Home week={week} cursor={cursor} setCursor={setCursor} history={history} name={name}
                 greeting={greeting(name, history)} onEditName={() => setTab("welcome")}
@@ -368,7 +377,7 @@ export default function Page() {
         {tab === "more" && (
           <More history={history} plannedMiss={plannedMiss} overrides={overrides} onSwap={swapDrill} />
         )}
-      </div>
+      </main>
 
       <nav className="nav">
         <button className={`nav-item${tab === "home" ? " active" : ""}`} onClick={() => setTab("home")}>
@@ -441,6 +450,11 @@ function More({ history, plannedMiss, overrides, onSwap }: {
           <span className="more-txt"><b>Fixes</b><span>Miss patterns and the first fix to try</span></span>
           <Icon name="chevron_right" size={20} color="var(--icon-muted)" />
         </button>
+
+        <p className="app-foot">
+          <Icon name="lock" size={13} />
+          Your sessions stay on this device. No account, nothing uploaded — back them up from Trends.
+        </p>
       </div>
     </>
   );
@@ -491,9 +505,9 @@ function Home({
             <div className="hdr-title">Week {cursor.week + 1} · {week.title}</div>
             <div className="hdr-sub">Session {cursor.session + 1} of {week.sessions.length}</div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flex: "none" }}>
+          <div className="hdr-actions">
             {streak > 1 && (
-              <div className="chip" style={{ color: "var(--sand)", background: "var(--sand-face)", borderColor: "var(--sand-border)" }}>
+              <div className="chip sand">
                 <Icon name="local_fire_department" size={15} fill />{streak} wk
               </div>
             )}
@@ -777,7 +791,7 @@ function SessionScreen({
           </div>
           <div className="chip"><Icon name="check_circle" size={16} fill={logged === 5} />{logged}/5</div>
         </div>
-        <div className="pbar"><span style={{ width: `${(logged / 5) * 100}%` }} /></div>
+        <div className="pbar"><span style={{ transform: `scaleX(${logged / 5})` }} /></div>
       </header>
 
       <div className="screen log">
@@ -918,7 +932,8 @@ function Block({
           {(logged || !open) && (
             <span className={`block-tally${logged ? "" : " none"}`}>{logged ? tally : "not logged"}</span>
           )}
-          <Icon name={open ? "expand_less" : "expand_more"} size={22} color="var(--icon-muted)" />
+          <Icon name="expand_more" size={22} color="var(--icon-muted)"
+                className={"rot-chev" + (open ? " open" : "")} />
         </span>
       </button>
       {open && <div className="block-body">{children}</div>}
