@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   description: "Log range sessions from the 4-week plan and track your progress. Works offline.",
   manifest: "/manifest.json",
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "RangeCard" },
+  other: { "mobile-web-app-capable": "yes" },
   icons: {
     icon: [
       { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },

@@ -960,6 +960,33 @@ html.lenis, html.lenis body { height: auto; }
 .install-x { flex: none; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: var(--icon-muted); }
 .install-x:hover { background: var(--inset); }
 
+.install-ios {
+  position: relative; display: flex; flex-direction: column; gap: 9px;
+  padding: 15px 16px 14px;
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--edge); border-radius: 16px;
+  box-shadow: 0 12px 28px -12px rgba(0,0,0,0.5);
+}
+.install-ios .install-x { position: absolute; top: 7px; right: 7px; }
+.install-ios-h {
+  display: flex; align-items: center; gap: 9px; padding-right: 30px;
+  font-size: 14px; font-weight: 700; letter-spacing: -0.01em; color: var(--text);
+}
+.install-steps {
+  margin: 0; padding: 0; list-style: none; counter-reset: step;
+  display: flex; flex-direction: column; gap: 7px;
+}
+.install-steps li { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-2); text-wrap: pretty; }
+.install-steps li::before {
+  counter-increment: step; content: counter(step); flex: none;
+  width: 18px; height: 18px; border-radius: 6px;
+  background: var(--chip-bg); border: 1px solid var(--chip-border); color: var(--green);
+  font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center;
+}
+.install-steps .msr { font-size: 16px; color: var(--green); }
+.install-ios-note { margin: 0; font-size: 12px; color: var(--muted); }
+
 /* ---------- draft banner (Plan) ---------- */
 .draft-banner {
   display: flex; align-items: center; gap: 10px; width: 100%;
@@ -1061,6 +1088,7 @@ body:has(.welcome-wrap) .install,
 body:has(.boot) .install { display: none; }
 /* when it is showing, keep it from covering the last of the page content */
 body:has(.install) .app { padding-bottom: calc(150px + env(safe-area-inset-bottom)); }
+body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-bottom)); }
 
 .welcome-h { font-size: 27px; font-weight: 800; letter-spacing: -0.045em; line-height: 1.08; text-wrap: balance; }
 .welcome.edit .welcome-h { font-size: 22px; letter-spacing: -0.035em; }
