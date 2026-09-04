@@ -623,7 +623,13 @@ function Home({
             {draftHere ? "Resume session" : "Start this session"}
           </button>
           <div className="arealist">
-            {AREAS.map(([n, ic]) => <span key={n}><Icon name={ic} size={15} />{n}</span>)}
+            <div className="arealist-track">
+              {AREAS.concat(AREAS).map(([n, ic], i) => (
+                <span key={i} aria-hidden={i >= AREAS.length}>
+                  <Icon name={ic} size={15} />{n}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
       </div>
