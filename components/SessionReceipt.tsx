@@ -10,10 +10,11 @@ const wkNum = (id: string) => id.replace(/[^0-9]/g, "") || "0";
 const sNum = (l: string) => l.replace(/[^0-9]/g, "") || "?";
 
 export function SessionReceipt({
-  session, history, nextWeek, nextSession, onDone, onNext,
+  session, history, quick = false, nextWeek, nextSession, onDone, onNext,
 }: {
   session: SavedSession;
   history: SavedSession[];
+  quick?: boolean;
   nextWeek: Week;
   nextSession: Session;
   onDone: () => void;
@@ -21,10 +22,6 @@ export function SessionReceipt({
 }) {
   const balls = sessionBalls(session);
   const mins = sessionMinutes(session);
-  const solidNow = solidPct(session);
-  const prev = history.length >= 2 ? history[history.length - 2] : null;
-  const delta = prev ? solidNow - solidPct(prev) : null;
-  const best = history.every((s) => solidPct(s) <= solidNow);
 
   const p = session.pitching ?? { close: 0, short: 0, long: 0 };
   const rows: { label: string; made: number; of: number }[] = [
@@ -38,10 +35,30 @@ export function SessionReceipt({
   const worst = [...rows].sort((a, b) => a.made / a.of - b.made / b.of)[0];
   const ownWeek = PLAN.find((w) => w.id === session.weekId);
 
+  // headline metric: solid rate for a plan session; for a quick session with no
+  // tee/iron shots, the most-hit area's rate shown as a plain number (no delta)
+  const hasStrikes = session.driving.fairway + session.driving.left + session.driving.right +
+    session.irons.solid + session.irons.fat + session.irons.thin > 0;
+  const headRow = quick && !hasStrikes && rows.length
+    ? [...rows].sort((a, b) => b.of - a.of)[0]
+    : null;
+  const solidNow = headRow ? Math.round((headRow.made / headRow.of) * 100) : solidPct(session);
+  const headCap = headRow ? headRow.label.replace(/^(\w+) · /, "$1 ").toLowerCase() : "solid strike rate";
+
+  // delta only for the solid-rate case, against previous sessions that logged strikes
+  const strikeHist = history.filter((s) =>
+    s.driving.fairway + s.driving.left + s.driving.right + s.irons.solid + s.irons.fat + s.irons.thin > 0);
+  const prev = !headRow && strikeHist.length >= 2 ? strikeHist[strikeHist.length - 2] : null;
+  const delta = prev ? solidNow - solidPct(prev) : null;
+  const best = !headRow && strikeHist.every((s) => solidPct(s) <= solidNow);
+
   function share() {
+    const head = quick
+      ? "RangeCard · Quick session"
+      : `RangeCard · Week ${wkNum(session.weekId)} · Session ${sNum(session.sessionLabel)}`;
     const lines = [
-      `RangeCard · Week ${wkNum(session.weekId)} · Session ${sNum(session.sessionLabel)}`,
-      `Solid rate ${solidNow}%${delta !== null ? ` (${delta >= 0 ? "+" : ""}${delta})` : ""}`,
+      head,
+      `${headCap[0].toUpperCase() + headCap.slice(1)} ${solidNow}%${delta !== null ? ` (${delta >= 0 ? "+" : ""}${delta})` : ""}`,
       ...rows.map((r) => `${r.label}: ${r.made} of ${r.of}`),
     ].join("\n");
     if (navigator.share) navigator.share({ text: lines }).catch(() => {});
@@ -52,22 +69,24 @@ export function SessionReceipt({
     <div className="welcome-wrap" style={{ alignItems: "flex-start", paddingTop: 34 }}>
       <div className="receipt">
         <div className="receipt-top">
-          <span className="icon-tile lg glow"><Icon name="check" size={26} fill /></span>
-          <div className="receipt-h">Session {sNum(session.sessionLabel)} logged</div>
+          <span className="icon-tile lg glow"><Icon name={quick ? "bolt" : "check"} size={26} fill /></span>
+          <div className="receipt-h">{quick ? "Quick session logged" : `Session ${sNum(session.sessionLabel)} logged`}</div>
           <div className="receipt-meta">
-            W{wkNum(session.weekId)}{ownWeek ? ` · ${ownWeek.title}` : ""} · {balls} balls{mins ? ` · ${mins} min` : ""}
+            {quick
+              ? `${balls} ball${balls === 1 ? "" : "s"}${mins ? ` · ${mins} min` : ""}`
+              : `W${wkNum(session.weekId)}${ownWeek ? ` · ${ownWeek.title}` : ""} · ${balls} balls${mins ? ` · ${mins} min` : ""}`}
           </div>
         </div>
 
         <div className="receipt-moved">
-          <div className="eyebrow">What moved</div>
+          <div className="eyebrow">{quick && headRow ? "Where you landed" : "What moved"}</div>
           <div className="receipt-big">
             <span className="receipt-delta">
               {delta === null ? solidNow + "%" : (delta >= 0 ? "+" : "") + delta}
             </span>
             <span className="receipt-cap">
-              {delta === null ? "solid strike rate" : "points of solid rate"}
-              <br />{best ? "your best session yet" : delta !== null && delta >= 0 ? "moving the right way" : "off your recent best"}
+              {delta === null ? headCap : "points of solid rate"}
+              <br />{best ? "your best session yet" : delta !== null && delta >= 0 ? "moving the right way" : delta !== null ? "off your recent best" : "logged"}
             </span>
           </div>
           <div className="receipt-rows">
@@ -94,10 +113,12 @@ export function SessionReceipt({
           </button>
           <button className="receipt-next" onClick={onNext}>
             <span>
-              <b>Next: {nextWeek.short} · {nextSession.label.replace(/ —.*/, "")}</b>
+              <b>{quick
+                ? `Back to your plan · ${nextWeek.short} · ${nextSession.label.replace(/ —.*/, "")}`
+                : `Next: ${nextWeek.short} · ${nextSession.label.replace(/ —.*/, "")}`}</b>
               <small>{worst ? `${worst.label.split(" ·")[0]} needs the attention` : "Keep the plan"}</small>
             </span>
-            <span className="icon-tile sm dim"><Icon name="event" size={16} /></span>
+            <span className="icon-tile sm dim"><Icon name={quick ? "flag" : "event"} size={16} /></span>
           </button>
           <button className="btn-ghost" onClick={onDone}>Done</button>
         </div>

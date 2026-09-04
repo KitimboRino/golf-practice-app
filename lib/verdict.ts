@@ -29,9 +29,15 @@ export type Verdict = {
   note: string;
 };
 
+// a session counts toward the solid-rate verdict only if it logged tee or iron shots
+const hasStrikes = (s: SavedSession) =>
+  s.driving.fairway + s.driving.left + s.driving.right +
+  s.irons.solid + s.irons.fat + s.irons.thin > 0;
+
 export function verdict(history: SavedSession[]): Verdict | null {
-  if (history.length < 2) return null;
-  const window = history.slice(-4);
+  const strikeHist = history.filter(hasStrikes);
+  if (strikeHist.length < 2) return null;
+  const window = strikeHist.slice(-4);
   const vals = window.map(solidPct);
   const change = vals[vals.length - 1] - vals[0];
   const span = window.length;

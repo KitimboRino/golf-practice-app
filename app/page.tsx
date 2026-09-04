@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { PLAN, Week, Session } from "@/lib/plan";
 import { SESSION_FLOW } from "@/lib/prep";
-import { PITCH_FOCUS, PITCHING_DRILL } from "@/lib/library";
+import { PITCH_FOCUS, PITCHING_DRILL, LIBRARY } from "@/lib/library";
+import { CATALOG } from "@/lib/faults";
 import { Outcome } from "@/components/Outcome";
 import { Icon } from "@/components/Icon";
 import { Trends } from "@/components/Trends";
@@ -16,7 +17,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/Confirm";
 import {
-  SavedSession, SessionInput, Strips, emptyStrips, countIn,
+  SavedSession, SessionInput, Strips, emptyStrips, countIn, ADHOC,
   DrillOverride, DrillOverrides,
   saveSession, allSessions, deleteSession, restoreSession, uuid,
   getMeta, setMeta, delMeta,
@@ -26,7 +27,9 @@ import { todaysOneThing, weekStreak } from "@/lib/verdict";
 import { SessionReceipt } from "@/components/SessionReceipt";
 import { doneFx } from "@/lib/haptics";
 
-type Tab = "home" | "session" | "trends" | "more" | "warmup" | "welcome" | "receipt";
+type Tab = "home" | "session" | "trends" | "more" | "warmup" | "welcome" | "receipt" | "quickpick";
+
+type QuickFocus = { title: string; body: string };
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -53,6 +56,9 @@ type Live = {
   weekId: string; sessionLabel: string; date: string; notes: string;
   bestClub: string; startedAt: number;
   strips: Strips;
+  // quick session only: which areas are in play, and an optional focus (e.g. from Fixes)
+  areas?: (keyof Strips)[];
+  focus?: QuickFocus;
 };
 
 const STRIP_TOTAL = (s: Strips) =>
@@ -64,6 +70,10 @@ function emptyLive(weekId: string, sessionLabel: string): Live {
     weekId, sessionLabel, date: new Date().toISOString().slice(0, 10), notes: "",
     bestClub: "", startedAt: Date.now(), strips: emptyStrips(),
   };
+}
+
+function emptyQuickLive(areas: (keyof Strips)[], focus?: QuickFocus): Live {
+  return { ...emptyLive(ADHOC, "Quick session"), areas, focus };
 }
 
 // rebuild strips from tallies when editing a pre-v3 session (tap order is lost)
@@ -127,6 +137,163 @@ const AREAS = [
   ["Chipping", "swipe_up"], ["Pitching", "arrow_outward"], ["Irons", "golf_course"],
   ["Driving", "sports_golf"], ["Putting", "adjust"],
 ] as const;
+
+const QUICK_AREAS: { key: keyof Strips; name: string; icon: string }[] = [
+  { key: "chipping", name: "Chipping", icon: "swipe_up" },
+  { key: "pitching", name: "Pitching", icon: "arrow_outward" },
+  { key: "irons", name: "Irons", icon: "golf_course" },
+  { key: "driving", name: "Driving", icon: "sports_golf" },
+  { key: "putting", name: "Putting", icon: "adjust" },
+];
+
+const missToArea = (m: string): keyof Strips | null =>
+  m === "right" || m === "left" ? "driving" : m === "strike" ? "irons" : null;
+
+const libAreaKey = (raw: string): keyof Strips => {
+  const a = raw.toLowerCase();
+  if (a.startsWith("driv")) return "driving";
+  if (a.startsWith("iron")) return "irons";
+  if (a.startsWith("chip")) return "chipping";
+  if (a.startsWith("pitch")) return "pitching";
+  return "putting";
+};
+
+function QuickPick({
+  plannedMiss, onStart, onCancel,
+}: {
+  plannedMiss: string;
+  onStart: (areas: (keyof Strips)[], focus?: QuickFocus) => void;
+  onCancel: () => void;
+}) {
+  const seed = missToArea(plannedMiss);
+  const [picked, setPicked] = useState<Set<keyof Strips>>(new Set(seed ? [seed] : []));
+  const [focus, setFocus] = useState<(QuickFocus & { area: keyof Strips }) | null>(null);
+  const [picker, setPicker] = useState<null | "fix" | "drill">(null);
+
+  const toggle = (k: keyof Strips) => {
+    const next = new Set(picked);
+    next.has(k) ? next.delete(k) : next.add(k);
+    setPicked(next);
+  };
+  const chooseFocus = (f: QuickFocus & { area: keyof Strips }) => {
+    setFocus(f);
+    setPicked((p) => new Set(p).add(f.area));
+    setPicker(null);
+  };
+
+  const list = QUICK_AREAS.filter((a) => picked.has(a.key)).map((a) => a.key);
+  // the fault that matches the miss the player told us about (surface it first)
+  const mineFaultId =
+    plannedMiss === "right" ? "slice" : plannedMiss === "left" ? "hook"
+    : plannedMiss === "strike" ? "heavy-chip" : null;
+
+  return (
+    <>
+      <header className="hdr">
+        <div className="hdr-row" style={{ alignItems: "center" }}>
+          <button className="icon-btn" onClick={onCancel} aria-label="Back">
+            <Icon name="arrow_back" size={22} />
+          </button>
+          <div style={{ flex: 1 }}>
+            <div className="hdr-eyebrow">Quick session</div>
+            <div className="hdr-title">What are you working on?</div>
+            <div className="hdr-sub">Pick an area, or a fix or drill to hone in on.</div>
+          </div>
+        </div>
+      </header>
+
+      <div className="screen">
+        {focus ? (
+          <div className="quick-focus">
+            <span className="icon-tile sm"><Icon name={focus.area === "driving" ? "sports_golf" : "build"} size={15} /></span>
+            <span>
+              <b>{focus.title}</b>
+              <small>{focus.body}</small>
+            </span>
+            <button className="icon-btn" style={{ width: 34, height: 34 }} aria-label="Clear focus"
+                    onClick={() => setFocus(null)}>
+              <Icon name="close" size={17} />
+            </button>
+          </div>
+        ) : (
+          <div className="chips">
+            <button className={"chip-btn" + (picker === "fix" ? " on" : "")}
+                    onClick={() => setPicker(picker === "fix" ? null : "fix")}>
+              <Icon name="build" size={14} /> Work on a fix
+            </button>
+            <button className={"chip-btn" + (picker === "drill" ? " on" : "")}
+                    onClick={() => setPicker(picker === "drill" ? null : "drill")}>
+              <Icon name="menu_book" size={14} /> Pick a drill
+            </button>
+          </div>
+        )}
+
+        {picker === "fix" && (
+          <div className="focus-list">
+            {[...CATALOG].sort((a, b) =>
+              (b.id === mineFaultId ? 1 : 0) - (a.id === mineFaultId ? 1 : 0),
+            ).map((f) => (
+              <button key={f.id} className="focus-opt"
+                      onClick={() => chooseFocus({
+                        area: f.area as keyof Strips,
+                        title: `Fix: ${f.fault.split(" — ")[0]}`,
+                        body: f.fix,
+                      })}>
+                <b>{f.pattern}{f.id === mineFaultId && <span className="focus-tag">your miss</span>}</b>
+                <small>{f.fault.split(" — ")[0]} · {QUICK_AREAS.find((q) => q.key === f.area)?.name}</small>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {picker === "drill" && (
+          <div className="focus-list">
+            {LIBRARY.flatMap((g) =>
+              g.drills.map((d) => (
+                <button key={g.area + d.name} className="focus-opt"
+                        onClick={() => chooseFocus({
+                          area: libAreaKey(g.area),
+                          title: d.name,
+                          body: d.why || d.how,
+                        })}>
+                  <b>{d.name}</b>
+                  <small>{QUICK_AREAS.find((q) => q.key === libAreaKey(g.area))?.name} · {d.how}</small>
+                </button>
+              )),
+            )}
+          </div>
+        )}
+
+        <div className="area-picks">
+          {QUICK_AREAS.map((a) => {
+            const on = picked.has(a.key);
+            return (
+              <button key={a.key} className={"area-pick" + (on ? " on" : "")}
+                      aria-pressed={on} onClick={() => toggle(a.key)}>
+                <span className="icon-tile sm"><Icon name={a.icon} size={16} /></span>
+                <span>{a.name}</span>
+                <Icon name={on ? "check_circle" : "radio_button_unchecked"} size={20}
+                      color={on ? "var(--green)" : "var(--icon-muted)"} fill={on} />
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="grp" style={{ paddingTop: 4 }}>
+          <button className="cta" disabled={!list.length}
+                  onClick={() => onStart(list, focus ? { title: focus.title, body: focus.body } : undefined)}>
+            <Icon name="play_arrow" size={22} fill />
+            {list.length ? `Start · ${list.length} area${list.length === 1 ? "" : "s"}` : "Pick an area"}
+          </button>
+          <p className="app-foot" style={{ justifyContent: "center" }}>
+            <Icon name="bolt" size={13} />
+            Logs to your history and trends — but doesn&apos;t use a plan session.
+          </p>
+        </div>
+      </div>
+    </>
+  );
+}
 
 export default function Page() {
   const [tab, setTab] = useState<Tab>("home");
@@ -230,6 +397,20 @@ export default function Page() {
     setTab("session");
   }
 
+  async function startQuick(areas: (keyof Strips)[], focus?: QuickFocus) {
+    if (isDraft) {
+      const ok = await confirm({
+        title: `Discard "${live!.sessionLabel}"?`,
+        body: "You have an unfinished session. Starting a quick session will discard it.",
+        confirmLabel: "Discard & start",
+        tone: "danger",
+      });
+      if (!ok) { resumeDraft(); return; }
+    }
+    setLive(emptyQuickLive(areas, focus));
+    setTab("session");
+  }
+
   async function dismissWarmup() {
     await setMeta("warmupShown", today());
     openLog();
@@ -261,6 +442,7 @@ export default function Page() {
       return;
     }
     const wasEdit = !!editOrig;
+    const isAdhoc = live.weekId === ADHOC;
     const rec: SessionInput = {
       id: editOrig?.id ?? uuid(),
       createdAt: editOrig?.createdAt ?? Date.now(),
@@ -274,7 +456,7 @@ export default function Page() {
     }
 
     let nextCursor = cursor;
-    if (!wasEdit) {
+    if (!wasEdit && !isAdhoc) {
       let w = cursor.week, s = cursor.session + 1;
       if (s >= PLAN[w].sessions.length) { s = 0; w = Math.min(w + 1, PLAN.length - 1); }
       nextCursor = { week: w, session: s };
@@ -344,10 +526,15 @@ export default function Page() {
       <SessionReceipt
         session={receipt.session}
         history={receipt.history}
+        quick={receipt.session.weekId === ADHOC}
         nextWeek={PLAN[receipt.nextCursor.week]}
         nextSession={PLAN[receipt.nextCursor.week].sessions[receipt.nextCursor.session]}
         onDone={() => { setReceipt(null); setTab("home"); }}
-        onNext={() => { setReceipt(null); startSession(); }}
+        onNext={() => {
+          setReceipt(null);
+          if (receipt.session.weekId === ADHOC) setTab("home");
+          else startSession();
+        }}
       />
     );
   }
@@ -359,8 +546,12 @@ export default function Page() {
           <Home week={week} cursor={cursor} setCursor={setCursor} history={history} name={name}
                 greeting={greeting(name, history)} onEditName={() => setTab("welcome")}
                 oneThing={todaysOneThing(history, plannedMiss)} streak={weekStreak(history)}
-                onStart={startSession} draftLabel={isDraft ? live!.sessionLabel : null}
+                onStart={startSession} onQuick={() => setTab("quickpick")}
+                draftLabel={isDraft ? live!.sessionLabel : null}
                 draftHere={draftHere} onResume={resumeDraft} />
+        )}
+        {tab === "quickpick" && (
+          <QuickPick plannedMiss={plannedMiss} onStart={startQuick} onCancel={() => setTab("home")} />
         )}
         {tab === "session" && live && (
           <SessionScreen week={week} session={session} pitchFocus={pitchFocus} live={live} setLive={setLive}
@@ -375,7 +566,11 @@ export default function Page() {
           <Warmup onSkip={dismissWarmup} onReady={dismissWarmup} />
         )}
         {tab === "more" && (
-          <More history={history} plannedMiss={plannedMiss} overrides={overrides} onSwap={swapDrill} />
+          <More history={history} plannedMiss={plannedMiss} overrides={overrides} onSwap={swapDrill}
+                onPracticeFix={(f) => startQuick(
+                  [f.area],
+                  { title: `Working on: ${f.fault.split(" — ")[0]}`, body: f.fix },
+                )} />
         )}
       </main>
 
@@ -383,10 +578,10 @@ export default function Page() {
         <button className={`nav-item${tab === "home" ? " active" : ""}`} onClick={() => setTab("home")}>
           <Icon name="flag" size={24} fill={tab === "home"} />Plan
         </button>
-        <button className={`nav-item${tab === "session" || tab === "warmup" ? " active" : ""}`}
+        <button className={`nav-item${tab === "session" || tab === "warmup" || tab === "quickpick" ? " active" : ""}`}
                 onClick={() => (live ? setTab("session") : startSession())}>
           <span className="nav-glyph">
-            <Icon name="sports_golf" size={24} fill={tab === "session" || tab === "warmup"} />
+            <Icon name="sports_golf" size={24} fill={tab === "session" || tab === "warmup" || tab === "quickpick"} />
             {isDraft && <span className="nav-dot" />}
           </span>
           Log
@@ -402,15 +597,15 @@ export default function Page() {
   );
 }
 
-function More({ history, plannedMiss, overrides, onSwap }: {
+function More({ history, plannedMiss, overrides, onSwap, onPracticeFix }: {
   history: SavedSession[];
   plannedMiss: string;
   overrides: DrillOverrides;
   onSwap: (area: keyof DrillOverrides, drill: DrillOverride | null) => void;
+  onPracticeFix: (fault: import("@/lib/faults").Fault) => void;
 }) {
   const [view, setView] = useState<"menu" | "prep" | "library" | "fixes">("menu");
   const [libFocus, setLibFocus] = useState<import("@/lib/faults").Fault | null>(null);
-  const openLibrary = (f: import("@/lib/faults").Fault | null) => { setLibFocus(f); setView("library"); };
   if (view === "prep") return <Prep onBack={() => setView("menu")} />;
   if (view === "library")
     return (
@@ -421,7 +616,8 @@ function More({ history, plannedMiss, overrides, onSwap }: {
   if (view === "fixes")
     return (
       <Fixes onBack={() => setView("menu")} history={history} plannedMiss={plannedMiss}
-             onPractice={openLibrary} />
+             onPractice={onPracticeFix}
+             onBrowseDrills={(f) => { setLibFocus(f); setView("library"); }} />
     );
   return (
     <>
@@ -462,7 +658,7 @@ function More({ history, plannedMiss, overrides, onSwap }: {
 
 function Home({
   week, cursor, setCursor, history, name, greeting, onEditName, oneThing, streak,
-  onStart, draftLabel, draftHere, onResume,
+  onStart, onQuick, draftLabel, draftHere, onResume,
 }: {
   week: Week;
   cursor: { week: number; session: number };
@@ -474,6 +670,7 @@ function Home({
   oneThing: import("@/lib/verdict").OneThing | null;
   streak: number;
   onStart: () => void;
+  onQuick: () => void;
   draftLabel: string | null;
   draftHere: boolean;
   onResume: () => void;
@@ -485,11 +682,15 @@ function Home({
   const loggedSlots = new Set(history.map((s) => `${s.weekId}|${s.sessionLabel}`));
   const loggedCount = flat.filter((f) => loggedSlots.has(`${f.id}|${f.label}`)).length;
   const done = history.length;
-  const lastSolid = history.length ? solidPct(history[history.length - 1]) : null;
-  const solidDelta = history.length >= 2
-    ? solidPct(history[history.length - 1]) - solidPct(history[history.length - 2])
+  // solid-rate tile ignores quick sessions that logged no tee/iron shots
+  const strikeHist = history.filter(
+    (s) => s.driving.fairway + s.driving.left + s.driving.right + s.irons.solid + s.irons.fat + s.irons.thin > 0,
+  );
+  const lastSolid = strikeHist.length ? solidPct(strikeHist[strikeHist.length - 1]) : null;
+  const solidDelta = strikeHist.length >= 2
+    ? solidPct(strikeHist[strikeHist.length - 1]) - solidPct(strikeHist[strikeHist.length - 2])
     : null;
-  const donePct = Math.min(100, Math.round((done / flat.length) * 100));
+  const donePct = Math.min(100, Math.round((loggedCount / flat.length) * 100));
   const firstRun = done === 0;
 
   return (
@@ -563,12 +764,12 @@ function Home({
         <div className="tiles">
           <div className="tile">
             <div className="tile-head">
-              <span className="eyebrow">Total logs</span>
+              <span className="eyebrow">Plan progress</span>
               <span className="icon-tile sm dim"><Icon name="event_available" size={15} /></span>
             </div>
-            <div className="tile-val num">{done}<span className="frac">/{flat.length}</span></div>
+            <div className="tile-val num">{loggedCount}<span className="frac">/{flat.length}</span></div>
             <div className="tile-foot">
-              <span className="tile-lbl">sessions logged</span>
+              <span className="tile-lbl">plan sessions logged</span>
               <span className="tile-lbl num">{donePct}%</span>
             </div>
           </div>
@@ -633,8 +834,11 @@ function Home({
 
         <div className="grp" style={{ paddingTop: 4 }}>
           <button className="cta" onClick={onStart}>
-            <Icon name={draftHere ? "play_arrow" : "play_arrow"} size={22} fill />
+            <Icon name="play_arrow" size={22} fill />
             {draftHere ? "Resume session" : "Start this session"}
+          </button>
+          <button className="btn-ghost" onClick={onQuick}>
+            <Icon name="bolt" size={17} />Quick session — just a few balls
           </button>
           <div className="arealist">
             <div className="arealist-track">
@@ -735,8 +939,12 @@ function SessionScreen({
   onFinish: () => void;
   onDiscard: () => void;
 }) {
-  const [open, setOpen] = useState<Record<string, boolean>>(
-    { chip: true, iron: false, drive: false, pitch: false, putt: false },
+  const quickAreas = live.areas;
+  const isQuick = !!quickAreas;
+  const steps = quickAreas ? STEPS.filter((s) => quickAreas.includes(s.area)) : STEPS;
+
+  const [open, setOpen] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(steps.map((s, i) => [s.id, i === 0])),
   );
   const set = (patch: Partial<Live>) => setLive({ ...live, ...patch });
   const toggle = (k: string) => setOpen({ ...open, [k]: !open[k] });
@@ -757,7 +965,8 @@ function SessionScreen({
   };
 
   const areaLogged = (a: AreaKey) => live.strips[a].length > 0 || (a === "chipping" && !!live.bestClub.trim());
-  const logged = STEPS.filter((s) => areaLogged(s.area)).length;
+  const logged = steps.filter((s) => areaLogged(s.area)).length;
+  const total = steps.length;
   const canFinish = editMode || logged > 0;
 
   const drillFor = (step: StepDef): { line: string; cards: { how: string; name?: string }[]; sticks: string[]; swapped?: boolean } => {
@@ -783,29 +992,49 @@ function SessionScreen({
       <header className="hdr">
         <div className="hdr-row">
           <div>
-            <div className="hdr-eyebrow">{editMode ? "Editing session" : "Session log"}</div>
-            <div className="hdr-title sm">
-              {week.short} · {session.label.replace(/ —.*/, "")}
+            <div className="hdr-eyebrow">
+              {editMode ? "Editing session" : isQuick ? "Quick session" : "Session log"}
             </div>
-            <div className="hdr-sub sm">{week.title} block · 5 areas</div>
+            <div className="hdr-title sm">
+              {isQuick
+                ? `Quick session`
+                : `${week.short} · ${session.label.replace(/ —.*/, "")}`}
+            </div>
+            <div className="hdr-sub sm">
+              {isQuick
+                ? `${total} area${total === 1 ? "" : "s"} · log as many balls as you like`
+                : `${week.title} block · 5 areas`}
+            </div>
           </div>
-          <div className="chip"><Icon name="check_circle" size={16} fill={logged === 5} />{logged}/5</div>
+          <div className="chip"><Icon name="check_circle" size={16} fill={logged === total} />{logged}/{total}</div>
         </div>
-        <div className="pbar"><span style={{ transform: `scaleX(${logged / 5})` }} /></div>
+        <div className="pbar"><span style={{ transform: `scaleX(${total ? logged / total : 0})` }} /></div>
       </header>
 
       <div className="screen log">
-        <details className="flowstrip">
-          <summary>
-            <Icon name="checklist" size={16} />Session flow
-            <Icon name="expand_more" size={18} className="flowstrip-chev" />
-          </summary>
-          <ol className="flow-list">
-            {SESSION_FLOW.map((s, i) => <li key={i}>{s}</li>)}
-          </ol>
-        </details>
+        {isQuick && live.focus && (
+          <div className="quick-focus">
+            <span className="icon-tile sm"><Icon name="build" size={15} /></span>
+            <span>
+              <b>{live.focus.title}</b>
+              <small>{live.focus.body}</small>
+            </span>
+          </div>
+        )}
 
-        {STEPS.map((step) => {
+        {!isQuick && (
+          <details className="flowstrip">
+            <summary>
+              <Icon name="checklist" size={16} />Session flow
+              <Icon name="expand_more" size={18} className="flowstrip-chev" />
+            </summary>
+            <ol className="flow-list">
+              {SESSION_FLOW.map((s, i) => <li key={i}>{s}</li>)}
+            </ol>
+          </details>
+        )}
+
+        {steps.map((step) => {
           const strip = live.strips[step.area];
           const done = areaLogged(step.area);
           const d = drillFor(step);
@@ -816,10 +1045,12 @@ function SessionScreen({
             <Block key={step.id} id={step.id} name={step.name} icon={step.icon} logged={done}
                    tally={tallyKeys.join("/")}
                    open={open[step.id]} toggle={() => toggle(step.id)}>
-              <div className="drline">
-                <Icon name={step.drillIcon} size={17} color="var(--blue)" style={{ marginTop: 1 }} />{d.line}
-              </div>
-              {d.swapped && (
+              {!isQuick && (
+                <div className="drline">
+                  <Icon name={step.drillIcon} size={17} color="var(--blue)" style={{ marginTop: 1 }} />{d.line}
+                </div>
+              )}
+              {!isQuick && d.swapped && (
                 <div className="drswap">
                   <Icon name="swap_horiz" size={13} />
                   <span>Swapped in from the Library</span>
@@ -886,8 +1117,8 @@ function SessionScreen({
                 <span className="hint" style={{ margin: 0 }}>hold a count to subtract</span>
               </div>
 
-              {d.cards.map((c, i) => <DrillCard key={i} how={c.how} name={c.name} />)}
-              {d.sticks.map((s, i) => <Stick key={i} text={s} />)}
+              {!isQuick && d.cards.map((c, i) => <DrillCard key={i} how={c.how} name={c.name} />)}
+              {!isQuick && d.sticks.map((s, i) => <Stick key={i} text={s} />)}
             </Block>
           );
         })}

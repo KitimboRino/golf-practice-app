@@ -33,12 +33,13 @@ function yourMiss(history: SavedSession[], plannedMiss: string): { fault: Fault;
 }
 
 export function Fixes({
-  onBack, history = [], plannedMiss = "", onPractice,
+  onBack, history = [], plannedMiss = "", onPractice, onBrowseDrills,
 }: {
   onBack?: () => void;
   history?: SavedSession[];
   plannedMiss?: string;
   onPractice?: (fault: Fault) => void;
+  onBrowseDrills?: (fault: Fault) => void;
 }) {
   const [selected, setSelected] = useState<Fault | null>(null);
   const mine = yourMiss(history, plannedMiss);
@@ -74,11 +75,18 @@ export function Fixes({
               <div className="fault-line"><span className="fault-k">Likely</span>{hero.fault}</div>
               <div className="fault-line"><span className="fault-k fix">Fix</span>{hero.fix}</div>
             </div>
-            {onPractice && (
-              <button className="fault-hero-go" onClick={() => onPractice(hero)}>
-                <Icon name="sports_golf" size={16} />Practice this fix now
-              </button>
-            )}
+            <div className="fault-hero-actions">
+              {onPractice && (
+                <button className="fault-hero-go" onClick={() => onPractice(hero)}>
+                  <Icon name="bolt" size={16} fill />Practice this now
+                </button>
+              )}
+              {onBrowseDrills && (
+                <button className="fault-hero-alt" onClick={() => onBrowseDrills(hero)}>
+                  <Icon name="menu_book" size={15} />Drills
+                </button>
+              )}
+            </div>
           </div>
         ) : (
           <div className="fault-note">

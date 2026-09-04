@@ -1,11 +1,11 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { SavedSession, exportBackup, importBackup } from "@/lib/db";
+import { SavedSession, exportBackup, importBackup, isAdhoc } from "@/lib/db";
 import { PLAN } from "@/lib/plan";
 import { solidPct, fairwayPct, puttPct, pitchPct } from "@/lib/stats";
 import { detectFaults } from "@/lib/faults";
-import { verdict, areaMoves } from "@/lib/verdict";
+import { verdict, areaMoves, AREA_RATES } from "@/lib/verdict";
 import { useCountUp } from "@/lib/useCountUp";
 import { useToast } from "./Toast";
 import { Icon } from "./Icon";
@@ -15,6 +15,12 @@ const fmtDate = (iso: string) => {
   return isNaN(+d) ? iso : d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 };
 const wkNum = (id: string) => id.replace(/[^0-9]/g, "") || "0";
+// solid rate for plan sessions; for a quick session, the first logged area's rate
+const rowRate = (s: SavedSession): number => {
+  if (!isAdhoc(s)) return solidPct(s);
+  for (const a of AREA_RATES) { const r = a.rate(s); if (r !== null) return r; }
+  return 0;
+};
 const sLabel = (l: string) => {
   const n = l.replace(/[^0-9]/g, "");
   if (!n) return l;
@@ -137,24 +143,30 @@ export function Trends({
     );
   }
 
-  const solid = history.map(solidPct);
-  const fair = history.map(fairwayPct);
-  const putt = history.map(puttPct);
-  const pitch = history.map(pitchPct);
-  const pitchLogged = history.some((s) => {
-    const p = s.pitching ?? { close: 0, short: 0, long: 0 };
-    return p.close + p.short + p.long > 0;
-  });
+  // each chart only plots sessions that actually logged that area
+  // (a quick putting-only session shouldn't drop the fairways line to 0)
+  const driveN = (s: SavedSession) => s.driving.fairway + s.driving.left + s.driving.right;
+  const ironN = (s: SavedSession) => s.irons.solid + s.irons.fat + s.irons.thin;
+  const pitchN = (s: SavedSession) => { const p = s.pitching ?? { close: 0, short: 0, long: 0 }; return p.close + p.short + p.long; };
+  const puttN = (s: SavedSession) => s.putting.in + s.putting.out;
+
+  const solid = history.filter((s) => driveN(s) + ironN(s) > 0).map(solidPct);
+  const fair = history.filter((s) => driveN(s) > 0).map(fairwayPct);
+  const putt = history.filter((s) => puttN(s) > 0).map(puttPct);
+  const pitch = history.filter((s) => pitchN(s) > 0).map(pitchPct);
+  const pitchLogged = history.some((s) => pitchN(s) > 0);
 
   const weeks = PLAN.filter((w) => history.some((s) => s.weekId === w.id));
   const histRows = wkFilter ? history.filter((s) => s.weekId === wkFilter) : history;
   const shown = showAll ? histRows : histRows.slice(-4);
 
   // baseline (first logged session) vs Test day — or vs latest if the test isn't logged yet
-  const baseline = history[0];
-  const testIdx = history.findIndex((s) => s.weekId === "week4" && /test/i.test(s.sessionLabel));
-  const target = testIdx >= 0 ? history[testIdx] : history[history.length - 1];
-  const showCompare = history.length >= 2 && baseline.id !== target.id;
+  // quick sessions are excluded — the compare is a plan-progress view
+  const planHist = history.filter((s) => !isAdhoc(s));
+  const baseline = planHist[0];
+  const testIdx = planHist.findIndex((s) => s.weekId === "week4" && /test/i.test(s.sessionLabel));
+  const target = testIdx >= 0 ? planHist[testIdx] : planHist[planHist.length - 1];
+  const showCompare = planHist.length >= 2 && !!baseline && !!target && baseline.id !== target.id;
 
   return (
     <>
@@ -251,14 +263,14 @@ export function Trends({
                     >
                       <div className="hist-l">
                         <div className="wk">
-                          W{wkNum(r.weekId)} · {sLabel(r.sessionLabel)}
+                          {isAdhoc(r) ? "Quick session" : `W${wkNum(r.weekId)} · ${sLabel(r.sessionLabel)}`}
                           {r.notes && <Icon name="edit_note" size={14} color="var(--icon-muted)" />}
                         </div>
                         <div className="dt">{fmtDate(r.date)}</div>
                       </div>
                     </button>
                     <div className="hist-r">
-                      <div className="hist-solid num">{solidPct(r)}%</div>
+                      <div className="hist-solid num">{rowRate(r)}%</div>
                       <button
                         className="hist-del"
                         aria-label="Delete session"

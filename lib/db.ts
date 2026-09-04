@@ -35,6 +35,10 @@ export type SavedSession = {
 export const countIn = (arr: string[] | undefined, key: string) =>
   (arr ?? []).reduce((n, x) => (x === key ? n + 1 : n), 0);
 
+// weekId sentinel for an ad-hoc "quick session" — not part of the 4-week plan
+export const ADHOC = "adhoc";
+export const isAdhoc = (s: { weekId: string }) => s.weekId === ADHOC;
+
 // A drill swapped in from the Library for a given area — held in meta ("drillOverrides"),
 // applied to the current/next session's focus drill. Not synced (a local preference).
 export type AreaKey = "driving" | "irons" | "chipping" | "pitching" | "putting";
