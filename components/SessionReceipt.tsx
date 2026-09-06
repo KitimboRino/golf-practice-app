@@ -35,11 +35,11 @@ export function SessionReceipt({
   const worst = [...rows].sort((a, b) => a.made / a.of - b.made / b.of)[0];
   const ownWeek = PLAN.find((w) => w.id === session.weekId);
 
-  // headline metric: solid rate for a plan session; for a quick session with no
-  // tee/iron shots, the most-hit area's rate shown as a plain number (no delta)
+  // headline metric: solid rate when tee/iron shots were logged; otherwise (a
+  // quick or venue-limited session with none) the most-hit area's rate, no delta
   const hasStrikes = session.driving.fairway + session.driving.left + session.driving.right +
     session.irons.solid + session.irons.fat + session.irons.thin > 0;
-  const headRow = quick && !hasStrikes && rows.length
+  const headRow = !hasStrikes && rows.length
     ? [...rows].sort((a, b) => b.of - a.of)[0]
     : null;
   const solidNow = headRow ? Math.round((headRow.made / headRow.of) * 100) : solidPct(session);
@@ -79,7 +79,7 @@ export function SessionReceipt({
         </div>
 
         <div className="receipt-moved">
-          <div className="eyebrow">{quick && headRow ? "Where you landed" : "What moved"}</div>
+          <div className="eyebrow">{headRow ? "Where you landed" : "What moved"}</div>
           <div className="receipt-big">
             <span className="receipt-delta">
               {delta === null ? solidNow + "%" : (delta >= 0 ? "+" : "") + delta}
@@ -103,7 +103,7 @@ export function SessionReceipt({
           <div className="receipt-note">
             <div className="eyebrow dim"><Icon name="bookmark" size={14} color="var(--blue-icon)" /> Remember this</div>
             <div className="receipt-quote">&ldquo;{session.notes.trim()}&rdquo;</div>
-            <div className="receipt-sub">Your note — pinned to the top of your next session.</div>
+            <div className="receipt-sub">Your note, pinned to the top of your next session.</div>
           </div>
         )}
 

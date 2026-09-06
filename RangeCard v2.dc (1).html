@@ -1,0 +1,222 @@
+# Handoff: Accessibility pass + first-run flow (RangeCard v2)
+
+## Overview
+Two connected changes to the golf practice app:
+
+1. **Turn 2 — Usable by everyone.** An accessibility pass over the existing screens: real buttons with labels, a shot strip that is readable without colour, 56px minimum targets, a light/high-contrast theme that survives 200% text, and an "Ease of use" settings screen for the things the OS can't know (gloves, one hand, plain language).
+2. **Turn 3 — The first ten minutes.** A first-run flow that stops asking a beginner what they don't know: show the deal, teach the three log buttons by doing, run a no-score diagnostic session ("the read"), then reveal their miss pattern with a four-week plan already built.
+
+Nothing here forks the app into an "accessible version" or a separate onboarding product. Same data model, same five practice areas, same three-counter logging.
+
+## About the Design Files
+The files in this bundle are **design references created in HTML** — prototypes showing intended look and behaviour, not production code to copy directly.
+
+`RangeCard v2.dc.html` is a design canvas: several 390x844 phone frames laid out side by side, each representing one screen. It is not an app shell. The task is to **recreate these screens in the app's existing environment** (the React + Dexie codebase this project already documents in `github.md`) using its established components, routing and persistence patterns.
+
+The one exception, called out below, is a set of literal code-level fixes (viewport meta, semantic elements, ARIA, focus rings, reduced motion) that should be applied directly to the existing components rather than rebuilt.
+
+## Fidelity
+**High-fidelity.** Colours, type, spacing, radii and copy are final. Recreate pixel-accurately using the codebase's existing primitives. Where a value here disagrees with the current app, this file wins — the contrast and target-size numbers are deliberate.
+
+Two things are intentionally *illustrative* and must not ship as-is:
+- The "Screen reader says" card in frame 2a is an annotation for the developer, not UI. Implement it as a visually hidden `aria-live` region.
+- The frames render a fake status bar (9:41, wifi, battery). Drop it.
+
+---
+
+## Screens / Views
+
+### 2a — Log, gloves on  (replaces the current logging screen)
+**Purpose:** log where each ball started, in sun, with gloves, one-handed, without looking.
+
+**Layout:** full-height column. Header (fixed) → scrollable body → action cluster pinned to the bottom via `margin-top:auto`.
+- Header: `padding:12px 18px 14px`, `border-bottom:1px solid #1B2429`, row, `gap:12px`. Two 56x56 icon buttons flanking a flexible title block.
+- Body: `padding:18px 22px 22px`, column, `gap:16px`.
+
+**Components**
+- *Icon buttons (close / help):* 56x56, radius 18, `background:#141B1F`, `border:1px solid #3A4A50`, icon 24px `#E9F0EE`. Real `<button>` with `aria-label` ("End session" / "How this drill works"); the glyph is `aria-hidden`.
+- *Title block:* "Driving · Positional Drive" 16px/700, `-0.02em`. Sub: "Area 3 of 5 · ball N of 10" 14px/600 `#B4C2BE`.
+- *Prompt:* "Where did it **start**?" 24px/700, `-0.03em`, line-height 1.25; the word "start" in `#6BD69B`.
+- *Shot strip card:* `background:#141B1F`, `border:1px solid #3A4A50`, radius 22, `padding:16`, column `gap:12`.
+  - Row: "This session" 14px/600 `#B4C2BE` | "NN% on line" 15px/800 `#E9F0EE` (the percentage is text, never colour-coded alone).
+  - Strip: 10 slots, wrap, `gap:6`. Each 32x32, radius 10, `border:1.5px solid`, centred 14px/800 glyph.
+    - on line: bg `rgba(107,214,155,0.18)`, border `rgba(107,214,155,0.45)`, fg `#6BD69B`, glyph `✓`
+    - left: bg `rgba(232,177,90,0.16)`, border `rgba(232,177,90,0.4)`, fg `#E8B15A`, glyph `L`
+    - right: bg `rgba(210,114,107,0.16)`, border `rgba(210,114,107,0.4)`, fg `#D2726B`, glyph `R`
+    - empty: bg `#11181B`, border `#3A4A50`, no glyph
+    - Container `role="list"` + `aria-label="Shots logged this session"`; each slot `role="listitem"` with `aria-label` "Ball 3, miss right" / "Ball 8, not logged yet".
+  - Key row: "✓ on line / L left / R right", 13px/600 `#B4C2BE`, `border-top:1px solid #263237`, `padding-top:11px`. This row is what makes the strip colour-independent — keep it.
+- *Primary log button ("On my line"):* height 112, radius 22, `border:2px solid #6BD69B`, `background:rgba(107,214,155,0.16)`, `padding:0 22px`, space-between. Label 22px/800 with a 26px `check_circle` in `#6BD69B`; sub-label "Volume up logs this" 15px/600 `#B4C2BE`; count 48px/800, `-0.05em`, `#6BD69B`. Active: `background:rgba(107,214,155,0.34)`.
+- *Left / Right buttons:* row `gap:12`, each flex 1, height 104, radius 20, `border:2px solid` (`#E8B15A` / `#D2726B`) over `rgba(...,0.14)`. Count 36px/800 in the accent; label 16px/800 in `#F0CF9C` / `#E6ADA8` with a 19px `west`/`east` glyph. Active: accent at 0.30 alpha.
+- *Undo:* full-width, height 60, radius 18, `#141B1F`, `border:1px solid #3A4A50`, 16px/700 `#E9F0EE`, label "Undo last ball". Never a long-press or a confirm dialog — a tremor mis-tap must cost exactly one press.
+
+**Focus:** every control `style-focus`/`:focus-visible` → `outline:3px solid` (`#6BD69B` on neutral chrome, `#E9F0EE` on accent-filled buttons) with `outline-offset:3px`.
+
+### 2b — Sunlight & 200% text  (the Plan screen, light theme, largest system text)
+**Purpose:** prove the Plan screen holds up outdoors and at the largest accessibility text size.
+
+**Layout:** same column structure as the dark Plan screen. `background:#FFFFFF`, ink `#06110C`, dividers `2px solid #DEE6E3`.
+
+**Components**
+- Header: eyebrow "Thursday · Week 2" 15px/800 uppercase `0.04em` `#4A5A55`; title "Control" 32px/800 `-0.03em`.
+- *One-thing card:* `background:#EBF7F0`, `border:2px solid #0F6B3E`, radius 24, `padding:20px 18px`, `gap:14`. Eyebrow 15px/800 uppercase `#0B5531` + 21px `target` glyph. Headline 30px/800 `-0.03em` line-height 1.25. Body 20px/1.5 `#22332C`.
+- *Solid rate block:* "Solid rate 63%" 20px/800; body 19px/1.45 `#22332C` with "It's working." bolded.
+- *Progress:* label 19px/800; bar height 16, radius 8, track `#DEE6E3`, fill `#0F6B3E` at 44%; caption 18px/600 `#3A4A44`. Percentage is always also stated in text.
+- *Primary CTA:* `min-height:84px` (not fixed height — it must grow), radius 22, `#0F6B3E` on white text, 24px/800, `padding:14px 20px`, `text-wrap:pretty`. Hover `#0B5531`.
+- *Secondary CTA:* `min-height:72px`, white, `border:2px solid #06110C`, 21px/700.
+- *Tab bar:* 66px items, 26px glyphs, 13px labels; active `#0F6B3E` with `FILL 1`, inactive `#3A4A44`.
+
+**The rule this frame encodes:** at large text sizes, secondary text is **dropped, never shrunk**. Note what disappeared versus the dark Plan screen — the streak pill, the sparkline, the 8-step plan rail (now a single bar), the session sub-caption. Every box that holds text uses `min-height`, not `height`.
+
+### 2c — Ease of use  (new screen under "More")
+**Purpose:** the accessibility settings a phone can't infer. OS text size, bold text, contrast and reduced motion are *followed*, never duplicated here — state that in the intro card.
+
+**Layout:** header (back + eyebrow "More" + title "Ease of use") → body `padding:18px 22px 24px`, column `gap:20`. Three labelled groups, each a card `#141B1F` / `border:1px solid #3A4A50` / radius 20 with `1px solid #263237` row dividers.
+
+**Rows:** `min-height:76px`, `padding:14px 18px`, `gap:14`. Title 16px/700; description 14px `#B4C2BE`. Switch: 56x34, radius 17 — on `#6BD69B` with a 26px `#08120D` knob right, off `#2C383D` + `border:1px solid #3A4A50` with an `#8A9A96` knob left. `role="switch"` + `aria-checked` + `aria-label`.
+
+**Content (exact):**
+- *At the range* — "Glove mode / Fewer, bigger buttons" (on) · "Log with volume keys / Up = on line, down = miss" (on) · "Buttons on the left / For a left thumb" (off)
+- *Reading it* — "Letters on shot dots / Never colour on its own" (on) · "Plain language / “Good hits out of 10”, not “solid rate”" (on) · "Read my session back / Spoken summary at the end" (off)
+- *The plan* — "Areas I can practise": chips for Putting / Chipping / Bunker / Irons; enabled chips `rgba(107,214,155,0.12)` + `border:1px solid rgba(107,214,155,0.45)` + `#9FD9BB` + check glyph, disabled `#11181B` / `#3A4A50` / `#8A9A96`. Body copy: turning an area off **rebuilds the plan around what's left instead of scoring zero** — this is the seated/adaptive/limited-facility case and it must not be modelled as a skipped session.
+- Intro card: `#11181B`, `border:1px solid #2A4A63`, radius 18, 14px/1.5 `#C6D2CE`, 19px `settings_accessibility` glyph in `#8CB8DC`.
+
+### 3a — The deal  (new first screen, replaces the miss quiz as the entry point)
+**Purpose:** answer "what am I signing up for?" before asking anything.
+
+- Mark: 52x52, radius 17, `#6BD69B`, `sports_golf` 27px `FILL 1` in `#08120D`.
+- Headline: "Ten balls tonight, and I'll tell you what you're doing." 32px/800 `-0.04em` line-height 1.1. Body 16px/1.55 `#B4C2BE`.
+- *Three-step card:* `#141B1F` / `#3A4A50` / radius 22 / `padding:18`; rows split by `1px solid #263237` at `padding:16px 0`. Step badge 30x30 radius 10 — step 1 `#6BD69B` on `#08120D`, later steps `#1F292E` + `border:1px solid #3A4A50` + `#B4C2BE`. Rows: "Tonight · 10 balls / Five minutes. You find out your miss." · "Four weeks · 8 sessions / 35 minutes each, built around that miss." · "Then we re-test / Same ten balls. You see the number move — or we change the plan."
+- *Payoff card:* green gradient `linear-gradient(158deg,#1B2E26 0%,#141B1F 62%)`, `border:1px solid #2C4238`, radius 20. "+8" 46px/800 `#6BD69B` beside "points of solid strike, and the reason it happened written down." 14px/1.45.
+- *Primary CTA:* `min-height:72px`, radius 22, `#6BD69B`, "Hit ten balls" 18px/800 + sub "About five minutes" 13px/600 at 0.66 opacity, trailing 52px play tile `rgba(8,18,13,0.14)`.
+- *Secondary:* "I already know my miss" — `min-height:56px`, transparent, `border:1px solid #3A4A50`. **This is where the current miss picker lives now.** Same four options, same write to the profile.
+- Footer: lock glyph `#8CB8DC` + "No account. Nothing leaves this phone." 13px `#8A9A96`.
+
+### 3b — Practice run  (coach marks over the log screen)
+**Purpose:** teach the three buttons in five taps, including undo.
+
+- Backdrop: the real log screen at `opacity:0.32` (status bar 0.4), untouched otherwise — no scrim overlay.
+- *Coach card:* `#141B1F`, `border:1px solid #6BD69B`, radius 22, `padding:20px 18px`, plus `box-shadow:0 0 0 6px rgba(107,214,155,0.10)`. Header row: "Step 1 of 3" 12px/800 uppercase `0.06em` `#6BD69B` + `touch_app` glyph | three 20x4 pills (`#6BD69B` / `#2C4238` / `#1F292E`). Headline 21px/800 `-0.03em`: "Say that one started at the flag." Body 15px/1.5 `#B4C2BE`: "Tap the big green button below. That's the whole app, really."
+- *Spotlit target:* the real primary button at full opacity, `background:rgba(107,214,155,0.2)`, `box-shadow:0 0 0 8px rgba(107,214,155,0.10)`, sub-label swapped to "Tap me", trailing tile shows a 26px `arrow_back` pointer.
+- Everything not spotlit sits at `opacity:0.3–0.4` and is inert.
+- Steps: 1 log an on-line ball → 2 log a miss (Left/Right lit) → 3 undo it. Each step advances **only on the real tap**; no "Got it" button, no carousel.
+- Escape hatch: "Skip the practice run", `min-height:44px`, 15px/600 `#8A9A96`.
+
+### 3c — The read  (session zero)
+**Purpose:** ten balls, no score, no plan yet — the diagnostic that replaces the quiz.
+
+- Header title "The read · your first ten" 16px/700; sub "Ball 7 of 10 · any club you like" 14px/600 `#B4C2BE`. Close button only — no progress rail, because there are no areas yet.
+- *Reassurance card:* `#11181B`, `border:1px solid #2A4A63`, radius 18, `visibility` glyph `#8CB8DC`, copy: "No score tonight. Bad ones are the useful ones — they're what builds your plan."
+- Strip card as 2a but the header reads **"Six logged, four to go"** — no percentage anywhere on this screen. The next empty slot is outlined `1.5px solid #6BD69B` as the cursor.
+- Buttons identical to 2a (112 / 104 / 60). Bottom row splits Undo and "Stop here →" so a short session still produces a read.
+- Ending early is legitimate: with ≥6 balls, go to 3d with a lower-confidence sentence; below 6, offer to finish next time and keep the balls.
+
+### 3d — Your read  (the reveal)
+**Purpose:** hand back a sentence the user couldn't have written, then the plan.
+
+- Eyebrow "Your read · 10 balls" 12px/800 uppercase `#8A9A96`; verdict "You lose it right." 34px/800 `-0.04em`.
+- *Pattern card:* red gradient `linear-gradient(158deg,#2A1E1D 0%,#141B1F 62%)`, `border:1px solid #43302E`, radius 24. Three rows — 52px label 13px/700 `#B4C2BE` | bar height 14 radius 7 on `#1F292E` | count 15px/800 right-aligned, 44px wide. Right `#D2726B` 6/10, Left `#E8B15A` 1/10, On line `#6BD69B` 3/10. Counts are "6/10", never bare percentages — a beginner reads fractions faster.
+  - Explanation 16px/1.5 `#E9F0EE` above a `border-top:1px solid #3A2A28`: "Six of ten leaked right, and the last three were the worst — a slice that gets stronger as you tire. **One fault, not five.**" Then provenance 13px/600 `#8A9A96`: "Field guide p.162 · slice".
+- *Plan card:* green gradient as 3a. Eyebrow "So here's your four weeks" + `flag`. Thesis 19px/700: "Square the start line, then hold it when you're tired." Three rows over `border-top:1px solid #24332C`: "Weeks 1–2 · Aim / 4 sessions", "Week 3 · Path / 2 sessions", "Week 4 · Re-test / Same ten balls".
+- CTAs: "Use this plan" `min-height:68px` `#6BD69B`; "That's not my usual miss — adjust" `min-height:56px` outlined → opens the miss picker pre-filled with the detected answer. Footer 14px/600 `#8A9A96`: "Practise when you can. The plan waits for you, it doesn't expire."
+
+---
+
+## Interactions & Behavior
+
+**Logging (2a / 3c)**
+- Tap on-line / left / right → append to `shots`, increment that counter, fill the next strip slot, bump "ball N of 10". Cap at 10; further taps are no-ops.
+- Undo pops the last shot and clears its slot. Idempotent at zero.
+- Volume-up = on line, volume-down = cycles/holds the miss side (setting-gated, 2c). Screen off or in a pocket must still register.
+- Haptic on every log — this is the confirmation for a user who isn't looking, so it stays even under reduced motion.
+
+**Announcements**
+- One visually-hidden `aria-live="polite"` node, not ten. On each log it reads: `"Ball 7, miss right. 3 of 7 on line."` On undo: "Undo. Ball 7 removed." Session zero omits the ratio: "Ball 7, miss right. Three to go."
+- The strip's `listitem` labels exist for *exploration* (swipe-through), not narration — never `aria-live` on the strip.
+
+**Motion**
+- Default: new dot scales 0.8 → 1 with a 160ms `cubic-bezier(0.2,0.8,0.2,1)` fade; counter cross-fades 120ms.
+- `prefers-reduced-motion: reduce` → both become instant state changes. No parallax, no auto-advancing carousels anywhere.
+
+**First run (3a → 3d)**
+- 3a "Hit ten balls" → 3b practice run (3 forced taps, discarded) → 3c the read → 3d reveal.
+- 3a "I already know my miss" → existing miss picker → straight to Plan, skipping 3b–3d.
+- 3d "Use this plan" → Plan screen at Week 1 Session 1. "Adjust" → miss picker pre-filled.
+- Re-entrant: quitting mid-read keeps the logged balls and resumes on next launch.
+
+**Returning after a gap**
+- No broken streak, ever. Plan header shows **sessions this month**, not a week streak. A return after >14 days opens with "Welcome back — picking up at Week 2, Session 2" and offers "restart the four weeks" as a secondary.
+
+**Venue**
+- Under the Plan start button: "I've only got a putting green / a net / the garden" reorders tonight's areas rather than leaving the session unlogged.
+
+## State Management
+Additions only; existing session/plan state is unchanged.
+- `shots: Array<'fairway'|'left'|'right'>` — already present in the logging screen; the strip and all three counters derive from it (`count(k)`, `pct = round(fairway/shots.length*100)`). Derive, never store duplicates.
+- `onboarding: { stage: 'deal'|'practice'|'read'|'reveal'|'done', practiceTaps: number }` — persisted, so a cold start resumes.
+- `readSession: { shots, completedAt }` — session zero. Feeds the existing miss-pattern function; the result writes the **same profile field** the quiz wrote, so the plan builder needs no change.
+- `a11y: { gloveMode, volumeKeys, leftHanded, dotLetters, plainLanguage, readBack, enabledAreas[] }` — persisted locally; OS-level prefs (text size, bold, contrast, reduced motion) are read live from the platform and never mirrored into this object.
+- No network state. Everything stays local, as today.
+
+## Direct code fixes (apply to existing components, don't rebuild)
+1. **Viewport meta** — remove `maximum-scale` and `user-scalable=no`. Ship `<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">`. Single highest-impact change in the app.
+2. **Semantics** — every tappable `div` becomes `<button type="button">` with an `aria-label`; icon glyphs get `aria-hidden="true"`. Keyboard, switch control and screen readers then work without further work.
+3. **Focus** — never `outline:none`. `:focus-visible { outline:3px solid; outline-offset:3px }`, ring `#6BD69B` on neutral chrome and `#E9F0EE` on accent fills (both ≥3:1 against their backgrounds).
+4. **Contrast floor** — in-card body text `#8A9A96` → `#B4C2BE`; borders on interactive containers `#263237` → `#3A4A50`. Keep `#8A9A96` only for non-essential captions on `#070C0E`.
+5. **Never colour alone** — the strip carries letter + icon + position; the miss-pattern bars carry a text count; "Gaining/Slipping" carry arrow glyphs and words.
+6. **Text scaling** — `min-height` instead of `height` on anything containing text; no `white-space:nowrap` on labels; `text-wrap:pretty` on prose. Must survive 200% with nothing clipped.
+7. **Targets** — 56px minimum for anything tappable (44px is the floor, 56 is the standard here because of gloves); primary log actions 104–112px, in the bottom third of the screen.
+8. **No destructive-only-path gestures** — every long-press or swipe action has a visible button equivalent.
+9. **Reduced motion** — gate the dot and counter animations; keep haptics.
+10. **Labels, not placeholders** — the optional name field keeps a persistent visible label.
+
+## Design Tokens
+
+**Dark theme**
+| Token | Value | Use |
+|---|---|---|
+| bg/root | `#070C0E` | app background |
+| bg/screen | `#0B1013` | screen surface |
+| bg/card | `#141B1F` | cards, controls |
+| bg/sunken | `#11181B` | inputs, empty slots |
+| bg/raised | `#1C2529` | hover on cards |
+| border/quiet | `#1B2429` / `#263237` | dividers, static cards |
+| border/interactive | `#3A4A50` | any card holding a control |
+| text/primary | `#E9F0EE` | headings, values |
+| text/body | `#B4C2BE` | in-card body copy |
+| text/muted | `#8A9A96` | captions on root bg only |
+| text/faint | `#687773` | annotation only, never UI copy |
+| accent/green | `#6BD69B` (hover `#8AE0B0`, ink `#08120D`) | primary, on-line |
+| accent/amber | `#E8B15A` (text `#F0CF9C`) | left miss, streaks |
+| accent/red | `#D2726B` (text `#E6ADA8`) | right miss, slipping |
+| accent/blue | `#5B93C4` (text `#8CB8DC` / `#C6D2CE`) | information, safety |
+| grad/positive | `linear-gradient(158deg,#1B2E26 0%,#141B1F 62%)` + `#2C4238` | verdict, plan, one-thing |
+| grad/negative | `linear-gradient(158deg,#2A1E1D 0%,#141B1F 62%)` + `#43302E` | fault, miss pattern |
+
+**Light / sunlight theme**
+| Token | Value |
+|---|---|
+| bg | `#FFFFFF` · card `#EBF7F0` · hover `#F0F4F2` |
+| ink | `#06110C` · body `#22332C` · muted `#3A4A44` / `#4A5A55` |
+| green | `#0F6B3E` (hover `#0B5531`) — 5.6:1 on white |
+| border | `#DEE6E3` quiet, `#C9D4D0` frame, `#06110C` on outlined buttons |
+
+**Type** — Manrope 400/500/600/700/800. Display 30–34/800 `-0.04em`; title 22–27/700–800 `-0.03em`; body 15–16/1.5; label 13–14/600–700; eyebrow 12/800 uppercase `0.06em`; numerals `font-variant-numeric: tabular-nums` everywhere. Light-theme large-text scale: 32 / 30 / 24 / 20 / 19 / 18 / 15.
+
+**Spacing** 4 · 6 · 8 · 10 · 12 · 14 · 16 · 18 · 20 · 22 · 24 (screen padding 18–26; card padding 16–22)
+**Radius** 7/8 chips · 10 dots · 13 pills · 14–18 icon tiles & inputs · 18–22 buttons · 20–24 cards · 40 phone frame
+**Targets** 44 min · 56 standard · 60 undo · 104 secondary log · 112 primary log
+**Shadow** frame only: `inset 0 1px 0 rgba(255,255,255,0.05), 0 40px 80px -40px rgba(0,0,0,0.9)`; spotlight `0 0 0 6–8px rgba(107,214,155,0.10)`; focus `outline`, not shadow.
+
+## Assets
+- **Manrope** (Google Fonts, weights 400–800) — already in use.
+- **Material Symbols Rounded** — icons used: `target sports_golf check check_circle west east undo close help arrow_back arrow_forward play_arrow flag show_chart more_horiz workspace_premium touch_app visibility record_voice_over settings_accessibility lock insights lightbulb bolt self_improvement trending_up verified radar build my_location health_and_safety info format_quote search filter_alt recommend swap_horiz bookmark bookmark_add event ios_share tune expand_more expand_less straighten back_hand accessibility_new balance shuffle height person radio_button_unchecked local_fire_department network_wifi battery_full`. All `aria-hidden`.
+- No images, no illustrations, no custom SVG. The status-bar glyphs in the frames are mock chrome — drop them.
+- Copy in the Fixes and Prep screens is sourced from the app's existing `faults.ts` / `prep.ts` / `library.ts`; the page references ("p.43", "p.162") come from that same content.
+
+## Files
+- `RangeCard v2.dc.html` — the design canvas. Sections top to bottom: **turn 3** (first-run: 3a–3d + spec), **turn 2** (accessibility: 2a–2c + spec), **turn 1** (the original coach-voice pass: frames 1–9, for context on the surrounding app).
+- `support.js` — runtime needed to open the canvas in a browser. Not application code; do not port it.
+- Open the HTML file directly in a browser to see the frames. Frame 2a's log buttons are live — tap them to watch the strip, counters and announcement text update.
+- Prior related handoff: `design_handoff_scorecard/` in the same project.
+- Repo association: `github.md` at the project root.

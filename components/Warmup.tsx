@@ -21,7 +21,6 @@ export function Warmup({ onSkip, onReady }: { onSkip: () => void; onReady: () =>
       <header className="hdr">
         <div className="hdr-row">
           <div>
-            <div className="hdr-eyebrow">Pre-session</div>
             <div className="hdr-title">Warm up</div>
           </div>
           <button className="link-btn" onClick={onSkip}>Skip</button>
@@ -90,7 +89,7 @@ export function Warmup({ onSkip, onReady }: { onSkip: () => void; onReady: () =>
 
         <button className="cta" onClick={onReady} disabled={!allDone && done.length === 0}>
           <Icon name="play_arrow" size={22} fill />
-          {allDone ? "Start logging" : "I'm ready — start logging"}
+          {allDone ? "Start logging" : "I'm ready, start logging"}
         </button>
       </div>
     </>

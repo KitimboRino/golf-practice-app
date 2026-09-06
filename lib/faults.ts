@@ -12,6 +12,7 @@ export type Area = "driving" | "irons" | "chipping";
 export type Fault = {
   id: string;
   area: Area;
+  name: string;      // short name, e.g. "Slice"
   pattern: string;   // what the golfer logged / noticed
   fault: string;     // likely cause
   fix: string;       // first thing to try
@@ -22,64 +23,72 @@ export const CATALOG: Fault[] = [
   {
     id: "slice",
     area: "driving",
+    name: "Slice",
     pattern: "Starts left, curves hard right",
-    fault: "Slice — out-to-in path from an address aimed left, with an open clubface.",
+    fault: "An out-to-in path from an address aimed left, with an open clubface.",
     fix: "Square your stance and shoulders to the target line, then feel the ball start right of target on an inside path into impact. Soften grip pressure for a free release.",
     ref: "p.162",
   },
   {
     id: "push",
     area: "driving",
+    name: "Push",
     pattern: "Starts right, stays right",
-    fault: "Push — clubhead swinging in-to-out with the face square to that path.",
+    fault: "The clubhead swinging in-to-out with the face square to that path.",
     fix: "Address with your left toe in line with your right heel so the left side is cleared, and swing more left through impact. Then rebuild the feel from a normal stance.",
     ref: "p.168",
   },
   {
     id: "hook",
     area: "driving",
+    name: "Hook",
     pattern: "Starts right, then curves left",
-    fault: "Hook — in-to-out path with a closed face, hips sliding toward the target.",
-    fix: "Put a headcover on the ground ~6in inside the target line to block the inside path. Unwind your hips instead of sliding them. Check grip — see only two knuckles.",
+    fault: "An in-to-out path with a closed face, hips sliding toward the target.",
+    fix: "Put a headcover on the ground ~6in inside the target line to block the inside path. Unwind your hips instead of sliding them. Check your grip shows only two knuckles.",
     ref: "p.163",
   },
   {
     id: "sky",
     area: "driving",
+    name: "Skied drive",
     pattern: "Flies straight but very short (pops up)",
-    fault: "Skied drive — a too-steep, narrow takeaway chopping down on the ball.",
+    fault: "A too-steep, narrow takeaway chopping down on the ball.",
     fix: "Widen the arc: sweep away low and slow, turn your back on the target, swing more around your body. In the downswing, sweep the ball away rather than hitting down.",
     ref: "p.166",
   },
   {
     id: "top",
     area: "driving",
+    name: "Top",
     pattern: "Clips the top, ball scuttles along the ground",
-    fault: "Top — posture rising through the swing, lifting the arc off the ball.",
+    fault: "Posture rising through the swing, lifting the arc off the ball.",
     fix: "Hold your spine angle from address to impact. Practice clipping a tee from the ground with the driver at a constant height, then hit drives focusing on solid contact.",
     ref: "p.167",
   },
   {
     id: "heavy-chip",
     area: "chipping",
+    name: "Heavy-contact scoop",
     pattern: "Lots of fat / heavy contact on chips",
-    fault: "Heavy-contact scoop — trying to help the ball up; clubhead passes the hands before impact.",
-    fix: "Keep your hands ahead of the clubhead through impact — hold the angle in your right wrist so the low point is at the ball, leaving the smallest divot after it.",
+    fault: "Trying to help the ball up, so the clubhead passes the hands before impact.",
+    fix: "Keep your hands ahead of the clubhead through impact. Hold the angle in your right wrist so the low point is at the ball, leaving the smallest divot after it.",
     ref: "p.164",
   },
   {
     id: "shank",
     area: "irons",
+    name: "Shank",
     pattern: "Ball shoots ~45° sideways",
-    fault: "Shank — struck from the hosel; clubhead thrown out on an out-to-in path.",
+    fault: "Struck from the hosel, with the clubhead thrown out on an out-to-in path.",
     fix: "Place an obstacle behind the ball ~3in outside the target line and hit short irons. It forces the club onto the correct path so the sweet spot meets the ball.",
     ref: "p.165",
   },
   {
     id: "pull",
     area: "irons",
+    name: "Pull",
     pattern: "Starts left, stays left",
-    fault: "Pull — out-to-in path with the face square to that path.",
+    fault: "An out-to-in path with the face square to that path.",
     fix: "Feel the club approach from inside the line: draw your right foot back so your right toe is level with your left heel (shoulders square) to make room for an inside path.",
     ref: "p.169",
   },
@@ -104,7 +113,7 @@ export function detectFaults(s: {
     if (s.driving.right / driveTotal >= 0.5) {
       hits.push({
         fault: byId("slice"),
-        note: `${s.driving.right} of ${driveTotal} tee shots missed right. Most often that's a slice — try the fix, or a push if the ball never curves back.`,
+        note: `${s.driving.right} of ${driveTotal} tee shots missed right. Most often that's a slice. Try the fix, or a push if the ball never curves back.`,
       });
     } else if (s.driving.left / driveTotal >= 0.5) {
       hits.push({

@@ -57,7 +57,6 @@ export function Fixes({
             </button>
           )}
           <div style={{ flex: 1 }}>
-            <div className="hdr-eyebrow">Field guide</div>
             <div className="hdr-title">Fixes</div>
           </div>
         </div>
@@ -72,7 +71,7 @@ export function Fixes({
             </div>
             <div className="fault-hero-pat">{hero.pattern}</div>
             <div className="fault-hero-lines">
-              <div className="fault-line"><span className="fault-k">Likely</span>{hero.fault}</div>
+              <div className="fault-line"><span className="fault-k">Likely</span><b>{hero.name}.</b> {hero.fault}</div>
               <div className="fault-line"><span className="fault-k fix">Fix</span>{hero.fix}</div>
             </div>
             <div className="fault-hero-actions">
@@ -97,7 +96,7 @@ export function Fixes({
 
         <div className="fault-note">
           <span className="icon-tile sm dim"><Icon name="info" size={15} /></span>
-          <span>A miss pattern points to the most likely fault, not a certain one — try it first, but a lesson beats a table.</span>
+          <span>A miss pattern points to the most likely fault, not a certain one. Try it first, but a lesson beats a table.</span>
         </div>
 
         {GROUPS.map((g) => {
@@ -115,7 +114,7 @@ export function Fixes({
                   <button key={f.id} className="fault-row" onClick={() => setSelected(f)}>
                     <span>
                       <b>{f.pattern}</b>
-                      <small>{f.fault.split(" — ")[0]}</small>
+                      <small>{f.name}</small>
                     </span>
                     <Icon name="chevron_right" size={20} color="var(--icon-muted)" />
                   </button>

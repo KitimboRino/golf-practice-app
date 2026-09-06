@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PLAN, Week, Session } from "@/lib/plan";
 import { SESSION_FLOW } from "@/lib/prep";
 import { PITCH_FOCUS, PITCHING_DRILL, LIBRARY } from "@/lib/library";
@@ -13,6 +13,8 @@ import { Prep } from "@/components/Prep";
 import { Library } from "@/components/Library";
 import { Warmup } from "@/components/Warmup";
 import { Welcome } from "@/components/Welcome";
+import { FirstRun } from "@/components/FirstRun";
+import { Onboarding, OnbStage, FRESH_ONB, Shot, ReadSession } from "@/lib/onboarding";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/Confirm";
@@ -29,7 +31,7 @@ import { About } from "@/components/About";
 import { APP_VERSION } from "@/lib/version";
 import { doneFx } from "@/lib/haptics";
 
-type Tab = "home" | "session" | "trends" | "more" | "warmup" | "welcome" | "receipt" | "quickpick";
+type Tab = "home" | "session" | "trends" | "more" | "warmup" | "welcome" | "receipt" | "quickpick" | "firstrun";
 
 type QuickFocus = { title: string; body: string };
 
@@ -37,15 +39,15 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 function greeting(name: string, history: SavedSession[]): string {
   const who = name ? `, ${name}` : "";
-  if (history.length === 0) return `Welcome${who} — let's get your baseline down`;
+  if (history.length === 0) return `Welcome${who}. Let's get your baseline down`;
 
   const dayMs = 86400000;
   const since = (d: string) => Math.floor((Date.now() - new Date(d + "T00:00:00").getTime()) / dayMs);
   const gap = since(history[history.length - 1].date);
-  if (gap >= 7) return `First session in ${gap} days${who} — ease back in`;
+  if (gap >= 7) return `First session in ${gap} days${who}. Ease back in`;
 
   const thisWeek = history.filter((s) => since(s.date) < 7).length;
-  if (thisWeek >= 2) return `${thisWeek} sessions this week${who} — keep it going`;
+  if (thisWeek >= 2) return `${thisWeek} sessions this week${who}. Keep it going`;
 
   const h = new Date().getHours();
   const tod = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
@@ -148,6 +150,16 @@ const QUICK_AREAS: { key: keyof Strips; name: string; icon: string }[] = [
   { key: "putting", name: "Putting", icon: "adjust" },
 ];
 
+// "I've only got X today" — limits + reorders tonight's plan session instead of
+// leaving it unlogged. Still the plan session: ticks the slot, keeps the drills.
+const VENUES: { key: string; label: string; icon: string; areas: (keyof Strips)[] }[] = [
+  { key: "full", label: "Full range", icon: "sports_golf", areas: [] },
+  { key: "short", label: "Short-game area", icon: "golf_course", areas: ["chipping", "pitching", "putting"] },
+  { key: "net", label: "Net or cage", icon: "grid_view", areas: ["driving", "irons"] },
+  { key: "putting", label: "Putting green", icon: "adjust", areas: ["putting"] },
+];
+const venueByKey = (k: string) => VENUES.find((v) => v.key === k) ?? VENUES[0];
+
 const missToArea = (m: string): keyof Strips | null =>
   m === "right" || m === "left" ? "driving" : m === "strike" ? "irons" : null;
 
@@ -238,11 +250,11 @@ function QuickPick({
               <button key={f.id} className="focus-opt"
                       onClick={() => chooseFocus({
                         area: f.area as keyof Strips,
-                        title: `Fix: ${f.fault.split(" — ")[0]}`,
+                        title: `Fix: ${f.name}`,
                         body: f.fix,
                       })}>
                 <b>{f.pattern}{f.id === mineFaultId && <span className="focus-tag">your miss</span>}</b>
-                <small>{f.fault.split(" — ")[0]} · {QUICK_AREAS.find((q) => q.key === f.area)?.name}</small>
+                <small>{f.name} · {QUICK_AREAS.find((q) => q.key === f.area)?.name}</small>
               </button>
             ))}
           </div>
@@ -289,7 +301,7 @@ function QuickPick({
           </button>
           <p className="app-foot" style={{ justifyContent: "center" }}>
             <Icon name="bolt" size={13} />
-            Logs to your history and trends — but doesn&apos;t use a plan session.
+            Logs to your history and trends. Not a plan session.
           </p>
         </div>
       </div>
@@ -306,6 +318,8 @@ export default function Page() {
   const [ready, setReady] = useState(false);
   const [name, setName] = useState("");
   const [onboardedAt, setOnboardedAt] = useState<string | null>(null);
+  const [onb, setOnb] = useState<Onboarding | null>(null);
+  const [readShots, setReadShots] = useState<Shot[]>([]);
   const [plannedMiss, setPlannedMiss] = useState<string>("");
   const [overrides, setOverrides] = useState<DrillOverrides>({});
   const [receipt, setReceipt] = useState<
@@ -313,6 +327,7 @@ export default function Page() {
   >(null);
   const toast = useToast();
   const { confirm } = useConfirm();
+  const pendingVenue = useRef<(keyof Strips)[] | undefined>(undefined);
 
   useEffect(() => {
     (async () => {
@@ -322,6 +337,10 @@ export default function Page() {
       setOverrides((await getMeta<DrillOverrides>("drillOverrides")) ?? {});
       const ob = (await getMeta<string>("onboardedAt")) ?? null;
       setOnboardedAt(ob);
+      if (!ob) {
+        setOnb((await getMeta<Onboarding>("onboarding")) ?? FRESH_ONB);
+        setReadShots((await getMeta<ReadSession>("readSession"))?.shots ?? []);
+      }
       const draft = await getMeta<Live>("draft");
       if (draft) {
         setLive(draft);
@@ -331,22 +350,35 @@ export default function Page() {
         const c = await getMeta<{ week: number; session: number }>("cursor");
         if (c) setCursor(c);
       }
-      if (!ob) setTab("welcome");
+      if (!ob) setTab("firstrun");
       setReady(true);
     })();
   }, []);
 
   const cleanName = (n: string) => n.replace(/\s+/g, " ").trim().slice(0, 24);
 
-  async function finishOnboarding(n: string, miss: string) {
-    const nm = cleanName(n);
+  async function onbStage(s: OnbStage) {
+    const next: Onboarding = { ...(onb ?? FRESH_ONB), stage: s };
+    setOnb(next);
+    await setMeta("onboarding", next);
+  }
+
+  async function onbReadShots(shots: Shot[]) {
+    setReadShots(shots);
+    await setMeta("readSession", { shots, completedAt: 0 } satisfies ReadSession);
+  }
+
+  async function completeOnboarding(miss: string) {
     const now = new Date().toISOString();
-    setName(nm);
     setPlannedMiss(miss);
     setOnboardedAt(now);
-    await setMeta("name", nm);
+    setOnb(null);
+    setReadShots([]);
+    setCursor({ week: 0, session: 0 });
     await setMeta("plannedMiss", miss);
     await setMeta("onboardedAt", now);
+    await delMeta("onboarding");
+    await delMeta("readSession");
     setTab("home");
   }
 
@@ -377,7 +409,7 @@ export default function Page() {
   const isDraft = !!live && !editOrig;
   const draftHere = isDraft && live!.weekId === week.id && live!.sessionLabel === session.label;
 
-  async function startSession() {
+  async function startSession(venueAreas?: (keyof Strips)[]) {
     if (isDraft) {
       if (draftHere) { setTab("session"); return; }
       const ok = await confirm({
@@ -388,6 +420,7 @@ export default function Page() {
       });
       if (!ok) { resumeDraft(); return; }
     }
+    pendingVenue.current = venueAreas?.length ? venueAreas : undefined;
     // fresh start — offer the warm-up once per calendar day
     const shown = await getMeta<string>("warmupShown");
     if (shown === today()) openLog();
@@ -395,7 +428,10 @@ export default function Page() {
   }
 
   function openLog() {
-    setLive(emptyLive(week.id, session.label));
+    const l = emptyLive(week.id, session.label);
+    if (pendingVenue.current?.length) l.areas = pendingVenue.current;
+    pendingVenue.current = undefined;
+    setLive(l);
     setTab("session");
   }
 
@@ -515,11 +551,22 @@ export default function Page() {
     );
   }
 
+  if (tab === "firstrun" && onb) {
+    return (
+      <FirstRun
+        stage={onb.stage}
+        onSetStage={onbStage}
+        readShots={readShots}
+        onReadShots={onbReadShots}
+        onComplete={completeOnboarding}
+      />
+    );
+  }
+
   if (tab === "welcome") {
-    return onboardedAt ? (
+    // post-onboarding only — the greeting taps here to edit the name
+    return (
       <Welcome isEdit name={name} onDone={(n) => saveName(n)} onCancel={() => setTab("home")} />
-    ) : (
-      <Welcome onDone={finishOnboarding} />
     );
   }
 
@@ -571,7 +618,7 @@ export default function Page() {
           <More history={history} plannedMiss={plannedMiss} overrides={overrides} onSwap={swapDrill}
                 onPracticeFix={(f) => startQuick(
                   [f.area],
-                  { title: `Working on: ${f.fault.split(" — ")[0]}`, body: f.fix },
+                  { title: `Working on: ${f.name}`, body: f.fix },
                 )} />
         )}
       </main>
@@ -627,9 +674,7 @@ function More({ history, plannedMiss, overrides, onSwap, onPracticeFix }: {
       <header className="hdr">
         <div className="hdr-row">
           <div>
-            <div className="hdr-eyebrow">Toolkit</div>
             <div className="hdr-title">More</div>
-            <div className="hdr-sub">Reference &amp; guidance</div>
           </div>
         </div>
       </header>
@@ -659,7 +704,7 @@ function More({ history, plannedMiss, overrides, onSwap, onPracticeFix }: {
 
         <p className="app-foot">
           <Icon name="lock" size={13} />
-          Your sessions stay on this device. No account, nothing uploaded — back them up from Trends.
+          Your sessions stay on this device. No account, nothing uploaded. Back them up from Trends.
         </p>
       </div>
     </>
@@ -679,7 +724,7 @@ function Home({
   onEditName: () => void;
   oneThing: import("@/lib/verdict").OneThing | null;
   streak: number;
-  onStart: () => void;
+  onStart: (venueAreas?: (keyof Strips)[]) => void;
   onQuick: () => void;
   draftLabel: string | null;
   draftHere: boolean;
@@ -702,6 +747,8 @@ function Home({
     : null;
   const donePct = Math.min(100, Math.round((loggedCount / flat.length) * 100));
   const firstRun = done === 0;
+  const [venue, setVenue] = useState("full");
+  const v = venueByKey(venue);
 
   return (
     <>
@@ -731,7 +778,7 @@ function Home({
         {draftLabel && !draftHere && (
           <button className="draft-banner" onClick={onResume}>
             <Icon name="pending_actions" size={18} />
-            <span>Unfinished — {draftLabel}</span>
+            <span>Unfinished · {draftLabel}</span>
             <b>Resume</b>
           </button>
         )}
@@ -747,7 +794,7 @@ function Home({
               <Icon name="edit" size={15} />
             </button>
             <p className="home-hero-p">
-              Let&apos;s get your baseline down — one honest pass through all five areas.
+              Let&apos;s get your baseline down. One honest pass through all five areas.
               No targets to hit today, just the truth about where your game is.
             </p>
             <div className="home-hero-meta">
@@ -803,13 +850,7 @@ function Home({
         </div>
         )}
 
-        <div className="focuscard">
-          <div className="lbl">
-            <span className="icon-tile sm"><Icon name="target" size={15} /></span>
-            <span className="eyebrow">This week&apos;s focus</span>
-          </div>
-          <div className="body">{week.focus}</div>
-        </div>
+        <p className="week-focus"><b>This week</b>{week.focus}</p>
 
         <div className="grp">
           <div className="sec-head">
@@ -843,12 +884,37 @@ function Home({
         </div>
 
         <div className="grp" style={{ paddingTop: 4 }}>
-          <button className="cta" onClick={onStart}>
+          <button className="cta" onClick={() => onStart(v.areas)}>
             <Icon name="play_arrow" size={22} fill />
-            {draftHere ? "Resume session" : "Start this session"}
+            {draftHere ? "Resume session" : venue === "full" ? "Start this session" : `Start · ${v.label}`}
           </button>
+
+          {!draftHere && (
+            <details className="venue">
+              <summary>
+                <Icon name="place" size={16} />
+                {venue === "full" ? "Somewhere smaller today?" : v.label}
+                <Icon name="expand_more" size={18} className="venue-chev" />
+              </summary>
+              <div className="venue-opts">
+                {VENUES.map((opt) => (
+                  <button
+                    key={opt.key}
+                    className={"venue-opt" + (opt.key === venue ? " on" : "")}
+                    aria-pressed={opt.key === venue}
+                    onClick={() => setVenue(opt.key)}
+                  >
+                    <Icon name={opt.icon} size={17} />
+                    <span>{opt.label}</span>
+                    <small>{opt.areas.length ? `${opt.areas.length} area${opt.areas.length === 1 ? "" : "s"}` : "all 5"}</small>
+                  </button>
+                ))}
+              </div>
+            </details>
+          )}
+
           <button className="btn-ghost" onClick={onQuick}>
-            <Icon name="bolt" size={17} />Quick session — just a few balls
+            <Icon name="bolt" size={17} />Quick session, just a few balls
           </button>
           <div className="arealist">
             <div className="arealist-track">
@@ -905,35 +971,35 @@ const STEPS: StepDef[] = [
 
 function liveNote(area: AreaKey, strip: string[]): string {
   const n = strip.length;
-  if (n < 3) return "The pattern tells you more than the total — keep going.";
+  if (n < 3) return "The pattern tells you more than the total. Keep going.";
   const c = (k: string) => strip.reduce((a, x) => (x === k ? a + 1 : a), 0);
   const good = area === "driving" ? "fairway" : area === "irons" ? "solid"
     : area === "chipping" ? "on" : area === "pitching" ? "close" : "in";
   const goodRate = c(good) / n;
   if (area === "driving") {
-    if (c("right") >= c("left") + 2) return "Leaking right — set your feet left and let it be.";
-    if (c("left") >= c("right") + 2) return "Pulling left — your shoulders are probably closed at address.";
+    if (c("right") >= c("left") + 2) return "Leaking right. Set your feet left and let it be.";
+    if (c("left") >= c("right") + 2) return "Pulling left. Your shoulders are probably closed at address.";
     if (goodRate >= 0.7) return "Best start-line run of the day. Change nothing.";
-    return "Misses go both ways — that's timing, not aim.";
+    return "Misses go both ways, so it's timing, not aim.";
   }
   if (area === "irons") {
-    if (c("fat") >= c("thin") + 2) return "Heavy — feel the low point ahead of the ball.";
-    if (c("thin") >= c("fat") + 2) return "Thin — you're standing up out of it. Chest stays down.";
+    if (c("fat") >= c("thin") + 2) return "Heavy contact. Feel the low point ahead of the ball.";
+    if (c("thin") >= c("fat") + 2) return "Thin. You're standing up out of it, so chest stays down.";
     if (goodRate >= 0.7) return "Flushing it. Same swing, next ball.";
-    return "Contact's mixed — settle your tempo before the next one.";
+    return "Contact is mixed. Settle your tempo before the next one.";
   }
   if (area === "chipping") {
     if (goodRate >= 0.6) return "Landing zone dialled. Trust it.";
     return "Short of the towel? Commit to a firmer, shorter stroke.";
   }
   if (area === "pitching") {
-    if (c("short") >= c("long") + 2) return "Coming up short — take one more club-length of backswing.";
-    if (c("long") >= c("short") + 2) return "Flying it long — quieten the hit through impact.";
+    if (c("short") >= c("long") + 2) return "Coming up short. Take one more club-length of backswing.";
+    if (c("long") >= c("short") + 2) return "Flying it long. Quieten the hit through impact.";
     if (goodRate >= 0.6) return "Distance control is there today.";
-    return "Distances scattered — pick one number and groove it.";
+    return "Distances scattered. Pick one number and groove it.";
   }
   if (goodRate >= 0.7) return "Stroke's holding. Keep the same routine.";
-  return "Misses creeping in — slow the takeaway on the next few.";
+  return "Misses creeping in. Slow the takeaway on the next few.";
 }
 
 function SessionScreen({
@@ -949,9 +1015,12 @@ function SessionScreen({
   onFinish: () => void;
   onDiscard: () => void;
 }) {
-  const quickAreas = live.areas;
-  const isQuick = !!quickAreas;
-  const steps = quickAreas ? STEPS.filter((s) => quickAreas.includes(s.area)) : STEPS;
+  const areaFilter = live.areas;
+  const isQuick = live.weekId === ADHOC;                 // truly ad-hoc: no drills, no flow strip
+  const venueLimited = !isQuick && !!areaFilter?.length; // a plan session at a smaller venue
+  const steps = areaFilter?.length
+    ? areaFilter.map((a) => STEPS.find((s) => s.area === a)).filter((s): s is StepDef => !!s)
+    : STEPS;
 
   const [open, setOpen] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(steps.map((s, i) => [s.id, i === 0])),
@@ -1013,7 +1082,9 @@ function SessionScreen({
             <div className="hdr-sub sm">
               {isQuick
                 ? `${total} area${total === 1 ? "" : "s"} · log as many balls as you like`
-                : `${week.title} block · 5 areas`}
+                : venueLimited
+                  ? `${week.title} block · ${total} of 5 areas`
+                  : `${week.title} block · 5 areas`}
             </div>
           </div>
           <div className="chip"><Icon name="check_circle" size={16} fill={logged === total} />{logged}/{total}</div>

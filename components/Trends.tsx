@@ -118,7 +118,7 @@ export function Trends({
             <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
               <div className="empty-h">Your first line starts today</div>
               <div className="empty-p">
-                Log one range session and this page fills in — solid strikes, fairways found,
+                Log one range session and this page fills in: solid strikes, fairways found,
                 putts made, session by session.
               </div>
             </div>
@@ -175,7 +175,7 @@ export function Trends({
           <div>
             <div className="hdr-title">Trends</div>
             <div className="hdr-sub">
-              {history.length} {history.length === 1 ? "session" : "sessions"} · weeks 1–4
+              {history.length} {history.length === 1 ? "session" : "sessions"} · weeks 1-4
             </div>
           </div>
           <button
@@ -210,7 +210,6 @@ export function Trends({
           <div className="coach" key={`${h.fault.id}-${i}`}>
             <Icon name="conversion_path" size={18} color="var(--blue-icon)" style={{ marginTop: 1 }} />
             <div className="coach-body">
-              <div className="eyebrow" style={{ color: "var(--blue-icon)" }}>Coach note</div>
               <div className="coach-h">{h.fault.pattern}</div>
               <div className="coach-note">{h.note}</div>
               <div className="coach-fix">
@@ -326,7 +325,6 @@ function VerdictCard({ history }: { history: SavedSession[] }) {
   return (
     <>
       <div className={"verdict " + v.tone}>
-        <div className="eyebrow"><Icon name="verified" size={15} />Verdict</div>
         <div className="verdict-h">{v.headline}</div>
         <div className="verdict-detail">{v.detail}</div>
         <div className="verdict-bars">

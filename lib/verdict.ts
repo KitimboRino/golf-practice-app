@@ -44,14 +44,14 @@ export function verdict(history: SavedSession[]): Verdict | null {
   const confidence = Math.min(4, span);
   const note =
     confidence >= 4
-      ? "Confident — four sessions of signal."
+      ? "Confident. Four sessions of signal."
       : `Confidence ${confidence} of 4 · ${4 - confidence} more session${4 - confidence === 1 ? "" : "s"} to be certain.`;
 
   if (change >= 5) {
     return {
       tone: "up",
       headline: "It's working.",
-      detail: `Your solid rate has climbed ${change} points over ${span} sessions — past the noise in your own numbers. Keep the plan.`,
+      detail: `Your solid rate has climbed ${change} points over ${span} sessions, past the noise in your own numbers. Keep the plan.`,
       confidence,
       note,
     };
@@ -60,7 +60,7 @@ export function verdict(history: SavedSession[]): Verdict | null {
     return {
       tone: "down",
       headline: "Something slipped.",
-      detail: `Your solid rate is down ${Math.abs(change)} points over ${span} sessions. Worth changing one thing — check the miss pattern below.`,
+      detail: `Your solid rate is down ${Math.abs(change)} points over ${span} sessions. Worth changing one thing. Check the miss pattern below.`,
       confidence,
       note,
     };
@@ -68,7 +68,7 @@ export function verdict(history: SavedSession[]): Verdict | null {
   return {
     tone: "flat",
     headline: "Holding steady.",
-    detail: `Solid rate has moved ${change >= 0 ? "+" : ""}${change} points over ${span} sessions — inside the noise. Give the plan a couple more sessions before you judge it.`,
+    detail: `Solid rate has moved ${change >= 0 ? "+" : ""}${change} points over ${span} sessions, inside the noise. Give the plan a couple more sessions before you judge it.`,
     confidence,
     note,
   };
@@ -114,7 +114,7 @@ export function todaysOneThing(history: SavedSession[], plannedMiss?: string): O
     if (plannedMiss === "right") {
       return {
         title: "Start every drive left of the flag.",
-        body: "You told us the ball leaks right. Today, only count a drive as good if it starts left of your target — the finish can look after itself.",
+        body: "You told us the ball leaks right. Today, only count a drive as good if it starts left of your target. The finish can look after itself.",
         source: "From your setup answer",
       };
     }

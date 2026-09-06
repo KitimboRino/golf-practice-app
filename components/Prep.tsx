@@ -27,7 +27,6 @@ export function Prep({ onBack }: { onBack?: () => void }) {
             </button>
           )}
           <div style={{ flex: 1 }}>
-            <div className="hdr-eyebrow">Protocol</div>
             <div className="hdr-title">Prep</div>
           </div>
         </div>
@@ -83,7 +82,7 @@ export function Prep({ onBack }: { onBack?: () => void }) {
                 {SESSION_FLOW.map((s, i) => <li key={i}>{s}</li>)}
               </ol>
             </div>
-            <div className="grp-lbl" style={{ marginTop: 4 }}>Warm-up runs first — {WARMUP.length} movements, on its own screen when you start a session.</div>
+            <div className="grp-lbl" style={{ marginTop: 4 }}>Warm-up runs first. {WARMUP.length} movements, on its own screen when you start a session.</div>
           </>
         )}
 

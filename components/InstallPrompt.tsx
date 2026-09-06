@@ -71,7 +71,7 @@ export function InstallPrompt() {
             <li>Tap <span className="msr">ios_share</span> Share in the Safari toolbar</li>
             <li>Scroll down and choose <b>Add to Home Screen</b></li>
           </ol>
-          <p className="install-ios-note">Opens full-screen, works offline — no App Store needed.</p>
+          <p className="install-ios-note">Opens full-screen, works offline. No App Store needed.</p>
         </div>
       </div>
     );
@@ -83,7 +83,7 @@ export function InstallPrompt() {
     <div className="install">
       <div className="install-card">
         <span className="msr" style={{ fontSize: 19, color: "var(--green)" }}>install_mobile</span>
-        <span className="install-txt">Install RangeCard — offline, full-screen</span>
+        <span className="install-txt">Install RangeCard for offline, full-screen use</span>
         <button className="install-go" onClick={install}>Install</button>
         <button className="install-x" onClick={close} aria-label="Dismiss">
           <span className="msr" style={{ fontSize: 18 }}>close</span>

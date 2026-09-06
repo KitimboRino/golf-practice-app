@@ -20,7 +20,7 @@ export function About({ onBack }: { onBack: () => void }) {
   async function reset() {
     const ok = await confirm({
       title: "Reset RangeCard?",
-      body: "Every session, note and setting on this device is erased. This cannot be undone — export a backup from Trends first if you want to keep your history.",
+      body: "Every session, note and setting on this device is erased. This cannot be undone. Export a backup from Trends first if you want to keep your history.",
       confirmLabel: "Erase everything",
       tone: "danger",
     });
@@ -37,8 +37,7 @@ export function About({ onBack }: { onBack: () => void }) {
             <Icon name="arrow_back" size={22} />
           </button>
           <div style={{ flex: 1 }}>
-            <div className="hdr-eyebrow">About</div>
-            <div className="hdr-title">RangeCard</div>
+            <div className="hdr-title">About RangeCard</div>
           </div>
         </div>
       </header>
@@ -55,7 +54,7 @@ export function About({ onBack }: { onBack: () => void }) {
 
         <p className="about-p">
           A four-week range-practice plan. Log every ball, and RangeCard tells you whether
-          the work is landing — session by session.
+          the work is landing, session by session.
         </p>
 
         <div className="prep-card">
