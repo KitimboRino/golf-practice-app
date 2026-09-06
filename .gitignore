@@ -8,3 +8,4 @@ public/workbox-*.js.map
 .DS_Store
 *.log
 stitch_rangecard_golf_practice_tracker
+*.md

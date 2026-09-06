@@ -8,6 +8,9 @@ const withPWA = require("next-pwa")({
 
 const nextConfig = {
   reactStrictMode: true,
+  env: {
+    NEXT_PUBLIC_APP_VERSION: require("./package.json").version,
+  },
 };
 
 module.exports = withPWA(nextConfig);

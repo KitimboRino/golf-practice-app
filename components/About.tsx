@@ -78,7 +78,7 @@ export function About({ onBack }: { onBack: () => void }) {
           <Icon name="menu_book" size={18} color="var(--blue-icon)" style={{ marginTop: 1 }} />
           <div className="stick-b">
             The plan, drills and fault fixes are <b>adapted from standard golf-instruction
-            references</b>. RangeCard is a personal practice tool, not coaching.
+            references and expert advice</b>. RangeCard is a personal practice tool, not coaching.
           </div>
         </div>
 
