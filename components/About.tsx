@@ -53,8 +53,9 @@ export function About({ onBack }: { onBack: () => void }) {
         </div>
 
         <p className="about-p">
-          A four-week range-practice plan. Log every ball, and RangeCard tells you whether
-          the work is landing, session by session.
+          Built around a four-week range-practice plan: log every ball and RangeCard tells
+          you whether the work is landing, session by session. It also tracks your on-course
+          rounds, runs a handful of scored practice games, and drills a pre-shot routine.
         </p>
 
         <div className="prep-card">
@@ -69,7 +70,7 @@ export function About({ onBack }: { onBack: () => void }) {
           </div>
           <div className="pitem">
             <b>Back it up</b>
-            <span>Trends → the tune icon → Export backup writes a .json file you can re-import on any device.</span>
+            <span>More → Trends → the tune icon → Export backup writes a .json file (sessions, rounds and games) you can re-import on any device.</span>
           </div>
         </div>
 
