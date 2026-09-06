@@ -15,13 +15,20 @@ import { Warmup } from "@/components/Warmup";
 import { Welcome } from "@/components/Welcome";
 import { FirstRun } from "@/components/FirstRun";
 import { Onboarding, OnbStage, FRESH_ONB, Shot, ReadSession } from "@/lib/onboarding";
+import { Round, RoundSummary } from "@/components/Round";
+import { Games } from "@/components/Games";
+import { Routine } from "@/components/Routine";
+import { LiveRound } from "@/lib/round";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/Confirm";
 import {
   SavedSession, SessionInput, Strips, emptyStrips, countIn, ADHOC,
-  DrillOverride, DrillOverrides,
+  DrillOverride, DrillOverrides, SavedRound, RoundInput,
+  GameAttempt, GameAttemptInput,
   saveSession, allSessions, deleteSession, restoreSession, uuid,
+  saveRound, allRounds, deleteRound, restoreRound,
+  saveGameAttempt, allGameAttempts, deleteGameAttempt, restoreGameAttempt,
   getMeta, setMeta, delMeta,
 } from "@/lib/db";
 import { solidPct } from "@/lib/stats";
@@ -31,7 +38,7 @@ import { About } from "@/components/About";
 import { APP_VERSION } from "@/lib/version";
 import { doneFx } from "@/lib/haptics";
 
-type Tab = "home" | "session" | "trends" | "more" | "warmup" | "welcome" | "receipt" | "quickpick" | "firstrun";
+type Tab = "home" | "session" | "trends" | "more" | "warmup" | "welcome" | "receipt" | "quickpick" | "firstrun" | "round";
 
 type QuickFocus = { title: string; body: string };
 
@@ -325,6 +332,10 @@ export default function Page() {
   const [receipt, setReceipt] = useState<
     { session: SavedSession; history: SavedSession[]; nextCursor: { week: number; session: number } } | null
   >(null);
+  const [rounds, setRounds] = useState<SavedRound[]>([]);
+  const [round, setRound] = useState<LiveRound | null>(null);
+  const [roundView, setRoundView] = useState<{ round: SavedRound; fresh: boolean } | null>(null);
+  const [games, setGames] = useState<GameAttempt[]>([]);
   const toast = useToast();
   const { confirm } = useConfirm();
   const pendingVenue = useRef<(keyof Strips)[] | undefined>(undefined);
@@ -332,6 +343,9 @@ export default function Page() {
   useEffect(() => {
     (async () => {
       setHistory(await allSessions());
+      setRounds(await allRounds());
+      setGames(await allGameAttempts());
+      setRound((await getMeta<LiveRound>("roundDraft")) ?? null);
       setName((await getMeta<string>("name")) ?? "");
       setPlannedMiss((await getMeta<string>("plannedMiss")) ?? "");
       setOverrides((await getMeta<DrillOverrides>("drillOverrides")) ?? {});
@@ -401,6 +415,71 @@ export default function Page() {
   useEffect(() => {
     if (live && !editOrig) setMeta("draft", live);
   }, [live, editOrig]);
+
+  // persist the round in progress so a reload resumes on the same hole
+  useEffect(() => {
+    if (round) setMeta("roundDraft", round);
+  }, [round]);
+
+  async function finishRound(r: LiveRound) {
+    const rec: RoundInput = {
+      id: uuid(),
+      createdAt: Date.now(),
+      date: isDate(r.date) ? r.date : today(),
+      course: r.course.trim() || undefined,
+      holes: r.holes,
+      holeData: r.holeData,
+    };
+    await saveRound(rec);
+    await delMeta("roundDraft");
+    const all = await allRounds();
+    setRounds(all);
+    setRound(null);
+    doneFx();
+    setRoundView({ round: all.find((x) => x.id === rec.id) ?? (rec as SavedRound), fresh: true });
+  }
+
+  async function discardRound() {
+    await delMeta("roundDraft");
+    setRound(null);
+  }
+
+  async function removeRound(id: string) {
+    await deleteRound(id);
+    setRounds(await allRounds());
+    if (roundView?.round.id === id) setRoundView(null);
+    toast.show("Round deleted", {
+      label: "Undo",
+      run: async () => {
+        await restoreRound(id);
+        setRounds(await allRounds());
+      },
+    });
+  }
+
+  async function saveGame(gameId: string, score: number) {
+    const rec: GameAttemptInput = {
+      id: uuid(),
+      gameId,
+      score,
+      date: today(),
+      createdAt: Date.now(),
+    };
+    await saveGameAttempt(rec);
+    setGames(await allGameAttempts());
+  }
+
+  async function removeGame(id: string) {
+    await deleteGameAttempt(id);
+    setGames(await allGameAttempts());
+    toast.show("Run deleted", {
+      label: "Undo",
+      run: async () => {
+        await restoreGameAttempt(id);
+        setGames(await allGameAttempts());
+      },
+    });
+  }
 
   const week = PLAN[cursor.week];
   const session = week.sessions[cursor.session];
@@ -570,6 +649,16 @@ export default function Page() {
     );
   }
 
+  if (tab === "round" && roundView) {
+    return (
+      <RoundSummary
+        round={roundView.round}
+        fresh={roundView.fresh}
+        onDone={() => { setRoundView(null); if (roundView.fresh) setTab("home"); }}
+      />
+    );
+  }
+
   if (tab === "receipt" && receipt) {
     return (
       <SessionReceipt
@@ -608,14 +697,33 @@ export default function Page() {
                          editMode={!!editOrig} onFinish={finishSession} onDiscard={discard} />
         )}
         {tab === "trends" && (
-          <Trends history={history} onDelete={onDelete} onEdit={editSession}
+          <Trends history={history} onDelete={onDelete} onEdit={editSession} onBack={() => setTab("more")}
                   onStart={startSession} onImported={async () => setHistory(await allSessions())} />
         )}
         {tab === "warmup" && (
           <Warmup onSkip={dismissWarmup} onReady={dismissWarmup} />
         )}
+        {tab === "round" && (
+          <Round
+            liveRound={round}
+            onChange={setRound}
+            onStart={setRound}
+            onFinish={finishRound}
+            onDiscard={discardRound}
+            rounds={rounds}
+            onViewRound={(r) => setRoundView({ round: r, fresh: false })}
+            onDeleteRound={removeRound}
+            onPractice={(areas, focus) => startQuick(areas, focus)}
+          />
+        )}
         {tab === "more" && (
           <More history={history} plannedMiss={plannedMiss} overrides={overrides} onSwap={swapDrill}
+                games={games} onSaveGame={saveGame} onDeleteGame={removeGame}
+                onOpenTrends={() => setTab("trends")}
+                sessionDraft={isDraft ? live!.sessionLabel : null}
+                onResumeSession={resumeDraft}
+                hasRound={!!round}
+                onResumeRound={() => setTab("round")}
                 onPracticeFix={(f) => startQuick(
                   [f.area],
                   { title: `Working on: ${f.name}`, body: f.fix },
@@ -635,28 +743,47 @@ export default function Page() {
           </span>
           Log
         </button>
-        <button className={`nav-item${tab === "trends" ? " active" : ""}`} onClick={() => setTab("trends")}>
-          <Icon name="show_chart" size={24} fill={tab === "trends"} />Trends
+        <button className={`nav-item${tab === "round" ? " active" : ""}`} onClick={() => setTab("round")}>
+          <span className="nav-glyph">
+            <Icon name="golf_course" size={24} fill={tab === "round"} />
+            {round && <span className="nav-dot" />}
+          </span>
+          Round
         </button>
-        <button className={`nav-item${tab === "more" ? " active" : ""}`} onClick={() => setTab("more")}>
-          <Icon name="more_horiz" size={24} fill={tab === "more"} />More
+        <button className={`nav-item${tab === "more" || tab === "trends" ? " active" : ""}`}
+                onClick={() => setTab("more")}>
+          <Icon name="more_horiz" size={24} fill={tab === "more" || tab === "trends"} />More
         </button>
       </nav>
     </>
   );
 }
 
-function More({ history, plannedMiss, overrides, onSwap, onPracticeFix }: {
+function More({
+  history, plannedMiss, overrides, onSwap, games, onSaveGame, onDeleteGame, onPracticeFix,
+  onOpenTrends, sessionDraft, onResumeSession, hasRound, onResumeRound,
+}: {
   history: SavedSession[];
   plannedMiss: string;
   overrides: DrillOverrides;
   onSwap: (area: keyof DrillOverrides, drill: DrillOverride | null) => void;
+  games: GameAttempt[];
+  onSaveGame: (gameId: string, score: number) => void;
+  onDeleteGame: (id: string) => void;
   onPracticeFix: (fault: import("@/lib/faults").Fault) => void;
+  onOpenTrends: () => void;
+  sessionDraft: string | null;
+  onResumeSession: () => void;
+  hasRound: boolean;
+  onResumeRound: () => void;
 }) {
-  const [view, setView] = useState<"menu" | "prep" | "library" | "fixes" | "about">("menu");
+  const [view, setView] = useState<"menu" | "prep" | "routine" | "library" | "fixes" | "games" | "about">("menu");
   const [libFocus, setLibFocus] = useState<import("@/lib/faults").Fault | null>(null);
   if (view === "about") return <About onBack={() => setView("menu")} />;
   if (view === "prep") return <Prep onBack={() => setView("menu")} />;
+  if (view === "routine") return <Routine onBack={() => setView("menu")} />;
+  if (view === "games")
+    return <Games attempts={games} onBack={() => setView("menu")} onSave={onSaveGame} onDelete={onDeleteGame} />;
   if (view === "library")
     return (
       <Library onBack={() => { setLibFocus(null); setView("menu"); }}
@@ -675,32 +802,69 @@ function More({ history, plannedMiss, overrides, onSwap, onPracticeFix }: {
         <div className="hdr-row">
           <div>
             <div className="hdr-title">More</div>
+            <div className="hdr-sub">Everything outside the plan</div>
           </div>
         </div>
       </header>
       <div className="screen">
-        <button className="more-row" onClick={() => setView("prep")}>
-          <span className="more-ic"><Icon name="self_improvement" size={22} color="var(--green)" /></span>
-          <span className="more-txt"><b>Prep</b><span>Warm-up, setup check, session flow</span></span>
-          <Icon name="chevron_right" size={20} color="var(--icon-muted)" />
-        </button>
-        <button className="more-row" onClick={() => setView("library")}>
-          <span className="more-ic"><Icon name="menu_book" size={22} color="var(--green)" /></span>
-          <span className="more-txt"><b>Drill library</b><span>Alternate drills for every area</span></span>
-          <Icon name="chevron_right" size={20} color="var(--icon-muted)" />
-        </button>
-        <button className="more-row" onClick={() => setView("fixes")}>
-          <span className="more-ic"><Icon name="build" size={22} color="var(--green)" /></span>
-          <span className="more-txt"><b>Fixes</b><span>Miss patterns and the first fix to try</span></span>
-          <Icon name="chevron_right" size={20} color="var(--icon-muted)" />
-        </button>
-        <button className="more-row" onClick={() => setView("about")}>
-          <span className="more-ic"><Icon name="info" size={22} color="var(--green)" /></span>
-          <span className="more-txt">
-            <b>About</b><span>Version {APP_VERSION} · your data &amp; how it works</span>
-          </span>
-          <Icon name="chevron_right" size={20} color="var(--icon-muted)" />
-        </button>
+        {(sessionDraft || hasRound) && (
+          <div className="more-resume">
+            {sessionDraft && (
+              <button className="draft-banner" onClick={onResumeSession}>
+                <Icon name="pending_actions" size={18} />
+                <span>Session in progress</span>
+                <b>Resume</b>
+              </button>
+            )}
+            {hasRound && (
+              <button className="draft-banner" onClick={onResumeRound}>
+                <Icon name="golf_course" size={18} />
+                <span>Round in progress</span>
+                <b>Resume</b>
+              </button>
+            )}
+          </div>
+        )}
+
+        <div className="more-list">
+          <button className="more-row" onClick={onOpenTrends}>
+            <span className="more-ic"><Icon name="show_chart" size={22} color="var(--green)" /></span>
+            <span className="more-txt"><b>Trends</b><span>Your numbers, session by session</span></span>
+            <Icon name="chevron_right" size={20} color="var(--icon-muted)" />
+          </button>
+          <button className="more-row" onClick={() => setView("games")}>
+            <span className="more-ic"><Icon name="emoji_events" size={22} color="var(--green)" /></span>
+            <span className="more-txt"><b>Practice games</b><span>Scored challenges to beat your best</span></span>
+            <Icon name="chevron_right" size={20} color="var(--icon-muted)" />
+          </button>
+          <button className="more-row" onClick={() => setView("fixes")}>
+            <span className="more-ic"><Icon name="build" size={22} color="var(--green)" /></span>
+            <span className="more-txt"><b>Fixes</b><span>Your miss pattern and its first fix</span></span>
+            <Icon name="chevron_right" size={20} color="var(--icon-muted)" />
+          </button>
+          <button className="more-row" onClick={() => setView("routine")}>
+            <span className="more-ic"><Icon name="track_changes" size={22} color="var(--green)" /></span>
+            <span className="more-txt"><b>Pre-shot routine</b><span>The same steps before every shot</span></span>
+            <Icon name="chevron_right" size={20} color="var(--icon-muted)" />
+          </button>
+          <button className="more-row" onClick={() => setView("prep")}>
+            <span className="more-ic"><Icon name="self_improvement" size={22} color="var(--green)" /></span>
+            <span className="more-txt"><b>Prep</b><span>Warm-up, setup check and session flow</span></span>
+            <Icon name="chevron_right" size={20} color="var(--icon-muted)" />
+          </button>
+          <button className="more-row" onClick={() => setView("library")}>
+            <span className="more-ic"><Icon name="menu_book" size={22} color="var(--green)" /></span>
+            <span className="more-txt"><b>Drill library</b><span>Alternate drills for every practice area</span></span>
+            <Icon name="chevron_right" size={20} color="var(--icon-muted)" />
+          </button>
+          <button className="more-row" onClick={() => setView("about")}>
+            <span className="more-ic"><Icon name="info" size={22} color="var(--green)" /></span>
+            <span className="more-txt">
+              <b>About</b><span>Version {APP_VERSION} · your data and how it works</span>
+            </span>
+            <Icon name="chevron_right" size={20} color="var(--icon-muted)" />
+          </button>
+        </div>
 
         <p className="app-foot">
           <Icon name="lock" size={13} />

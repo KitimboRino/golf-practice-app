@@ -20,7 +20,7 @@ export function About({ onBack }: { onBack: () => void }) {
   async function reset() {
     const ok = await confirm({
       title: "Reset RangeCard?",
-      body: "Every session, note and setting on this device is erased. This cannot be undone. Export a backup from Trends first if you want to keep your history.",
+      body: "Every session, round, note and setting on this device is erased. This cannot be undone. Export a backup from Trends first if you want to keep your history.",
       confirmLabel: "Erase everything",
       tone: "danger",
     });

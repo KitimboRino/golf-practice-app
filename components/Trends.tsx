@@ -39,13 +39,14 @@ function downloadText(name: string, text: string) {
 }
 
 export function Trends({
-  history, onDelete, onEdit, onStart, onImported,
+  history, onDelete, onEdit, onStart, onImported, onBack,
 }: {
   history: SavedSession[];
   onDelete: (id: string) => void;
   onEdit: (s: SavedSession) => void;
   onStart: () => void;
   onImported: () => void;
+  onBack: () => void;
 }) {
   const [showAll, setShowAll] = useState(false);
   const [showData, setShowData] = useState(false);
@@ -73,7 +74,7 @@ export function Trends({
       onImported();
       setShowData(false);
       toast.show(
-        `Imported ${added} session${added === 1 ? "" : "s"}` +
+        `Imported ${added} record${added === 1 ? "" : "s"}` +
         (skipped ? `, skipped ${skipped} invalid row${skipped === 1 ? "" : "s"}` : ""),
       );
     } catch (e) {
@@ -100,8 +101,11 @@ export function Trends({
     return (
       <>
         <header className="hdr">
-          <div className="hdr-row">
-            <div>
+          <div className="hdr-row" style={{ alignItems: "center" }}>
+            <button className="icon-btn" onClick={onBack} aria-label="Back">
+              <Icon name="arrow_back" size={22} />
+            </button>
+            <div style={{ flex: 1 }}>
               <div className="hdr-title">Trends</div>
               <div className="hdr-sub">No sessions yet</div>
             </div>
@@ -171,8 +175,11 @@ export function Trends({
   return (
     <>
       <header className="hdr">
-        <div className="hdr-row">
-          <div>
+        <div className="hdr-row" style={{ alignItems: "center" }}>
+          <button className="icon-btn" onClick={onBack} aria-label="Back">
+            <Icon name="arrow_back" size={22} />
+          </button>
+          <div style={{ flex: 1 }}>
             <div className="hdr-title">Trends</div>
             <div className="hdr-sub">
               {history.length} {history.length === 1 ? "session" : "sessions"} · weeks 1-4

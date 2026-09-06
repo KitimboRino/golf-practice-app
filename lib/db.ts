@@ -35,6 +35,55 @@ export type SavedSession = {
 export const countIn = (arr: string[] | undefined, key: string) =>
   (arr ?? []).reduce((n, x) => (x === key ? n + 1 : n), 0);
 
+// ---- on-course rounds (separate from range sessions) ----
+export type RoundHole = {
+  par: 3 | 4 | 5;
+  fairwayHit: boolean | null;   // null on par 3s (no fairway to hit)
+  gir: boolean;                 // green in regulation
+  putts: number;
+  upAndDown: boolean | null;    // scrambling — only meaningful when gir === false
+};
+
+export type SavedRound = {
+  id: string;
+  date: string;                 // yyyy-mm-dd
+  course?: string;
+  holes: 9 | 18;                // hole count
+  holeData: RoundHole[];        // one entry per hole (length === holes)
+  createdAt: number;
+  updatedAt: number;
+  deleted?: boolean;
+};
+
+export type RoundInput = Omit<SavedRound, "updatedAt" | "deleted"> & {
+  updatedAt?: number;
+  deleted?: boolean;
+};
+
+// ---- scored practice games (one recorded number per attempt) ----
+export type GameAttempt = {
+  id: string;
+  gameId: string;               // matches a Game.id in lib/games.ts
+  date: string;                 // yyyy-mm-dd
+  score: number;                // the number the golfer recorded
+  createdAt: number;
+  updatedAt: number;
+  deleted?: boolean;
+};
+
+export type GameAttemptInput = Omit<GameAttempt, "updatedAt" | "deleted"> & {
+  updatedAt?: number;
+  deleted?: boolean;
+};
+
+export const emptyHole = (par: 3 | 4 | 5 = 4): RoundHole => ({
+  par,
+  fairwayHit: par === 3 ? null : false,
+  gir: false,
+  putts: 2,
+  upAndDown: false, // gir defaults false, so a green missed by default
+});
+
 // weekId sentinel for an ad-hoc "quick session" — not part of the 4-week plan
 export const ADHOC = "adhoc";
 export const isAdhoc = (s: { weekId: string }) => s.weekId === ADHOC;
@@ -53,6 +102,8 @@ export type SessionInput = Omit<SavedSession, "updatedAt" | "deleted"> & {
 
 class RangeCardDB extends Dexie {
   sessions!: Table<SavedSession, string>;
+  rounds!: Table<SavedRound, string>;
+  games!: Table<GameAttempt, string>;
   // meta uses out-of-line keys (Dexie spec ""), matching the original idb store
   meta!: Table<any, string>;
 
@@ -90,6 +141,23 @@ class RangeCardDB extends Dexie {
       sessions: "id, date, weekId, updatedAt",
       meta: "",
     });
+
+    // v4 — adds the `rounds` store for on-course round tracking. Existing stores
+    // are unchanged, so sessions/meta data opens as-is (no upgrade function needed).
+    this.version(4).stores({
+      sessions: "id, date, weekId, updatedAt",
+      meta: "",
+      rounds: "id, date, updatedAt",
+    });
+
+    // v5 — adds the `games` store for scored practice games. Existing stores
+    // unchanged; no upgrade function needed.
+    this.version(5).stores({
+      sessions: "id, date, weekId, updatedAt",
+      meta: "",
+      rounds: "id, date, updatedAt",
+      games: "id, gameId, date, updatedAt",
+    });
   }
 }
 
@@ -122,10 +190,56 @@ export async function purgeDeleted() {
   await db.sessions.filter((s) => !!s.deleted).delete();
 }
 
-// Wipe everything — sessions and settings. Used by the "Reset app" action.
+// ---- rounds (mirror of the session helpers) ----
+export async function saveRound(rec: RoundInput) {
+  await db.rounds.put({
+    ...rec,
+    updatedAt: Date.now(),
+    deleted: rec.deleted ?? false,
+  } as SavedRound);
+}
+
+export async function allRounds(): Promise<SavedRound[]> {
+  const all = await db.rounds.toArray();
+  return all.filter((r) => !r.deleted).sort((a, b) => a.createdAt - b.createdAt);
+}
+
+export async function deleteRound(id: string) {
+  await db.rounds.update(id, { deleted: true, updatedAt: Date.now() });
+}
+
+export async function restoreRound(id: string) {
+  await db.rounds.update(id, { deleted: false, updatedAt: Date.now() });
+}
+
+// ---- practice games (mirror of the session/round helpers) ----
+export async function saveGameAttempt(rec: GameAttemptInput) {
+  await db.games.put({
+    ...rec,
+    updatedAt: Date.now(),
+    deleted: rec.deleted ?? false,
+  } as GameAttempt);
+}
+
+export async function allGameAttempts(): Promise<GameAttempt[]> {
+  const all = await db.games.toArray();
+  return all.filter((g) => !g.deleted).sort((a, b) => a.createdAt - b.createdAt);
+}
+
+export async function deleteGameAttempt(id: string) {
+  await db.games.update(id, { deleted: true, updatedAt: Date.now() });
+}
+
+export async function restoreGameAttempt(id: string) {
+  await db.games.update(id, { deleted: false, updatedAt: Date.now() });
+}
+
+// Wipe everything — sessions, rounds, games and settings. Used by "Reset app".
 export async function wipeAll() {
-  await db.transaction("rw", db.sessions, db.meta, async () => {
+  await db.transaction("rw", db.sessions, db.rounds, db.games, db.meta, async () => {
     await db.sessions.clear();
+    await db.rounds.clear();
+    await db.games.clear();
     await db.meta.clear();
   });
 }
@@ -151,9 +265,12 @@ export function uuid() {
 // ---- backup / restore ----
 
 export async function exportBackup(): Promise<string> {
-  const sessions = await db.sessions.toArray(); // includes tombstones for a complete restore
+  // includes tombstones for a complete restore
+  const [sessions, rounds, games] = await Promise.all([
+    db.sessions.toArray(), db.rounds.toArray(), db.games.toArray(),
+  ]);
   return JSON.stringify(
-    { app: "rangecard", version: 1, exportedAt: new Date().toISOString(), sessions },
+    { app: "rangecard", version: 3, exportedAt: new Date().toISOString(), sessions, rounds, games },
     null,
     2,
   );
@@ -214,10 +331,77 @@ export async function importBackup(text: string): Promise<{ added: number; skipp
       deleted: !!r.deleted,
     });
   }
-  if (!recs.length) throw new Error("No valid sessions found in that file.");
+  // rounds (v2 backups) — coerced the same way, unusable rows skipped
+  const roundRows: unknown[] = Array.isArray((data as { rounds?: unknown[] })?.rounds)
+    ? (data as { rounds: unknown[] }).rounds
+    : [];
+  const par = (v: unknown): 3 | 4 | 5 => (v === 3 || v === 5 ? v : 4);
+  const bn = (v: unknown): boolean | null => (v === true || v === false ? v : null);
+  const roundRecs: SavedRound[] = [];
+  for (const raw of roundRows.slice(0, 2000)) {
+    const r = raw as Record<string, any>;
+    if (!r || typeof r !== "object" || typeof r.id !== "string" || !r.id) { skipped++; continue; }
+    const holes = r.holes === 9 ? 9 : 18;
+    const src = Array.isArray(r.holeData) ? r.holeData : [];
+    const holeData: RoundHole[] = Array.from({ length: holes }).map((_, i) => {
+      const h = (src[i] ?? {}) as Record<string, any>;
+      const p = par(h.par);
+      return {
+        par: p,
+        fairwayHit: p === 3 ? null : bn(h.fairwayHit),
+        gir: h.gir === true,
+        putts: Math.max(0, Math.min(20, Math.round(Number(h.putts) || 0))),
+        upAndDown: h.gir === true ? null : bn(h.upAndDown),
+      };
+    });
+    roundRecs.push({
+      id: r.id,
+      date: isDate(r.date) ? r.date : today,
+      course: typeof r.course === "string" ? r.course.slice(0, 80) : undefined,
+      holes,
+      holeData,
+      createdAt: ts(r.createdAt),
+      updatedAt: ts(r.updatedAt),
+      deleted: !!r.deleted,
+    });
+  }
+  // practice-game attempts (v3 backups)
+  const gameRows: unknown[] = Array.isArray((data as { games?: unknown[] })?.games)
+    ? (data as { games: unknown[] }).games
+    : [];
+  const gameRecs: GameAttempt[] = [];
+  for (const raw of gameRows.slice(0, 5000)) {
+    const r = raw as Record<string, any>;
+    if (!r || typeof r !== "object" || typeof r.id !== "string" || !r.id) { skipped++; continue; }
+    if (typeof r.gameId !== "string" || !r.gameId) { skipped++; continue; }
+    gameRecs.push({
+      id: r.id,
+      gameId: r.gameId.slice(0, 60),
+      date: isDate(r.date) ? r.date : today,
+      score: Math.max(0, Math.min(999, Math.round(Number(r.score) || 0))),
+      createdAt: ts(r.createdAt),
+      updatedAt: ts(r.updatedAt),
+      deleted: !!r.deleted,
+    });
+  }
+
+  if (!recs.length && !roundRecs.length && !gameRecs.length) {
+    throw new Error("No valid data found in that file.");
+  }
 
   // de-dupe within the file (last one wins)
   const byId = new Map(recs.map((r) => [r.id, r]));
+  const roundsById = new Map(roundRecs.map((r) => [r.id, r]));
+  const gamesById = new Map(gameRecs.map((r) => [r.id, r]));
   await db.sessions.bulkPut([...byId.values()]);
-  return { added: byId.size, skipped: skipped + (recs.length - byId.size) };
+  if (roundsById.size) await db.rounds.bulkPut([...roundsById.values()]);
+  if (gamesById.size) await db.games.bulkPut([...gamesById.values()]);
+  return {
+    added: byId.size + roundsById.size + gamesById.size,
+    skipped:
+      skipped +
+      (recs.length - byId.size) +
+      (roundRecs.length - roundsById.size) +
+      (gameRecs.length - gamesById.size),
+  };
 }
