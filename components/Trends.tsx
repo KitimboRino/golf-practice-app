@@ -8,6 +8,7 @@ import { detectFaults } from "@/lib/faults";
 import { verdict, areaMoves, AREA_RATES } from "@/lib/verdict";
 import { useCountUp } from "@/lib/useCountUp";
 import { useToast } from "./Toast";
+import { useConfirm } from "./Confirm";
 import { Icon } from "./Icon";
 
 const fmtDate = (iso: string) => {
@@ -54,6 +55,7 @@ export function Trends({
   const [wkFilter, setWkFilter] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const toast = useToast();
+  const { confirm } = useConfirm();
 
   async function doExport() {
     downloadText(`rangecard-${new Date().toISOString().slice(0, 10)}.json`, await exportBackup());
@@ -69,6 +71,12 @@ export function Trends({
       toast.show("That file is too large to import");
       return;
     }
+    const ok = await confirm({
+      title: "Import this backup?",
+      body: "Sessions, rounds and games from the file are merged in. Anything with the same id as a record you already have is overwritten.",
+      confirmLabel: "Import",
+    });
+    if (!ok) return;
     try {
       const { added, skipped } = await importBackup(await file.text());
       onImported();

@@ -279,9 +279,14 @@ export async function exportBackup(): Promise<string> {
 // Accepts a full backup object or a bare array of sessions. Malformed fields are
 // coerced; unusable rows are skipped. Returns how many were written vs skipped.
 export async function importBackup(text: string): Promise<{ added: number; skipped: number }> {
+  if (text.length > 12_000_000) throw new Error("That file is too large to import.");
   let data: unknown;
   try {
-    data = JSON.parse(text);
+    // reviver strips prototype-polluting keys — defence in depth (every field
+    // below is also read explicitly, never spread)
+    data = JSON.parse(text, (k, v) =>
+      k === "__proto__" || k === "constructor" || k === "prototype" ? undefined : v,
+    );
   } catch {
     throw new Error("That file isn't valid JSON.");
   }
@@ -393,9 +398,12 @@ export async function importBackup(text: string): Promise<{ added: number; skipp
   const byId = new Map(recs.map((r) => [r.id, r]));
   const roundsById = new Map(roundRecs.map((r) => [r.id, r]));
   const gamesById = new Map(gameRecs.map((r) => [r.id, r]));
-  await db.sessions.bulkPut([...byId.values()]);
-  if (roundsById.size) await db.rounds.bulkPut([...roundsById.values()]);
-  if (gamesById.size) await db.games.bulkPut([...gamesById.values()]);
+  // one transaction — a malformed file can't leave a half-applied import
+  await db.transaction("rw", db.sessions, db.rounds, db.games, async () => {
+    if (byId.size) await db.sessions.bulkPut([...byId.values()]);
+    if (roundsById.size) await db.rounds.bulkPut([...roundsById.values()]);
+    if (gamesById.size) await db.games.bulkPut([...gamesById.values()]);
+  });
   return {
     added: byId.size + roundsById.size + gamesById.size,
     skipped:

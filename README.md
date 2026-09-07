@@ -5,7 +5,7 @@ round stats, scored practice games and a pre-shot routine trainer alongside it.
 Works offline, stores everything on your device, installs to your home screen —
 no app store, no account, no network calls.
 
-Current version: **1.1.2** (see [Version history](#version-history)).
+Current version: **1.1.3** (see [Version history](#version-history)).
 
 ## What it does
 
@@ -98,11 +98,35 @@ It launches full-screen and runs offline.
   data wipes it — export a backup first.
 - Light / dark / system theme toggle lives in the Plan header.
 - No accounts, no tracking, no network calls. Fully local.
+- Security: response headers (incl. a CSP) are set in `next.config.js`; deps are
+  watched by Dependabot + `npm audit` in CI. The client-only architecture is the
+  main defence — no server, no API, nothing leaves the device. IndexedDB is not
+  encrypted, so device access = data access.
 - Brand assets live in `public/logo_kit/` (see its README). The in-app mark is
   `components/Mark.tsx`; favicons, app icons and the iOS splash are the copies
   in `public/` root wired up by `app/layout.tsx` and `public/manifest.json`.
 
 ## Version history
+
+### 1.1.3 — 2026-09-07
+
+Security hardening (the client-only architecture was already the main defence —
+no server, no API, nothing leaves the device).
+
+- Full set of response headers via `next.config.js` — a CSP whose teeth are
+  `connect-src 'self'` (an injected script can't phone data home),
+  `frame-ancestors 'none'` (no clickjacking of "Reset app"), and
+  `object-src`/`base-uri`/`form-action 'none'`; plus HSTS, `X-Frame-Options`,
+  `X-Content-Type-Options`, `Referrer-Policy: no-referrer`, a deny-all
+  `Permissions-Policy`, and COOP/CORP. Verified the app runs with zero CSP
+  violations.
+- `importBackup` strips prototype-polluting keys (JSON.parse reviver) and writes
+  in a single transaction; Trends asks before importing.
+- `.github/dependabot.yml` (weekly npm + actions) and a CI workflow
+  (`tsc` · `next build` · `npm audit`). Removed the redundant `yarn.lock` —
+  npm is the package manager.
+- Known: `next-pwa@5.6.0` is unmaintained and carries build-time advisories;
+  replacing it with a hand-written service worker is the next step.
 
 ### 1.1.2 — 2026-09-07
 

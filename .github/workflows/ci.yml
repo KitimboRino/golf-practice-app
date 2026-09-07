@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npx next build
+        env:
+          NODE_ENV: production
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      # Blocks the build on a critical advisory.
+      - run: npm audit --omit=dev --audit-level=critical
+      # Surfaces high advisories without blocking. The only highs today are
+      # build-time (workbox chain via next-pwa) — flip this to blocking once
+      # next-pwa is replaced.
+      - run: npm audit --omit=dev --audit-level=high
+        continue-on-error: true
