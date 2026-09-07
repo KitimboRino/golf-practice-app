@@ -7,6 +7,7 @@ import {
 import { useConfirm } from "./Confirm";
 import { tapFx, bumpFx } from "@/lib/haptics";
 import { Icon } from "./Icon";
+import { Mark } from "./Mark";
 
 const MISSES: { key: string; title: string; sub: string; icon: string }[] = [
   { key: "right", title: "Right, a slice", sub: "Starts right or curves away late", icon: "east" },
@@ -93,7 +94,7 @@ function Deal({ onStart, onKnowMiss }: { onStart: () => void; onKnowMiss: () => 
   return (
     <div className="fr-wrap">
       <div className="fr deal">
-        <span className="fr-mark"><Icon name="sports_golf" size={27} fill /></span>
+        <span className="fr-mark"><Mark size={34} /></span>
         <h1 className="deal-h">Ten balls {when}, and I&apos;ll tell you what you&apos;re doing.</h1>
         <p className="fr-body">
           No quiz about a swing you can&apos;t see. Hit ten, and RangeCard reads the pattern.

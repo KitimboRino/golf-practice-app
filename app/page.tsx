@@ -18,6 +18,7 @@ import { Onboarding, OnbStage, FRESH_ONB, Shot, ReadSession } from "@/lib/onboar
 import { Round, RoundSummary } from "@/components/Round";
 import { Games } from "@/components/Games";
 import { Routine } from "@/components/Routine";
+import { Mark } from "@/components/Mark";
 import { LiveRound } from "@/lib/round";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useToast } from "@/components/Toast";
@@ -626,7 +627,7 @@ export default function Page() {
 
   if (!ready) {
     return (
-      <div className="boot"><Icon name="sports_golf" size={44} fill /></div>
+      <div className="boot"><Mark size={56} /></div>
     );
   }
 

@@ -13,23 +13,36 @@ export const metadata: Metadata = {
   title: "RangeCard — Golf Range Tracker",
   description: "Log range sessions from the 4-week plan and track your progress. Works offline.",
   manifest: "/manifest.json",
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "RangeCard" },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "RangeCard",
+    startupImage: [
+      {
+        url: "/apple-splash-1284x2778.png",
+        media:
+          "screen and (device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)",
+      },
+    ],
+  },
   other: { "mobile-web-app-capable": "yes" },
   openGraph: {
     title: "RangeCard",
     description: "Log range sessions from the 4-week plan and track your progress. Works offline.",
     type: "website",
-    images: [{ url: "/icon-512.png", width: 512, height: 512, alt: "RangeCard" }],
+    images: [{ url: "/og.png", width: 1024, height: 1024, alt: "RangeCard" }],
   },
   twitter: {
     card: "summary",
     title: "RangeCard",
     description: "Log range sessions from the 4-week plan and track your progress. Works offline.",
-    images: ["/icon-512.png"],
+    images: ["/og.png"],
   },
   icons: {
     icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
       { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16.png", sizes: "16x16", type: "image/png" },
       { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
       { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
     ],

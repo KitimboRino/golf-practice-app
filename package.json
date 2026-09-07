@@ -1,13 +1,12 @@
 {
   "name": "rangecard",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "icons": "node scripts/gen-icons.js"
+    "lint": "next lint"
   },
   "dependencies": {
     "dexie": "^4.4.5",

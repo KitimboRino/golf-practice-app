@@ -5,6 +5,7 @@ import { wipeAll } from "@/lib/db";
 import { APP_VERSION } from "@/lib/version";
 import { useConfirm } from "./Confirm";
 import { Icon } from "./Icon";
+import { Mark } from "./Mark";
 
 export function About({ onBack }: { onBack: () => void }) {
   const { confirm } = useConfirm();
@@ -44,7 +45,7 @@ export function About({ onBack }: { onBack: () => void }) {
 
       <div className="screen">
         <div className="about-id">
-          <span className="about-mark"><Icon name="sports_golf" size={28} fill /></span>
+          <span className="about-mark"><Mark size={38} /></span>
           <div className="about-name">RangeCard</div>
           <div className="about-ver">
             <span className="tag">v{APP_VERSION}</span>

@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { Icon } from "@/components/Icon";
+import { Mark } from "@/components/Mark";
 
 export default function NotFound() {
   return (
     <div className="notfound">
       <span className="notfound-mark">
-        <Icon name="sports_golf" size={30} fill />
+        <Mark size={38} />
       </span>
       <h1 className="notfound-h">Out of bounds</h1>
       <p className="notfound-p">

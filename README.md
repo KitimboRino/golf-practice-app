@@ -68,6 +68,7 @@ or restyle. Worth reading first:
 - `lib/plan.ts` — the 4-week plan data
 - `lib/db.ts` — the local (Dexie/IndexedDB) schema
 - `app/globals.css` — the whole design-token system
+- `components/Mark.tsx` + `public/logo_kit/` — the brand mark and asset kit
 
 ## Deploy as a real installable app
 
@@ -84,7 +85,7 @@ It launches full-screen and runs offline.
 
 ## To do / nice-to-haves
 
-- Real app icons: drop `icon-192.png` and `icon-512.png` into `public/`.
+- More iOS splash-screen sizes (only the 1284×2778 device class is wired up).
 - Per-iron-drill breakdown (irons are tallied together today).
 - Optional cloud sync — the Dexie schema is built for it (`updatedAt`, soft
   deletes, uuid keys) but there's no backend today.
@@ -97,8 +98,18 @@ It launches full-screen and runs offline.
   data wipes it — export a backup first.
 - Light / dark / system theme toggle lives in the Plan header.
 - No accounts, no tracking, no network calls. Fully local.
+- Brand assets live in `public/logo_kit/` (see its README). The in-app mark is
+  `components/Mark.tsx`; favicons, app icons and the iOS splash are the copies
+  in `public/` root wired up by `app/layout.tsx` and `public/manifest.json`.
 
 ## Version history
+
+### 1.1.1 — 2026-09-07
+
+- New brand identity — the **Wedge** mark (`public/logo_kit/`). Favicons, PWA /
+  app icons (incl. dedicated maskable), the iOS splash screen and every in-app
+  logo spot (boot, About, first-run, 404) now use it via `components/Mark.tsx`.
+  Retired the placeholder-icon generator.
 
 ### 1.1.0 — 2026-09-06
 
