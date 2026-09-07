@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "RangeCard — Golf Range Tracker",
+  "name": "RangeCard — Golf Practice Tracker",
   "short_name": "RangeCard",
-  "description": "Log range sessions from the 4-week plan and track your progress. Works offline.",
+  "description": "A 4-week range-practice plan with per-ball logging, on-course round stats, scored practice games and a pre-shot routine. Works offline, stays on your device.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -16,5 +16,9 @@
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
     { "src": "/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "screenshots": [
+    { "src": "/screenshot-plan.png", "sizes": "780x1688", "type": "image/png", "form_factor": "narrow", "label": "The 4-week plan and today's session" },
+    { "src": "/screenshot-round.png", "sizes": "780x1688", "type": "image/png", "form_factor": "narrow", "label": "On-course round stats, hole by hole" }
   ]
 }

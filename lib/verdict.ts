@@ -168,28 +168,19 @@ function firstSentence(s: string): string {
   return m ? m[0] : s;
 }
 
-// ---- streak (consecutive ISO weeks with a session) --------------------------
+// ---- this month's activity -------------------------------------------------
+// A rolling count that resets with the calendar month — not a streak. Missing a
+// week shouldn't read as failure; the app's whole tone is "no score, just the
+// truth", so the header shows momentum, never a broken chain.
 
-export function weekStreak(history: SavedSession[]): number {
-  if (!history.length) return 0;
-  const weeks = new Set(history.map((s) => isoWeekKey(new Date(s.date + "T00:00:00"))));
-  let streak = 0;
-  const cursor = new Date();
-  for (let i = 0; i < 60; i++) {
-    if (weeks.has(isoWeekKey(cursor))) streak++;
-    else if (i > 0) break; // allow the current week to be empty (streak counts from last logged)
-    cursor.setDate(cursor.getDate() - 7);
-  }
-  return streak;
-}
-
-function isoWeekKey(d: Date): string {
-  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-  const day = t.getUTCDay() || 7;
-  t.setUTCDate(t.getUTCDate() + 4 - day);
-  const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
-  const week = Math.ceil(((t.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
-  return `${t.getUTCFullYear()}-W${week}`;
+export function sessionsThisMonth(history: SavedSession[]): number {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  return history.filter((s) => {
+    const d = new Date(s.date + "T00:00:00");
+    return !isNaN(+d) && d.getFullYear() === y && d.getMonth() === m;
+  }).length;
 }
 
 // ---- session totals (for the receipt) --------------------------------------

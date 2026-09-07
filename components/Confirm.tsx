@@ -47,14 +47,33 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const restoreRef = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
     if (!row) return;
+    restoreRef.current = document.activeElement as HTMLElement | null;
+    // buttons render in order [cancel, confirm]. For a destructive prompt land
+    // on Cancel (and don't let a stray Enter confirm it).
+    const btns = () => Array.from(dialogRef.current?.querySelectorAll<HTMLElement>("button") ?? []);
+    (row.tone === "danger" ? btns()[0] : btns()[1])?.focus();
+
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") settle(false);
-      if (e.key === "Enter") settle(true);
+      if (e.key === "Escape") { e.preventDefault(); settle(false); return; }
+      if (e.key === "Enter" && row.tone !== "danger") { settle(true); return; }
+      if (e.key === "Tab") {
+        const f = btns();
+        if (f.length < 2) return;
+        const first = f[0], last = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      restoreRef.current?.focus?.();
+    };
   }, [row, settle]);
 
   return (
@@ -66,17 +85,19 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
           onClick={() => settle(false)}
         >
           <div
+            ref={dialogRef}
             className={"confirm" + (leaving ? " leaving" : "")}
             role="alertdialog"
             aria-modal="true"
             aria-labelledby="confirm-title"
+            aria-describedby={row.body ? "confirm-body" : undefined}
             onClick={(e) => e.stopPropagation()}
           >
             <span className={"icon-tile lg" + (row.tone === "danger" ? " danger" : "")}>
               <Icon name={row.tone === "danger" ? "warning" : "help"} size={20} fill />
             </span>
             <div id="confirm-title" className="confirm-title">{row.title}</div>
-            {row.body && <p className="confirm-body">{row.body}</p>}
+            {row.body && <p id="confirm-body" className="confirm-body">{row.body}</p>}
             <div className="confirm-actions">
               <button className="btn-ghost" onClick={() => settle(false)}>
                 {row.cancelLabel ?? "Cancel"}
@@ -84,7 +105,6 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
               <button
                 className={"confirm-go" + (row.tone === "danger" ? " danger" : "")}
                 onClick={() => settle(true)}
-                autoFocus
               >
                 {row.confirmLabel ?? "Confirm"}
               </button>

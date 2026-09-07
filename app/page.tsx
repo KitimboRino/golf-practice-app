@@ -33,7 +33,7 @@ import {
   getMeta, setMeta, delMeta,
 } from "@/lib/db";
 import { solidPct } from "@/lib/stats";
-import { todaysOneThing, weekStreak } from "@/lib/verdict";
+import { todaysOneThing, sessionsThisMonth } from "@/lib/verdict";
 import { SessionReceipt } from "@/components/SessionReceipt";
 import { About } from "@/components/About";
 import { APP_VERSION } from "@/lib/version";
@@ -52,10 +52,10 @@ function greeting(name: string, history: SavedSession[]): string {
   const dayMs = 86400000;
   const since = (d: string) => Math.floor((Date.now() - new Date(d + "T00:00:00").getTime()) / dayMs);
   const gap = since(history[history.length - 1].date);
-  if (gap >= 7) return `First session in ${gap} days${who}. Ease back in`;
+  if (gap >= 10) return `Welcome back${who}. Pick up where you left off`;
 
   const thisWeek = history.filter((s) => since(s.date) < 7).length;
-  if (thisWeek >= 2) return `${thisWeek} sessions this week${who}. Keep it going`;
+  if (thisWeek >= 2) return `${thisWeek} sessions this week${who}. Nice`;
 
   const h = new Date().getHours();
   const tod = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
@@ -627,7 +627,12 @@ export default function Page() {
 
   if (!ready) {
     return (
-      <div className="boot"><Mark size={56} /></div>
+      <div className="boot">
+        <div className="boot-lockup">
+          <Mark size={48} />
+          <span className="boot-word">RangeCard</span>
+        </div>
+      </div>
     );
   }
 
@@ -684,7 +689,7 @@ export default function Page() {
         {tab === "home" && (
           <Home week={week} cursor={cursor} setCursor={setCursor} history={history} name={name}
                 greeting={greeting(name, history)} onEditName={() => setTab("welcome")}
-                oneThing={todaysOneThing(history, plannedMiss)} streak={weekStreak(history)}
+                oneThing={todaysOneThing(history, plannedMiss)} monthCount={sessionsThisMonth(history)}
                 onStart={startSession} onQuick={() => setTab("quickpick")}
                 draftLabel={isDraft ? live!.sessionLabel : null}
                 draftHere={draftHere} onResume={resumeDraft} />
@@ -877,7 +882,7 @@ function More({
 }
 
 function Home({
-  week, cursor, setCursor, history, name, greeting, onEditName, oneThing, streak,
+  week, cursor, setCursor, history, name, greeting, onEditName, oneThing, monthCount,
   onStart, onQuick, draftLabel, draftHere, onResume,
 }: {
   week: Week;
@@ -888,7 +893,7 @@ function Home({
   greeting: string;
   onEditName: () => void;
   oneThing: import("@/lib/verdict").OneThing | null;
-  streak: number;
+  monthCount: number;
   onStart: (venueAreas?: (keyof Strips)[]) => void;
   onQuick: () => void;
   draftLabel: string | null;
@@ -929,9 +934,9 @@ function Home({
             <div className="hdr-sub">Session {cursor.session + 1} of {week.sessions.length}</div>
           </div>
           <div className="hdr-actions">
-            {streak > 1 && (
-              <div className="chip sand">
-                <Icon name="local_fire_department" size={15} fill />{streak} wk
+            {monthCount >= 2 && (
+              <div className="chip" title="Sessions logged this calendar month">
+                <Icon name="event_available" size={15} />{monthCount} this month
               </div>
             )}
             <ThemeToggle />

@@ -5,7 +5,7 @@ round stats, scored practice games and a pre-shot routine trainer alongside it.
 Works offline, stores everything on your device, installs to your home screen —
 no app store, no account, no network calls.
 
-Current version: **1.1.0** (see [Version history](#version-history)).
+Current version: **1.1.2** (see [Version history](#version-history)).
 
 ## What it does
 
@@ -104,12 +104,35 @@ It launches full-screen and runs offline.
 
 ## Version history
 
+### 1.1.2 — 2026-09-07
+
+- **Accessibility**
+  - Pinch-zoom is no longer disabled (was a WCAG 1.4.4 fail).
+  - Faint grey text (`--hint`, and light-mode icon greys) darkened to meet
+    WCAG AA contrast.
+  - Keyboard focus rings no longer get clipped inside rounded cards / the nav.
+  - The confirm dialog now traps focus, restores it on close, describes its
+    body to screen readers, and lands on **Cancel** for destructive prompts
+    (a stray Enter can't confirm a delete any more).
+- **No more streak.** The Plan header showed a `{n} wk` streak that a missed
+  week would break; it's now a calm "{n} this month" count, and the
+  returning-after-a-gap greeting is warmer.
+- **Motion** — the hidden "hold to subtract" gesture on the tally buttons now
+  shows a filling bar; tallies and toggles land with a small spring overshoot
+  (`--ease-spring`). All degrade under `prefers-reduced-motion`.
+- The browser chrome / status-bar colour now tracks the light/dark theme
+  instead of always being dark.
+- Manifest cleaned up: real name and description, plus install-prompt
+  screenshots.
+- Boot and 404 screens show the mark + wordmark lockup (`components/Lockup.tsx`).
+- Removed dead onboarding / streak CSS.
+
 ### 1.1.1 — 2026-09-07
 
 - New brand identity — the **Wedge** mark (`public/logo_kit/`). Favicons, PWA /
   app icons (incl. dedicated maskable), the iOS splash screen and every in-app
-  logo spot (boot, About, first-run, 404) now use it via `components/Mark.tsx`.
-  Retired the placeholder-icon generator.
+  logo spot use it via `components/Mark.tsx`. Retired the placeholder-icon
+  generator.
 
 ### 1.1.0 — 2026-09-06
 

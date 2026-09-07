@@ -1,13 +1,11 @@
 import Link from "next/link";
 import { Icon } from "@/components/Icon";
-import { Mark } from "@/components/Mark";
+import { Lockup } from "@/components/Lockup";
 
 export default function NotFound() {
   return (
     <div className="notfound">
-      <span className="notfound-mark">
-        <Mark size={38} />
-      </span>
+      <Lockup height={24} className="notfound-lockup" />
       <h1 className="notfound-h">Out of bounds</h1>
       <p className="notfound-p">
         That page isn&apos;t part of RangeCard. Let&apos;s get you back on the range.

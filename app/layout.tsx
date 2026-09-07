@@ -51,16 +51,23 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0B1013",
+  themeColor: "#0B1013", // dark default; the inline script corrects it per theme
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // pinch-zoom is left enabled — capping it fails WCAG 1.4.4
   viewportFit: "cover",
 };
 
-// Sync theme before first paint so a forced light/dark choice doesn't flash.
-const themeScript = `try{var t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}`;
+// Before first paint: apply a forced light/dark choice, then point the
+// theme-color meta at whatever --bg resolves to (so the browser chrome /
+// status bar matches the theme instead of always being dark).
+const themeScript = `try{
+  var d=document.documentElement,t=localStorage.getItem('theme');
+  if(t==='light'||t==='dark')d.setAttribute('data-theme',t);
+  var bg=getComputedStyle(d).getPropertyValue('--bg').trim();
+  var m=document.querySelector('meta[name="theme-color"]');
+  if(m&&bg)m.setAttribute('content',bg);
+}catch(e){}`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
