@@ -14,6 +14,20 @@ updates:
           - "next"
           - "next-pwa"
           - "@next/*"
+    # This app is on React 18. Don't let the @types/react* packages (or React
+    # itself) jump to 19 on their own — a split bump breaks peer resolution and
+    # fails the Vercel install. Lift these when the app moves to React 19.
+    ignore:
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

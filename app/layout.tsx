@@ -5,7 +5,6 @@ import { ToastProvider } from "@/components/Toast";
 import { ConfirmProvider } from "@/components/Confirm";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { RegisterSW } from "@/components/RegisterSW";
-import { SmoothScroll } from "@/components/SmoothScroll";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
@@ -80,7 +79,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <div className="app">{children}</div>
             <InstallPrompt />
             <RegisterSW />
-            <SmoothScroll />
           </ConfirmProvider>
         </ToastProvider>
       </body>

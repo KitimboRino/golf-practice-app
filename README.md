@@ -128,6 +128,15 @@ no server, no API, nothing leaves the device).
 - Known: `next-pwa@5.6.0` is unmaintained and carries build-time advisories;
   replacing it with a hand-written service worker is the next step.
 
+**Fix:** removed Lenis smooth-scroll — its non-passive touch listeners blocked
+single-finger scrolling on Android (two-finger gestures route through the
+compositor and slipped past it). Native scroll everywhere now; one fewer
+dependency.
+
+**Fix:** `vercel.json` pins the install to `npm ci` (lockfile-exact, ignores any
+stale build cache) and Dependabot no longer proposes major React / `@types/react*`
+bumps — a split bump was breaking peer resolution on deploy.
+
 ### 1.1.2 — 2026-09-07
 
 - **Accessibility**
