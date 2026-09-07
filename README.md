@@ -134,8 +134,10 @@ compositor and slipped past it). Native scroll everywhere now; one fewer
 dependency.
 
 **Fix:** `vercel.json` pins the install to `npm ci` (lockfile-exact, ignores any
-stale build cache) and Dependabot no longer proposes major React / `@types/react*`
-bumps — a split bump was breaking peer resolution on deploy.
+stale build cache). Dependabot is capped to minor/patch for `next`, `next-pwa`,
+`react*`, `typescript` and `@types/*` — it had opened a Next 14→16 PR (Turbopack
+default + `next-pwa`'s webpack config = build-worker crash) and a TS 5→7 PR.
+Major framework/toolchain bumps are done by hand now.
 
 ### 1.1.2 — 2026-09-07
 
