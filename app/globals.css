@@ -212,8 +212,21 @@ html, body {
   overscroll-behavior-y: none;
   overflow-x: hidden;
   font-variant-numeric: tabular-nums;
+  /* Android Chrome: stop auto text-inflation, and drop double-tap-to-zoom (the
+     "it keeps zooming" bug) while leaving pinch-zoom — an accessibility need —
+     intact. `manipulation` = panning + pinch-zoom only. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  touch-action: manipulation;
 }
-body { background: var(--bg) var(--page-grad) fixed; }
+
+/* Page wash. A fixed *layer* rather than `background-attachment: fixed` on the
+   body — the latter forces a full-viewport repaint on every scroll frame and is
+   the main cause of janky scrolling on Android. */
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -2;
+  background: var(--page-grad); pointer-events: none;
+}
 
 /* ambient light — two fixed orbs behind everything */
 .app::before, .app::after {
@@ -1570,7 +1583,7 @@ body:has(.fr-wrap) .install-ios { display: none; }
 
 .fr-wrap {
   min-height: 100dvh; display: flex; flex-direction: column;
-  background: var(--bg) var(--page-grad) fixed; color: var(--text);
+  background: var(--bg) var(--page-grad) no-repeat; color: var(--text);
   padding: calc(20px + env(safe-area-inset-top)) 0 calc(24px + env(safe-area-inset-bottom));
 }
 .fr {
