@@ -1149,6 +1149,39 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .flowstrip[open] .flowstrip-chev { transform: rotate(180deg); }
 .flowstrip .flow-list { margin: 0; padding: 0 16px 15px 36px; }
 
+/* ---------- course management (reference + in-round strip) ---------- */
+.course-rules { display: flex; flex-direction: column; gap: 8px; }
+.course-rule {
+  background: var(--glass); border: 1px solid var(--edge); border-radius: 15px;
+  padding: 13px 15px; display: flex; flex-direction: column; gap: 4px;
+  box-shadow: var(--card-shadow);
+}
+.course-rule-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.course-rule-top b { font-size: 14px; font-weight: 700; letter-spacing: -0.01em; }
+.course-rule-ref {
+  flex: none; font-size: 11px; font-weight: 600; color: var(--hint);
+  font-variant-numeric: tabular-nums;
+}
+.course-rule p { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--muted); text-wrap: pretty; }
+
+/* in-round nudge — blue accent, collapsed by default (Round.tsx StrategyStrip) */
+.strat-strip {
+  background: var(--blue-note-bg); border: 1px solid var(--border-recessed);
+  border-left: 2px solid var(--blue); border-radius: 0 12px 12px 0; overflow: hidden;
+}
+.strat-strip > summary {
+  list-style: none; display: flex; align-items: center; gap: 8px;
+  padding: 11px 13px; font-size: 12.5px; font-weight: 700; color: var(--blue-strong);
+  cursor: pointer; text-align: left;
+}
+.strat-strip > summary::-webkit-details-marker { display: none; }
+.strat-strip > summary > .flowstrip-chev { margin-left: auto; }
+.strat-strip[open] .flowstrip-chev { transform: rotate(180deg); }
+.strat-body { padding: 2px 14px 13px; display: flex; flex-direction: column; gap: 10px; }
+.strat-rule { display: flex; flex-direction: column; gap: 3px; }
+.strat-rule b { font-size: 12.5px; font-weight: 700; color: var(--blue-strong); letter-spacing: -0.01em; }
+.strat-rule span { font-size: 12px; line-height: 1.5; color: var(--blue-text); text-wrap: pretty; }
+
 /* ---------- drill library ---------- */
 .lib-sub { font-weight: 400; color: var(--hint); margin-left: 6px; }
 .lib {
@@ -1887,7 +1920,11 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
 }
 
 /* ---------- boot splash ---------- */
-.boot { min-height: 100dvh; display: flex; align-items: center; justify-content: center; }
+.boot {
+  min-height: 100dvh; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 34px;
+  padding: 40px 28px calc(40px + env(safe-area-inset-bottom));
+}
 .boot-lockup {
   display: flex; flex-direction: column; align-items: center; gap: 14px;
   animation: boot-pulse 1.1s ease-in-out infinite;
@@ -1897,6 +1934,15 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
   font-size: 15px; font-weight: 800; letter-spacing: 0.08em; color: var(--text-2);
 }
 @keyframes boot-pulse { 0%, 100% { opacity: 0.35; transform: scale(0.96); } 50% { opacity: 1; transform: scale(1); } }
+
+.boot-stuck {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  max-width: 300px; text-align: center;
+  animation: tab-fade var(--dur-slow) var(--ease-out);
+}
+.boot-stuck p { margin: 0 0 2px; font-size: 14px; line-height: 1.5; color: var(--text-2); text-wrap: pretty; }
+.boot-stuck .btn-ghost { width: 100%; }
+.boot-stuck-note { font-size: 11.5px; color: var(--hint); margin-top: 2px; }
 
 /* ---------- press feedback (plan 002) ---------- */
 .more-row, .icon-btn, .chip-btn, .miss-row, .hist-del,

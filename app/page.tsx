@@ -18,6 +18,7 @@ import { Onboarding, OnbStage, FRESH_ONB, Shot, ReadSession } from "@/lib/onboar
 import { Round, RoundSummary } from "@/components/Round";
 import { Games } from "@/components/Games";
 import { Routine } from "@/components/Routine";
+import { Course } from "@/components/Course";
 import { Mark } from "@/components/Mark";
 import { LiveRound } from "@/lib/round";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -44,6 +45,25 @@ type Tab = "home" | "session" | "trends" | "more" | "warmup" | "welcome" | "rece
 type QuickFocus = { title: string; body: string };
 
 const today = () => new Date().toISOString().slice(0, 10);
+
+// Splash-screen escape hatch: a stale service worker or a broken cache after a
+// deploy can wedge the app before React finishes loading. Drop the SW + caches
+// (IndexedDB is left alone) and reload against the network.
+async function recoverBoot() {
+  try {
+    if ("serviceWorker" in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map((r) => r.unregister()));
+    }
+    if (typeof caches !== "undefined") {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    }
+  } catch {
+    /* best effort */
+  }
+  location.reload();
+}
 
 function greeting(name: string, history: SavedSession[]): string {
   const who = name ? `, ${name}` : "";
@@ -342,33 +362,62 @@ export default function Page() {
   const pendingVenue = useRef<(keyof Strips)[] | undefined>(undefined);
 
   useEffect(() => {
-    (async () => {
-      setHistory(await allSessions());
-      setRounds(await allRounds());
-      setGames(await allGameAttempts());
-      setRound((await getMeta<LiveRound>("roundDraft")) ?? null);
-      setName((await getMeta<string>("name")) ?? "");
-      setPlannedMiss((await getMeta<string>("plannedMiss")) ?? "");
-      setOverrides((await getMeta<DrillOverrides>("drillOverrides")) ?? {});
-      const ob = (await getMeta<string>("onboardedAt")) ?? null;
-      setOnboardedAt(ob);
-      if (!ob) {
-        setOnb((await getMeta<Onboarding>("onboarding")) ?? FRESH_ONB);
-        setReadShots((await getMeta<ReadSession>("readSession"))?.shots ?? []);
-      }
-      const draft = await getMeta<Live>("draft");
-      if (draft) {
-        setLive(draft);
-        const loc = locate(draft.weekId, draft.sessionLabel);
-        if (loc) setCursor(loc);
-      } else {
-        const c = await getMeta<{ week: number; session: number }>("cursor");
-        if (c) setCursor(c);
-      }
-      if (!ob) setTab("firstrun");
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
       setReady(true);
+      try { (window as unknown as { __rcReady?: boolean }).__rcReady = true; } catch { /* noop */ }
+    };
+    // hard ceiling: IndexedDB can *hang* (a blocked upgrade, a wedged store) and
+    // a hung promise never rejects, so try/catch alone can't save us. Show the
+    // app after 4s no matter what — worst case with stale/empty state.
+    const cap = setTimeout(finish, 4000);
+
+    (async () => {
+      try {
+        setHistory(await allSessions());
+        setRounds(await allRounds());
+        setGames(await allGameAttempts());
+        setRound((await getMeta<LiveRound>("roundDraft")) ?? null);
+        setName((await getMeta<string>("name")) ?? "");
+        setPlannedMiss((await getMeta<string>("plannedMiss")) ?? "");
+        setOverrides((await getMeta<DrillOverrides>("drillOverrides")) ?? {});
+        const ob = (await getMeta<string>("onboardedAt")) ?? null;
+        setOnboardedAt(ob);
+        if (!ob) {
+          setOnb((await getMeta<Onboarding>("onboarding")) ?? FRESH_ONB);
+          setReadShots((await getMeta<ReadSession>("readSession"))?.shots ?? []);
+        }
+        const draft = await getMeta<Live>("draft");
+        if (draft) {
+          setLive(draft);
+          const loc = locate(draft.weekId, draft.sessionLabel);
+          if (loc) setCursor(loc);
+        } else {
+          const c = await getMeta<{ week: number; session: number }>("cursor");
+          if (c) setCursor(c);
+        }
+        if (!ob) setTab("firstrun");
+      } catch (e) {
+        console.error("RangeCard failed to load local data:", e);
+      } finally {
+        clearTimeout(cap);
+        finish();
+      }
     })();
+
+    return () => clearTimeout(cap);
   }, []);
+
+  // if the splash is still up after a few seconds something is wedged
+  // (usually a stale service worker after a deploy) — offer a way out
+  const [bootStuck, setBootStuck] = useState(false);
+  useEffect(() => {
+    if (ready) return;
+    const t = setTimeout(() => setBootStuck(true), 6000);
+    return () => clearTimeout(t);
+  }, [ready]);
 
   const cleanName = (n: string) => n.replace(/\s+/g, " ").trim().slice(0, 24);
 
@@ -632,6 +681,14 @@ export default function Page() {
           <Mark size={48} />
           <span className="boot-word">RangeCard</span>
         </div>
+        {bootStuck && (
+          <div className="boot-stuck">
+            <p>This is taking longer than it should.</p>
+            <button className="btn-ghost" onClick={() => location.reload()}>Reload</button>
+            <button className="btn-ghost" onClick={recoverBoot}>Clear cached files &amp; reload</button>
+            <span className="boot-stuck-note">Your logged sessions and rounds are kept.</span>
+          </div>
+        )}
       </div>
     );
   }
@@ -783,11 +840,12 @@ function More({
   hasRound: boolean;
   onResumeRound: () => void;
 }) {
-  const [view, setView] = useState<"menu" | "prep" | "routine" | "library" | "fixes" | "games" | "about">("menu");
+  const [view, setView] = useState<"menu" | "prep" | "routine" | "course" | "library" | "fixes" | "games" | "about">("menu");
   const [libFocus, setLibFocus] = useState<import("@/lib/faults").Fault | null>(null);
   if (view === "about") return <About onBack={() => setView("menu")} />;
   if (view === "prep") return <Prep onBack={() => setView("menu")} />;
   if (view === "routine") return <Routine onBack={() => setView("menu")} />;
+  if (view === "course") return <Course onBack={() => setView("menu")} />;
   if (view === "games")
     return <Games attempts={games} onBack={() => setView("menu")} onSave={onSaveGame} onDelete={onDeleteGame} />;
   if (view === "library")
@@ -851,6 +909,11 @@ function More({
           <button className="more-row" onClick={() => setView("routine")}>
             <span className="more-ic"><Icon name="track_changes" size={22} color="var(--green)" /></span>
             <span className="more-txt"><b>Pre-shot routine</b><span>The same steps before every shot</span></span>
+            <Icon name="chevron_right" size={20} color="var(--icon-muted)" />
+          </button>
+          <button className="more-row" onClick={() => setView("course")}>
+            <span className="more-ic"><Icon name="map" size={22} color="var(--green)" /></span>
+            <span className="more-txt"><b>Course management</b><span>Strategy for every on-course situation</span></span>
             <Icon name="chevron_right" size={20} color="var(--icon-muted)" />
           </button>
           <button className="more-row" onClick={() => setView("prep")}>

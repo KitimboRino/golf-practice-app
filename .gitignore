@@ -1,11 +1,8 @@
 node_modules
 .next
 out
-public/sw.js
-public/workbox-*.js
-public/sw.js.map
-public/workbox-*.js.map
 .DS_Store
 *.log
+*.tsbuildinfo
 stitch_rangecard_golf_practice_tracker
 *.md

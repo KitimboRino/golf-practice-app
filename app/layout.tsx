@@ -68,11 +68,40 @@ const themeScript = `try{
   if(m&&bg)m.setAttribute('content',bg);
 }catch(e){}`;
 
+// Last-resort splash recovery. If the JS bundle fails to load / hydrate (a stale
+// service worker serving a dead chunk after a deploy), React never runs, so the
+// in-app 6s escape hatch never appears. This runs from the document itself:
+// after 12s with no sign of the app, it swaps the splash for reload controls.
+const recoveryScript = `setTimeout(function(){
+  try{
+    if(window.__rcReady) return;
+    var boot=document.querySelector('.boot');
+    if(!boot||document.querySelector('.boot-stuck')) return;
+    var wrap=document.createElement('div');
+    wrap.className='boot-stuck';
+    wrap.innerHTML='<p>This is taking longer than it should.</p>';
+    var mk=function(label,fn){var x=document.createElement('button');x.className='btn-ghost';x.textContent=label;x.onclick=fn;wrap.appendChild(x);};
+    mk('Reload',function(){location.reload();});
+    mk('Clear cached files & reload',function(){
+      var done=function(){location.reload();};
+      try{
+        var p=('serviceWorker' in navigator)
+          ? navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister();}));})
+          : Promise.resolve();
+        p.then(function(){return (typeof caches!=='undefined')?caches.keys().then(function(k){return Promise.all(k.map(function(x){return caches.delete(x);}));}):null;}).then(done,done);
+      }catch(e){done();}
+    });
+    var n=document.createElement('span');n.className='boot-stuck-note';n.textContent='Your logged sessions and rounds are kept.';wrap.appendChild(n);
+    boot.appendChild(wrap);
+  }catch(e){}
+},12000);`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${manrope.variable} ${materialSymbols.variable}`}>
       <body>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script dangerouslySetInnerHTML={{ __html: recoveryScript }} />
         <a href="#main" className="skip-link">Skip to content</a>
         <ToastProvider>
           <ConfirmProvider>

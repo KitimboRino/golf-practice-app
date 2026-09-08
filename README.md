@@ -5,7 +5,7 @@ round stats, scored practice games and a pre-shot routine trainer alongside it.
 Works offline, stores everything on your device, installs to your home screen —
 no app store, no account, no network calls.
 
-Current version: **1.1.3** (see [Version history](#version-history)).
+Current version: **1.1.4** (see [Version history](#version-history)).
 
 ## What it does
 
@@ -107,6 +107,34 @@ It launches full-screen and runs offline.
   in `public/` root wired up by `app/layout.tsx` and `public/manifest.json`.
 
 ## Version history
+
+### 1.1.4 — 2026-09-08
+
+- **Course management** (`lib/course.ts`, More → Course management) — a strategy
+  reference grouped by situation: off the tee, approach & pins, trouble &
+  recovery, wind, bunkers, mental keys.
+- The round tracker now shows a collapsed-by-default **Strategy** strip on the
+  per-hole screen that surfaces the relevant rule for the hole state — par 5
+  ("divide into mini-challenges"), par 3 (centre of green / sucker pins), a
+  recorded missed fairway (10-pace rough rule + centre of green), else a
+  rotating general tip. Read-only, no schema change.
+- **Dropped `next-pwa`** for a hand-written `public/sw.js` (~90 lines). It was
+  the cause of the "loading endlessly on the splash" reports: its generated SW
+  precached the HTML, so after a deploy a stale page could point the browser at
+  build chunks that had 404'd. The replacement is network-first for navigations
+  (never stale HTML), cache-first only for content-hashed `/_next/static/`, and
+  on `activate` it deletes every cache it doesn't own — so upgrading to it
+  auto-clears a wedged install. Also removed ~500 transitive packages and 5 of
+  the 7 `npm audit` highs.
+- **Splash can't hang.** The load reads IndexedDB behind a hard 4s ceiling
+  (a wedged store gives a hung promise that `try/catch` can't catch) plus
+  `try/finally`; a 6s in-app "Reload / Clear cached files" escape hatch, and a
+  document-level version of it at 12s for when the bundle never hydrates.
+  "Reset app" now also clears the SW + caches and drops the DB at the raw level.
+- **Fixed `npm run dev`** — the 1.1.3 CSP blocked `eval`, which `next dev` uses
+  for HMR, so the app never hydrated locally (endless splash). The CSP now
+  allows `'unsafe-eval'` + `ws:` **in development only**; production stays strict
+  (verified: prod `Content-Security-Policy` has no `unsafe-eval`).
 
 ### 1.1.3 — 2026-09-07
 

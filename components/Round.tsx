@@ -6,6 +6,7 @@ import {
   LiveRound, freshHoles, roundStats, roundLabel,
   leakReport, practiceNoun, LeakCategory, LEAK_BENCHMARK,
 } from "@/lib/round";
+import { holeStrategy } from "@/lib/course";
 import { useConfirm } from "./Confirm";
 import { tapFx, bumpFx } from "@/lib/haptics";
 import { Icon } from "./Icon";
@@ -203,6 +204,35 @@ function Bin({
   );
 }
 
+// A gentle, collapsed-by-default nudge from lib/course.ts, matched to the hole.
+function StrategyStrip({
+  par, missedFairway, holeIndex,
+}: {
+  par: 3 | 4 | 5;
+  missedFairway: boolean;
+  holeIndex: number;
+}) {
+  const strat = holeStrategy({ par, missedFairway }, holeIndex);
+  if (!strat.rules.length) return null;
+  return (
+    <details className="strat-strip">
+      <summary>
+        <Icon name="lightbulb" size={15} color="var(--blue-icon)" />
+        Strategy&nbsp;·&nbsp;{strat.reason}
+        <Icon name="expand_more" size={18} className="flowstrip-chev" />
+      </summary>
+      <div className="strat-body">
+        {strat.rules.map((r) => (
+          <div className="strat-rule" key={r.rule}>
+            <b>{r.rule}</b>
+            <span>{r.detail}</span>
+          </div>
+        ))}
+      </div>
+    </details>
+  );
+}
+
 function RoundPlay({
   round, onChange, onFinish, onDiscard,
 }: {
@@ -216,6 +246,9 @@ function RoundPlay({
   const h = round.holeData[i];
   const last = i === round.holes - 1;
   const st = roundStats(round.holeData.slice(0, i + (h ? 1 : 0)));
+  // holes where the golfer actually tapped a fairway result (the model defaults
+  // fairwayHit to false, so we can't infer a miss from the value alone)
+  const [fwAnswered, setFwAnswered] = useState<Set<number>>(() => new Set());
 
   const setHole = (patch: Partial<RoundHole>) => {
     const next = round.holeData.slice();
@@ -230,7 +263,11 @@ function RoundPlay({
       fairwayHit: par === 3 ? null : (h.fairwayHit === null ? false : h.fairwayHit),
     });
   };
-  const setFairway = (hit: boolean) => { tapFx(); setHole({ fairwayHit: hit }); };
+  const setFairway = (hit: boolean) => {
+    tapFx();
+    setFwAnswered((s) => new Set(s).add(i));
+    setHole({ fairwayHit: hit });
+  };
   const setGir = (gir: boolean) => {
     tapFx();
     setHole({ gir, upAndDown: gir ? false : (h.upAndDown ?? false) });
@@ -277,6 +314,15 @@ function RoundPlay({
       </header>
 
       <div className="screen log">
+        {/* key by hole so it starts collapsed each hole, but still updates live
+            as par / fairway change on the current hole */}
+        <StrategyStrip
+          key={i}
+          par={h.par}
+          missedFairway={h.fairwayHit === false && fwAnswered.has(i)}
+          holeIndex={i}
+        />
+
         <div className="rgrp">
           <div className="rgrp-lbl">Par</div>
           <div className="rrow">

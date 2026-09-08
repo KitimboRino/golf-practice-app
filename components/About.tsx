@@ -26,7 +26,24 @@ export function About({ onBack }: { onBack: () => void }) {
       tone: "danger",
     });
     if (!ok) return;
-    await wipeAll();
+    try {
+      await wipeAll();
+    } catch {
+      // Dexie may be unable to open a corrupt DB — drop it at the raw level
+    }
+    try {
+      indexedDB.deleteDatabase("scorecard");
+      if ("serviceWorker" in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister()));
+      }
+      if (typeof caches !== "undefined") {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+    } catch {
+      /* best effort */
+    }
     window.location.reload();
   }
 
