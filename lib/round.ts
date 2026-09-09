@@ -6,47 +6,82 @@ export function freshHoles(count: 9 | 18): RoundHole[] {
 }
 
 export type RoundStats = {
-  firPct: number | null;   // null when the round is all par 3s
+  strokes: number;             // total strokes over scored holes
+  scoredHoles: number;         // holes with a score entered
+  toPar: number;               // strokes − par of scored holes
+  parOfScored: number;
+  birdies: number;             // −1 or better
+  pars: number;
+  bogeys: number;              // +1
+  doubles: number;             // +2 or worse
+  penalties: number;           // penalty strokes across the round
+  penaltyHoles: number;        // holes that took at least one
+  firPct: number | null;       // null when no par 4/5 fairway was answered
   firMade: number;
-  firOf: number;
-  girPct: number;
+  firOf: number;               // par 4/5 holes with a fairway answer
+  fairwayLeft: number;         // fairway misses left / right
+  fairwayRight: number;
+  girPct: number | null;       // null when no GIR was answered
   girMade: number;
-  girOf: number;
+  girOf: number;               // holes with a GIR answer
   putts: number;
-  puttsPerHole: number;
-  scramblePct: number | null;  // null when no greens were missed / no U&D logged
+  puttsOf: number;             // holes with a putt count entered
+  puttsPerHole: number | null; // null when no putts entered
+  scramblePct: number | null;  // null when no missed-green U&D was answered
   scrambleMade: number;
   scrambleOf: number;
   threePutts: number;
   holesLogged: number;
 };
 
+// Only *answered* holes count toward each stat — a hole where the golfer hasn't
+// tapped fairway / GIR / putts yet is simply not in the denominator.
 export function roundStats(holes: RoundHole[]): RoundStats {
-  const firHoles = holes.filter((h) => h.fairwayHit !== null); // par 4s + 5s
-  const firMade = firHoles.filter((h) => h.fairwayHit).length;
+  const scored = holes.filter((h) => h.score != null);
+  const strokes = scored.reduce((n, h) => n + (h.score as number), 0);
+  const parOfScored = scored.reduce((n, h) => n + h.par, 0);
+  const rel = (h: RoundHole) => (h.score as number) - h.par;
 
-  const girMade = holes.filter((h) => h.gir).length;
+  const firHoles = holes.filter((h) => h.par !== 3 && h.fairwayHit != null);
+  const firMade = firHoles.filter((h) => h.fairwayHit === true).length;
 
-  const putts = holes.reduce((n, h) => n + h.putts, 0);
+  const girHoles = holes.filter((h) => h.gir != null);
+  const girMade = girHoles.filter((h) => h.gir === true).length;
 
-  const missedGreens = holes.filter((h) => !h.gir);
-  const scrambleMade = missedGreens.filter((h) => h.upAndDown === true).length;
+  const puttHoles = holes.filter((h) => h.putts != null);
+  const putts = puttHoles.reduce((n, h) => n + (h.putts as number), 0);
 
-  const threePutts = holes.filter((h) => h.putts >= 3).length;
+  const missedGreens = holes.filter((h) => h.gir === false);
+  const scrHoles = missedGreens.filter((h) => h.upAndDown != null);
+  const scrambleMade = scrHoles.filter((h) => h.upAndDown === true).length;
 
-  const n = holes.length || 1;
+  const threePutts = puttHoles.filter((h) => (h.putts as number) >= 3).length;
+
   return {
+    strokes,
+    scoredHoles: scored.length,
+    toPar: strokes - parOfScored,
+    parOfScored,
+    birdies: scored.filter((h) => rel(h) <= -1).length,
+    pars: scored.filter((h) => rel(h) === 0).length,
+    bogeys: scored.filter((h) => rel(h) === 1).length,
+    doubles: scored.filter((h) => rel(h) >= 2).length,
+    penalties: holes.reduce((n, h) => n + (h.penalties ?? 0), 0),
+    penaltyHoles: holes.filter((h) => (h.penalties ?? 0) > 0).length,
     firPct: firHoles.length ? Math.round((firMade / firHoles.length) * 100) : null,
     firMade,
     firOf: firHoles.length,
-    girPct: Math.round((girMade / n) * 100),
+    fairwayLeft: holes.filter((h) => h.fairwayMiss === "left").length,
+    fairwayRight: holes.filter((h) => h.fairwayMiss === "right").length,
+    girPct: girHoles.length ? Math.round((girMade / girHoles.length) * 100) : null,
     girMade,
-    girOf: holes.length,
+    girOf: girHoles.length,
     putts,
-    puttsPerHole: Math.round((putts / n) * 10) / 10,
-    scramblePct: missedGreens.length ? Math.round((scrambleMade / missedGreens.length) * 100) : null,
+    puttsOf: puttHoles.length,
+    puttsPerHole: puttHoles.length ? Math.round((putts / puttHoles.length) * 10) / 10 : null,
+    scramblePct: scrHoles.length ? Math.round((scrambleMade / scrHoles.length) * 100) : null,
     scrambleMade,
-    scrambleOf: missedGreens.length,
+    scrambleOf: scrHoles.length,
     threePutts,
     holesLogged: holes.length,
   };
@@ -59,6 +94,11 @@ export type LiveRound = {
   holeData: RoundHole[];
   current: number; // 0-indexed hole being logged
   startedAt: number;
+  note?: string;
+  // set only when editing an already-saved round — preserved on finish so the
+  // save updates in place instead of creating a duplicate
+  id?: string;
+  createdAt?: number;
 };
 
 // short label for a saved round in a list
@@ -273,19 +313,20 @@ export function leakReport(rounds: SavedRound[]): LeakReport | null {
   const girOf = total((s) => s.girOf), girMade = total((s) => s.girMade);
   const scrOf = total((s) => s.scrambleOf), scrMade = total((s) => s.scrambleMade);
   const puttsTot = total((s) => s.putts);
+  const puttsOf = total((s) => s.puttsOf);
   const threePuttTot = total((s) => s.threePutts);
 
   const firPct = firOf ? (firMade / firOf) * 100 : null;
   const girPct = girOf ? (girMade / girOf) * 100 : null;
   const scrPct = scrOf ? (scrMade / scrOf) * 100 : null;
-  const pph = holes ? puttsTot / holes : null;
-  const threePuttPer18 = holes ? (threePuttTot / holes) * 18 : 0;
+  const pph = puttsOf ? puttsTot / puttsOf : null;
+  const threePuttPer18 = puttsOf ? (threePuttTot / puttsOf) * 18 : 0;
   const threePuttPerRound = threePuttTot / usable.length;
 
   const firSeries = per.map((s) => s.firPct).filter((x): x is number => x !== null);
-  const girSeries = per.map((s) => s.girPct);
+  const girSeries = per.map((s) => s.girPct).filter((x): x is number => x !== null);
   const scrSeries = per.map((s) => s.scramblePct).filter((x): x is number => x !== null);
-  const pphSeries = per.map((s) => s.puttsPerHole);
+  const pphSeries = per.map((s) => s.puttsPerHole).filter((x): x is number => x !== null);
 
   const cats: LeakCategory[] = [
     pctCategory("driving", firPct, `${firMade} of ${firOf} fairways`, firSeries),

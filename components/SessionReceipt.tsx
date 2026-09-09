@@ -67,7 +67,7 @@ export function SessionReceipt({
   }
 
   return (
-    <div className="welcome-wrap" style={{ alignItems: "flex-start", paddingTop: 34 }}>
+    <div className="welcome-wrap" style={{ alignItems: "flex-start", paddingTop: "calc(34px + env(safe-area-inset-top))" }}>
       <div className="receipt">
         <div className="receipt-top">
           <span className="icon-tile lg glow">

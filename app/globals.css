@@ -297,7 +297,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   backdrop-filter: blur(16px) saturate(1.4);
   -webkit-backdrop-filter: blur(16px) saturate(1.4);
   border-bottom: 1px solid var(--hairline);
-  padding: 20px 24px 20px;
+  /* installed on iOS the status bar / Dynamic Island overlays the web view
+     (viewport-fit=cover + black-translucent) — keep the title clear of it */
+  padding: calc(20px + env(safe-area-inset-top)) 24px 20px;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -683,20 +685,40 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .rbtn.yes.on { background: var(--good-face); border-color: var(--good-border); color: var(--green); }
 .rbtn.no.on { background: var(--clay-face); border-color: var(--clay-border); color: var(--clay); }
 
-.putt-step {
+.putt-step, .score-step {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   background: var(--recessed); border: 1px solid var(--border-recessed); border-radius: 16px;
   padding: 10px 14px; min-height: 72px;
 }
-.putt-step button {
+.putt-step button, .score-step button {
   width: 56px; height: 56px; border-radius: 16px; flex: none;
   display: flex; align-items: center; justify-content: center;
   background: var(--glass); border: 1px solid var(--edge); color: var(--text);
   transition: transform var(--dur-fast) var(--ease-out);
 }
-.putt-step button:active { transform: scale(0.94); }
-.putt-step button:disabled { opacity: 0.35; }
+.putt-step button:active, .score-step button:active { transform: scale(0.94); }
+.putt-step button:disabled, .score-step button:disabled { opacity: 0.35; }
 .putt-step > .num { font-size: 40px; font-weight: 800; letter-spacing: -0.05em; color: var(--text); }
+.score-step-val { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.score-step-val .num { font-size: 38px; font-weight: 800; letter-spacing: -0.05em; color: var(--text); line-height: 1; }
+.score-step-val small {
+  font-size: 11px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted);
+}
+.score-step-val small.under { color: var(--green); }
+.score-step-val small.over { color: var(--clay); }
+
+/* compact inline stepper — penalty strokes (usually 0, so it stays low-key) */
+.pen-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 2px 2px; }
+.pen-step { display: flex; align-items: center; gap: 12px; flex: none; }
+.pen-step button {
+  width: 40px; height: 40px; border-radius: 12px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--glass); border: 1px solid var(--edge); color: var(--text);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.pen-step button:active { transform: scale(0.92); }
+.pen-step button:disabled { opacity: 0.32; }
+.pen-step > .num { font-size: 20px; font-weight: 800; min-width: 14px; text-align: center; color: var(--text); }
 
 .rnav { display: flex; gap: 10px; margin-top: 6px; }
 .rnav .btn-ghost { flex: none; width: auto; padding: 0 18px; }
@@ -1875,7 +1897,7 @@ body:has(.fr-wrap) .install-ios { display: none; }
 /* ---------- welcome ---------- */
 .welcome-wrap {
   min-height: 100dvh; display: flex; align-items: center; justify-content: center;
-  padding: 40px 22px calc(36px + env(safe-area-inset-bottom));
+  padding: calc(40px + env(safe-area-inset-top)) 22px calc(36px + env(safe-area-inset-bottom));
   position: relative; overflow: hidden;
 }
 .welcome { width: 100%; max-width: 344px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; }
@@ -1965,7 +1987,7 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
 /* ---------- 404 ---------- */
 .notfound {
   min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  text-align: center; gap: 12px; padding: 40px 28px calc(40px + env(safe-area-inset-bottom));
+  text-align: center; gap: 12px; padding: calc(40px + env(safe-area-inset-top)) 28px calc(40px + env(safe-area-inset-bottom));
   max-width: 360px; margin: 0 auto;
 }
 .notfound-lockup { color: var(--green); margin-bottom: 6px; }
@@ -1983,7 +2005,7 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
 .boot {
   min-height: 100dvh; display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 34px;
-  padding: 40px 28px calc(40px + env(safe-area-inset-bottom));
+  padding: calc(40px + env(safe-area-inset-top)) 28px calc(40px + env(safe-area-inset-bottom));
 }
 .boot-lockup {
   display: flex; flex-direction: column; align-items: center; gap: 14px;

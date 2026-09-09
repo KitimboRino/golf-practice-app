@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { RoundHole, SavedRound, AreaKey } from "@/lib/db";
 import {
-  LiveRound, freshHoles, roundStats, roundLabel,
+  LiveRound, RoundStats, freshHoles, roundStats, roundLabel,
   leakReport, practiceNoun, LeakCategory, LEAK_BENCHMARK,
 } from "@/lib/round";
 import { holeStrategy } from "@/lib/course";
@@ -19,6 +19,20 @@ const fmtDate = (iso: string) => {
   const d = new Date(iso + "T00:00:00");
   return isNaN(+d) ? iso : d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 };
+
+// score relative to par, in golfer's terms
+const scoreTerm = (rel: number): string => {
+  if (rel <= -3) return "Albatross";
+  if (rel === -2) return "Eagle";
+  if (rel === -1) return "Birdie";
+  if (rel === 0) return "Par";
+  if (rel === 1) return "Bogey";
+  if (rel === 2) return "Double";
+  if (rel === 3) return "Triple";
+  return `+${rel}`;
+};
+// round total against par, e.g. "+3", "E", "−2"
+const toParLabel = (n: number) => (n === 0 ? "E" : n > 0 ? `+${n}` : `−${Math.abs(n)}`);
 
 // ---------------------------------------------------------------------------
 
@@ -55,6 +69,46 @@ export function Round({
 }
 
 // ---------------------------------------------------------------------------
+// scoring trend — a sparkline of to-par (normalised to 18) across recent rounds
+
+function ScoringTrend({ trend, latest }: { trend: number[]; latest: RoundStats }) {
+  const n = trend.length;
+  const lo = Math.min(...trend, 0);
+  const hi = Math.max(...trend, 0);
+  const span = hi - lo || 1;
+  const W = 300, H = 80, PAD = 8;
+  const x = (i: number) => (n === 1 ? W / 2 : PAD + (i / (n - 1)) * (W - 2 * PAD));
+  const y = (v: number) => H - PAD - ((v - lo) / span) * (H - 2 * PAD); // lower to-par sits higher
+  const pts = trend.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const first = trend[0];
+  const last = trend[n - 1];
+  const dir = last < first - 0.5 ? "improving" : last > first + 0.5 ? "slipping" : "flat";
+
+  return (
+    <div className="chart" style={{ marginTop: 2 }}>
+      <div className="chart-top">
+        <div className="chart-t"><Icon name="show_chart" size={17} color="var(--green)" />Scoring</div>
+        <div className="chart-val num">
+          {toParLabel(latest.toPar)}<span className="u"> last round</span>
+        </div>
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden>
+        <line x1="0" y1={y(0)} x2={W} y2={y(0)} className="chart-grid" vectorEffect="non-scaling-stroke" />
+        <polyline points={pts} className="chart-line" vectorEffect="non-scaling-stroke" />
+        <circle cx={x(n - 1)} cy={y(last)} r="3.5" className="chart-marker" vectorEffect="non-scaling-stroke" />
+      </svg>
+      <div className="chart-ax">
+        <span>{n} round{n === 1 ? "" : "s"}</span>
+        <span className={`leak-dir ${dir}`}>
+          <Icon name={DIR_ICON[dir]} size={13} />
+          {dir === "improving" ? "trending lower" : dir === "slipping" ? "creeping up" : "steady"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // setup
 
 function RoundSetup({
@@ -81,6 +135,14 @@ function RoundSetup({
   };
 
   const recent = [...rounds].reverse().slice(0, 6);
+
+  // scoring trend — to-par normalised to 18 holes so 9s and 18s sit on one axis
+  const scoredRounds = rounds
+    .map((r) => ({ r, s: roundStats(r.holeData) }))
+    .filter(({ s }) => s.scoredHoles >= 5)
+    .slice(-8);
+  const trend = scoredRounds.map(({ s }) => (s.toPar / s.scoredHoles) * 18);
+  const latest = scoredRounds[scoredRounds.length - 1]?.s;
 
   return (
     <>
@@ -145,6 +207,8 @@ function RoundSetup({
           </button>
         )}
 
+        {trend.length >= 2 && latest && <ScoringTrend trend={trend} latest={latest} />}
+
         {recent.length > 0 && (
           <div className="grp" style={{ paddingTop: 6 }}>
             <div className="sec-head">
@@ -162,12 +226,15 @@ function RoundSetup({
                         <div className="hist-l">
                           <div className="wk">{roundLabel(r)}</div>
                           <div className="dt">
-                            {fmtDate(r.date)} · {r.holes} holes · {st.putts} putts
+                            {fmtDate(r.date)} · {r.holes} holes
+                            {st.girPct !== null && ` · GIR ${st.girPct}%`}
                           </div>
                         </div>
                       </button>
                       <div className="hist-r">
-                        <div className="hist-solid num">{st.girPct}%</div>
+                        <div className="hist-solid num">
+                          {st.scoredHoles ? toParLabel(st.toPar) : st.girPct === null ? "–" : `${st.girPct}%`}
+                        </div>
                         <button
                           className="hist-del"
                           aria-label={`Delete ${roundLabel(r)}`}
@@ -259,27 +326,41 @@ function RoundPlay({
 
   const setPar = (par: 3 | 4 | 5) => {
     tapFx();
-    setHole({
-      par,
-      fairwayHit: par === 3 ? null : (h.fairwayHit === null ? false : h.fairwayHit),
-    });
+    // par 3 has no fairway; switching off par 3 leaves it unanswered
+    setHole({ par, fairwayHit: par === 3 ? null : (h.fairwayHit ?? undefined) });
   };
-  const setFairway = (hit: boolean) => {
+  const setScore = (d: number) => {
+    // first tap lands on par, then +/- adjusts from there
+    const v = Math.max(1, Math.min(h.par + 10, h.score == null ? h.par : h.score + d));
+    if (h.score != null && v === h.score) { bumpFx(); return; }
+    tapFx();
+    setHole({ score: v });
+  };
+  const setFairway = (result: "hit" | "left" | "right") => {
     tapFx();
     setFwAnswered((s) => new Set(s).add(i));
-    setHole({ fairwayHit: hit });
+    setHole(result === "hit"
+      ? { fairwayHit: true, fairwayMiss: undefined }
+      : { fairwayHit: false, fairwayMiss: result });
   };
   const setGir = (gir: boolean) => {
     tapFx();
-    setHole({ gir, upAndDown: gir ? false : (h.upAndDown ?? false) });
+    // green hit → up-and-down is N/A; green missed → leave it unanswered
+    setHole({ gir, upAndDown: gir ? null : h.upAndDown });
   };
   const setPutts = (d: number) => {
-    const v = Math.max(0, Math.min(8, h.putts + d));
-    if (v === h.putts) { bumpFx(); return; }
+    const v = Math.max(0, Math.min(8, (h.putts ?? 0) + d));
+    if (h.putts != null && v === h.putts) { bumpFx(); return; }
     tapFx();
     setHole({ putts: v });
   };
   const setUpDown = (v: boolean) => { tapFx(); setHole({ upAndDown: v }); };
+  const setPenalty = (d: number) => {
+    const v = Math.max(0, Math.min(6, (h.penalties ?? 0) + d));
+    if (v === (h.penalties ?? 0)) { bumpFx(); return; }
+    tapFx();
+    setHole({ penalties: v || undefined });
+  };
 
   const go = (d: number) => {
     const c = Math.max(0, Math.min(round.holes - 1, i + d));
@@ -287,10 +368,13 @@ function RoundPlay({
   };
   const finish = () => onFinish(round);
 
+  const editing = !!round.id;
   async function quit() {
     const ok = await confirm({
-      title: "Discard this round?",
-      body: "The holes you've logged won't be saved.",
+      title: editing ? "Discard changes?" : "Discard this round?",
+      body: editing
+        ? "This round stays as it was — your edits won't be saved."
+        : "The holes you've logged won't be saved.",
       confirmLabel: "Discard",
       tone: "danger",
     });
@@ -302,14 +386,18 @@ function RoundPlay({
       <header className="hdr">
         <div className="hdr-row">
           <div>
-            <div className="hdr-eyebrow">{round.course || "Round"}</div>
+            <div className="hdr-eyebrow">{editing ? "Editing · " : ""}{round.course || "Round"}</div>
             <div className="hdr-title sm">Hole {i + 1} of {round.holes}</div>
             <div className="hdr-sub sm">
-              {st.firOf > 0 && `FIR ${st.firMade}/${st.firOf} · `}
-              GIR {st.girMade}/{st.girOf} · {st.putts} putt{st.putts === 1 ? "" : "s"}
+              {[
+                st.scoredHoles > 0 && `${toParLabel(st.toPar)} thru ${st.scoredHoles}`,
+                st.firOf > 0 && `FIR ${st.firMade}/${st.firOf}`,
+                st.girOf > 0 && `GIR ${st.girMade}/${st.girOf}`,
+                st.puttsOf > 0 && `${st.putts} putt${st.putts === 1 ? "" : "s"}`,
+              ].filter(Boolean).join(" · ") || "Tap to log this hole"}
             </div>
           </div>
-          <button className="link-btn" onClick={quit}>Discard</button>
+          <button className="link-btn" onClick={quit}>{editing ? "Cancel" : "Discard"}</button>
         </div>
         <div className="stepdots" aria-hidden>
           {Array.from({ length: round.holes }, (_, n) => (
@@ -344,12 +432,33 @@ function RoundPlay({
           </div>
         </div>
 
+        <div className="rgrp">
+          <div className="rgrp-lbl">Score</div>
+          <div className="score-step">
+            <button aria-label="One fewer stroke" onClick={() => setScore(-1)} disabled={h.score != null && h.score <= 1}>
+              <Icon name="remove" size={24} />
+            </button>
+            <span className="score-step-val">
+              <span className="num">{h.score ?? "–"}</span>
+              {h.score != null && (
+                <small className={h.score < h.par ? "under" : h.score > h.par ? "over" : ""}>
+                  {scoreTerm(h.score - h.par)}
+                </small>
+              )}
+            </span>
+            <button aria-label="One more stroke" onClick={() => setScore(1)}>
+              <Icon name="add" size={24} />
+            </button>
+          </div>
+        </div>
+
         {h.par !== 3 && (
           <div className="rgrp">
             <div className="rgrp-lbl">Fairway</div>
             <div className="rrow">
-              <Bin on={h.fairwayHit === true} label="Hit" tone="yes" icon="check" onClick={() => setFairway(true)} />
-              <Bin on={h.fairwayHit === false} label="Missed" tone="no" icon="close" onClick={() => setFairway(false)} />
+              <Bin on={h.fairwayHit === true} label="Hit" tone="yes" icon="check" onClick={() => setFairway("hit")} />
+              <Bin on={h.fairwayMiss === "left"} label="Left" tone="no" icon="arrow_back" onClick={() => setFairway("left")} />
+              <Bin on={h.fairwayMiss === "right"} label="Right" tone="no" icon="arrow_forward" onClick={() => setFairway("right")} />
             </div>
           </div>
         )}
@@ -357,25 +466,25 @@ function RoundPlay({
         <div className="rgrp">
           <div className="rgrp-lbl">Green in regulation</div>
           <div className="rrow">
-            <Bin on={h.gir} label="Hit" tone="yes" icon="check" onClick={() => setGir(true)} />
-            <Bin on={!h.gir} label="Missed" tone="no" icon="close" onClick={() => setGir(false)} />
+            <Bin on={h.gir === true} label="Hit" tone="yes" icon="check" onClick={() => setGir(true)} />
+            <Bin on={h.gir === false} label="Missed" tone="no" icon="close" onClick={() => setGir(false)} />
           </div>
         </div>
 
         <div className="rgrp">
           <div className="rgrp-lbl">Putts</div>
           <div className="putt-step">
-            <button aria-label="One fewer putt" onClick={() => setPutts(-1)} disabled={h.putts <= 0}>
+            <button aria-label="One fewer putt" onClick={() => setPutts(-1)} disabled={h.putts != null && h.putts <= 0}>
               <Icon name="remove" size={24} />
             </button>
-            <span className="num">{h.putts}</span>
+            <span className="num">{h.putts ?? "–"}</span>
             <button aria-label="One more putt" onClick={() => setPutts(1)}>
               <Icon name="add" size={24} />
             </button>
           </div>
         </div>
 
-        {!h.gir && (
+        {h.gir === false && (
           <div className="rgrp">
             <div className="rgrp-lbl">Up &amp; down</div>
             <div className="rrow">
@@ -385,13 +494,40 @@ function RoundPlay({
           </div>
         )}
 
+        <div className="pen-row">
+          <span className="rgrp-lbl">Penalty strokes</span>
+          <div className="pen-step">
+            <button aria-label="One fewer penalty stroke" onClick={() => setPenalty(-1)} disabled={!(h.penalties ?? 0)}>
+              <Icon name="remove" size={18} />
+            </button>
+            <span className="num">{h.penalties ?? 0}</span>
+            <button aria-label="One more penalty stroke" onClick={() => setPenalty(1)}>
+              <Icon name="add" size={18} />
+            </button>
+          </div>
+        </div>
+
+        {last && (
+          <div className="rgrp">
+            <div className="rgrp-lbl">Round note <span style={{ color: "var(--hint)", fontWeight: 600 }}>(optional)</span></div>
+            <textarea
+              className="notes"
+              rows={2}
+              maxLength={500}
+              value={round.note ?? ""}
+              onChange={(e) => onChange({ ...round, note: e.target.value })}
+              placeholder="Anything to remember from this round?"
+            />
+          </div>
+        )}
+
         <div className="rnav">
           <button className="btn-ghost" onClick={() => go(-1)} disabled={i === 0}>
             <Icon name="arrow_back" size={18} />Back
           </button>
           {last ? (
             <button className="cta rnav-finish" onClick={finish}>
-              <Icon name="done_all" size={20} />Finish round
+              <Icon name="done_all" size={20} />{editing ? "Save changes" : "Finish round"}
             </button>
           ) : (
             <button className="cta rnav-next" onClick={() => go(1)}>
@@ -408,22 +544,51 @@ function RoundPlay({
 // summary (a just-finished round, or a saved one from the list)
 
 export function RoundSummary({
-  round, fresh, onDone,
+  round, fresh, onDone, onEdit,
 }: {
   round: SavedRound;
   fresh: boolean;
   onDone: () => void;
+  onEdit?: () => void;
 }) {
   const s = roundStats(round.holeData);
 
+  const breakdown = [
+    s.birdies && `${s.birdies} birdie${s.birdies === 1 ? "" : "s"}`,
+    s.pars && `${s.pars} par${s.pars === 1 ? "" : "s"}`,
+    s.bogeys && `${s.bogeys} bogey${s.bogeys === 1 ? "" : "s"}`,
+    s.doubles && `${s.doubles} double+`,
+  ].filter(Boolean).join(" · ");
+
   const rows: { label: string; value: string; sub?: string }[] = [
+    {
+      label: "Score",
+      value: s.scoredHoles
+        ? `${s.strokes}${s.scoredHoles < round.holeData.length ? ` / ${s.scoredHoles}` : ""}`
+        : "—",
+      sub: s.scoredHoles
+        ? `${toParLabel(s.toPar)} to par${breakdown ? ` · ${breakdown}` : ""}`
+        : "not logged",
+    },
     {
       label: "Fairways hit",
       value: s.firPct === null ? "—" : `${s.firPct}%`,
-      sub: s.firOf ? `${s.firMade} of ${s.firOf}` : "no par 4s or 5s",
+      sub: s.firOf
+        ? `${s.firMade} of ${s.firOf}${
+            s.fairwayLeft || s.fairwayRight ? ` · missed ${s.fairwayLeft}L / ${s.fairwayRight}R` : ""
+          }`
+        : "no par 4s or 5s",
     },
-    { label: "Greens in regulation", value: `${s.girPct}%`, sub: `${s.girMade} of ${s.girOf}` },
-    { label: "Total putts", value: `${s.putts}`, sub: `${s.puttsPerHole} per hole` },
+    {
+      label: "Greens in regulation",
+      value: s.girPct === null ? "—" : `${s.girPct}%`,
+      sub: s.girOf ? `${s.girMade} of ${s.girOf}` : "not logged",
+    },
+    {
+      label: "Total putts",
+      value: s.puttsOf ? `${s.putts}` : "—",
+      sub: s.puttsPerHole === null ? "not logged" : `${s.puttsPerHole} per hole`,
+    },
     {
       label: "Scrambling",
       value: s.scramblePct === null ? "—" : `${s.scramblePct}%`,
@@ -431,21 +596,30 @@ export function RoundSummary({
     },
     { label: "Three-putts", value: `${s.threePutts}`, sub: s.threePutts === 1 ? "hole" : "holes" },
   ];
+  if (s.penalties > 0) {
+    rows.push({
+      label: "Penalty strokes",
+      value: `${s.penalties}`,
+      sub: `on ${s.penaltyHoles} hole${s.penaltyHoles === 1 ? "" : "s"}`,
+    });
+  }
 
   function share() {
     const lines = [
       `RangeCard · ${roundLabel(round)} · ${fmtDate(round.date)}`,
+      s.scoredHoles ? `Score ${s.strokes} (${toParLabel(s.toPar)})${breakdown ? ` — ${breakdown}` : ""}` : null,
       `Fairways ${s.firPct === null ? "n/a" : s.firPct + "%"} (${s.firMade}/${s.firOf})`,
-      `GIR ${s.girPct}% (${s.girMade}/${s.girOf})`,
-      `Putts ${s.putts} · ${s.puttsPerHole}/hole · ${s.threePutts} three-putt${s.threePutts === 1 ? "" : "s"}`,
+      `GIR ${s.girPct === null ? "n/a" : s.girPct + "%"} (${s.girMade}/${s.girOf})`,
+      `Putts ${s.putts} · ${s.puttsPerHole ?? "n/a"}/hole · ${s.threePutts} three-putt${s.threePutts === 1 ? "" : "s"}`,
       `Scrambling ${s.scramblePct === null ? "n/a" : s.scramblePct + "%"}`,
-    ].join("\n");
+      s.penalties > 0 ? `Penalties ${s.penalties}` : null,
+    ].filter(Boolean).join("\n");
     if (navigator.share) navigator.share({ text: lines }).catch(() => {});
     else navigator.clipboard?.writeText(lines).catch(() => {});
   }
 
   return (
-    <div className="welcome-wrap" style={{ alignItems: "flex-start", paddingTop: 34 }}>
+    <div className="welcome-wrap" style={{ alignItems: "flex-start", paddingTop: "calc(34px + env(safe-area-inset-top))" }}>
       <div className="receipt">
         <div className="receipt-top">
           <span className="icon-tile lg glow">
@@ -470,10 +644,22 @@ export function RoundSummary({
           </div>
         </div>
 
+        {round.note?.trim() && (
+          <div className="receipt-note">
+            <div className="eyebrow dim"><Icon name="bookmark" size={14} color="var(--blue-icon)" /> From this round</div>
+            <div className="receipt-quote">&ldquo;{round.note.trim()}&rdquo;</div>
+          </div>
+        )}
+
         <div className="receipt-actions">
           <button className="cta" onClick={share}>
             <Icon name="ios_share" size={22} />Share this card
           </button>
+          {!fresh && onEdit && (
+            <button className="btn-ghost" onClick={onEdit}>
+              <Icon name="edit" size={17} />Edit round
+            </button>
+          )}
           <button className="btn-ghost" onClick={onDone}>Done</button>
         </div>
       </div>

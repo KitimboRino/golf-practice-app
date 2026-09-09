@@ -38,10 +38,15 @@ export const countIn = (arr: string[] | undefined, key: string) =>
 // ---- on-course rounds (separate from range sessions) ----
 export type RoundHole = {
   par: 3 | 4 | 5;
-  fairwayHit: boolean | null;   // null on par 3s (no fairway to hit)
-  gir: boolean;                 // green in regulation
-  putts: number;
-  upAndDown: boolean | null;    // scrambling — only meaningful when gir === false
+  // every field below is undefined until the golfer taps an answer — a fresh
+  // hole has no pre-selected score / fairway / GIR / putts / up-and-down.
+  score?: number;                // total strokes for the hole (absolute)
+  fairwayHit?: boolean | null;   // null on par 3s (no fairway to hit)
+  fairwayMiss?: "left" | "right"; // only when fairwayHit === false
+  gir?: boolean;                 // green in regulation
+  putts?: number;
+  upAndDown?: boolean | null;    // scrambling — only asked once gir === false
+  penalties?: number;            // penalty strokes taken on the hole (0 default)
 };
 
 export type SavedRound = {
@@ -50,6 +55,7 @@ export type SavedRound = {
   course?: string;
   holes: 9 | 18;                // hole count
   holeData: RoundHole[];        // one entry per hole (length === holes)
+  note?: string;                // one free-text note for the round
   createdAt: number;
   updatedAt: number;
   deleted?: boolean;
@@ -76,12 +82,11 @@ export type GameAttemptInput = Omit<GameAttempt, "updatedAt" | "deleted"> & {
   deleted?: boolean;
 };
 
+// A fresh hole carries only its par (4 unless changed) — nothing else is
+// pre-answered. Par 3s never ask about the fairway, so that stays null.
 export const emptyHole = (par: 3 | 4 | 5 = 4): RoundHole => ({
   par,
-  fairwayHit: par === 3 ? null : false,
-  gir: false,
-  putts: 2,
-  upAndDown: false, // gir defaults false, so a green missed by default
+  fairwayHit: par === 3 ? null : undefined,
 });
 
 // weekId sentinel for an ad-hoc "quick session" — not part of the 4-week plan
@@ -341,28 +346,35 @@ export async function importBackup(text: string): Promise<{ added: number; skipp
     ? (data as { rounds: unknown[] }).rounds
     : [];
   const par = (v: unknown): 3 | 4 | 5 => (v === 3 || v === 5 ? v : 4);
-  const bn = (v: unknown): boolean | null => (v === true || v === false ? v : null);
   const roundRecs: SavedRound[] = [];
   for (const raw of roundRows.slice(0, 2000)) {
     const r = raw as Record<string, any>;
     if (!r || typeof r !== "object" || typeof r.id !== "string" || !r.id) { skipped++; continue; }
     const holes = r.holes === 9 ? 9 : 18;
     const src = Array.isArray(r.holeData) ? r.holeData : [];
+    // absent fields stay undefined ("not answered"); only coerce what's present
+    const optBool = (v: unknown): boolean | undefined =>
+      v === true || v === false ? v : undefined;
     const holeData: RoundHole[] = Array.from({ length: holes }).map((_, i) => {
       const h = (src[i] ?? {}) as Record<string, any>;
       const p = par(h.par);
+      const fh = p === 3 ? null : optBool(h.fairwayHit);
       return {
         par: p,
-        fairwayHit: p === 3 ? null : bn(h.fairwayHit),
-        gir: h.gir === true,
-        putts: Math.max(0, Math.min(20, Math.round(Number(h.putts) || 0))),
-        upAndDown: h.gir === true ? null : bn(h.upAndDown),
+        score: h.score == null ? undefined : Math.max(1, Math.min(20, Math.round(Number(h.score) || 0))),
+        fairwayHit: fh,
+        fairwayMiss: fh === false && (h.fairwayMiss === "left" || h.fairwayMiss === "right") ? h.fairwayMiss : undefined,
+        gir: optBool(h.gir),
+        putts: h.putts == null ? undefined : Math.max(0, Math.min(20, Math.round(Number(h.putts) || 0))),
+        upAndDown: h.gir === true ? null : optBool(h.upAndDown),
+        penalties: h.penalties == null ? undefined : Math.max(0, Math.min(10, Math.round(Number(h.penalties) || 0))),
       };
     });
     roundRecs.push({
       id: r.id,
       date: isDate(r.date) ? r.date : today,
       course: typeof r.course === "string" ? r.course.slice(0, 80) : undefined,
+      note: typeof r.note === "string" ? r.note.slice(0, 500) : undefined,
       holes,
       holeData,
       createdAt: ts(r.createdAt),

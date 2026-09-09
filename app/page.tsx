@@ -472,11 +472,13 @@ export default function Page() {
   }, [round]);
 
   async function finishRound(r: LiveRound) {
+    const editing = !!r.id;
     const rec: RoundInput = {
-      id: uuid(),
-      createdAt: Date.now(),
+      id: r.id ?? uuid(),
+      createdAt: r.createdAt ?? Date.now(),
       date: isDate(r.date) ? r.date : today(),
       course: r.course.trim() || undefined,
+      note: r.note?.trim() || undefined,
       holes: r.holes,
       holeData: r.holeData,
     };
@@ -486,7 +488,23 @@ export default function Page() {
     setRounds(all);
     setRound(null);
     doneFx();
-    setRoundView({ round: all.find((x) => x.id === rec.id) ?? (rec as SavedRound), fresh: true });
+    setRoundView({ round: all.find((x) => x.id === rec.id) ?? (rec as SavedRound), fresh: !editing });
+  }
+
+  function editRound(r: SavedRound) {
+    setRoundView(null);
+    setRound({
+      id: r.id,
+      createdAt: r.createdAt,
+      date: r.date,
+      course: r.course ?? "",
+      holes: r.holes,
+      holeData: r.holeData.map((h) => ({ ...h })),
+      note: r.note,
+      current: 0,
+      startedAt: r.createdAt,
+    });
+    setTab("round");
   }
 
   async function discardRound() {
@@ -718,6 +736,7 @@ export default function Page() {
         round={roundView.round}
         fresh={roundView.fresh}
         onDone={() => { setRoundView(null); if (roundView.fresh) setTab("home"); }}
+        onEdit={() => editRound(roundView.round)}
       />
     );
   }
