@@ -5,6 +5,7 @@ import { Week, Session, PLAN } from "@/lib/plan";
 import { solidPct } from "@/lib/stats";
 import { sessionBalls, sessionMinutes } from "@/lib/verdict";
 import { Icon } from "./Icon";
+import { Glyph } from "./Glyph";
 
 const wkNum = (id: string) => id.replace(/[^0-9]/g, "") || "0";
 const sNum = (l: string) => l.replace(/[^0-9]/g, "") || "?";
@@ -69,7 +70,9 @@ export function SessionReceipt({
     <div className="welcome-wrap" style={{ alignItems: "flex-start", paddingTop: 34 }}>
       <div className="receipt">
         <div className="receipt-top">
-          <span className="icon-tile lg glow"><Icon name={quick ? "bolt" : "check"} size={26} fill /></span>
+          <span className="icon-tile lg glow">
+            {quick ? <Icon name="bolt" size={26} fill /> : <Glyph name="flag" />}
+          </span>
           <div className="receipt-h">{quick ? "Quick session logged" : `Session ${sNum(session.sessionLabel)} logged`}</div>
           <div className="receipt-meta">
             {quick

@@ -10,6 +10,8 @@ import { useCountUp } from "@/lib/useCountUp";
 import { useToast } from "./Toast";
 import { useConfirm } from "./Confirm";
 import { Icon } from "./Icon";
+import { Glyph } from "./Glyph";
+import { Mark } from "./Mark";
 
 const fmtDate = (iso: string) => {
   const d = new Date(iso + "T00:00:00");
@@ -120,6 +122,7 @@ export function Trends({
           </div>
         </header>
         <div className="empty-wrap">
+          <Mark size={300} className="empty-watermark" />
           <div className="empty-card">
             <svg viewBox="0 0 260 76" style={{ width: "100%", height: 76, display: "block" }}>
               <line x1="6" y1="66" x2="254" y2="66" className="chart-base" />

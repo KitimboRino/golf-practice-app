@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { WARMUP } from "@/lib/prep";
 import { Icon } from "./Icon";
+import { Glyph } from "./Glyph";
 
 // Shown once per calendar day before a fresh session. A guided run — one movement
 // at a time. Skip stays first-class; both Skip and finishing proceed to logging.
@@ -54,7 +55,7 @@ export function Warmup({ onSkip, onReady }: { onSkip: () => void; onReady: () =>
           </div>
         ) : (
           <div className="warm-now" style={{ textAlign: "center" }}>
-            <span className="icon-tile lg glow" style={{ margin: "0 auto" }}><Icon name="check" size={24} fill /></span>
+            <span className="icon-tile lg glow" style={{ margin: "0 auto" }}><Glyph name="check" size={24} /></span>
             <div className="warm-now-name" style={{ textAlign: "center" }}>Warmed up</div>
             <div className="warm-now-how" style={{ textAlign: "center" }}>All seven movements done. Your body's ready.</div>
           </div>

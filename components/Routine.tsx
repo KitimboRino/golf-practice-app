@@ -5,6 +5,7 @@ import { ROUTINE, ROUTINE_REPS_KEY } from "@/lib/routine";
 import { getMeta, setMeta } from "@/lib/db";
 import { tapFx, doneFx } from "@/lib/haptics";
 import { Icon } from "./Icon";
+import { Glyph } from "./Glyph";
 
 export function Routine({ onBack }: { onBack: () => void }) {
   const [mode, setMode] = useState<"read" | "rehearse">("read");
@@ -117,7 +118,7 @@ export function Routine({ onBack }: { onBack: () => void }) {
       <div className="screen">
         {done ? (
           <div className="routine-rehearse routine-complete">
-            <span className="icon-tile lg glow"><Icon name="check" size={26} fill /></span>
+            <span className="icon-tile lg glow"><Glyph name="check" /></span>
             <div className="routine-complete-h">That&apos;s the routine.</div>
             <div className="routine-complete-p">
               Six steps, same every time. Rehearsed {reps} {reps === 1 ? "time" : "times"}.

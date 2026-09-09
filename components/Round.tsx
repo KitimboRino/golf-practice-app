@@ -10,6 +10,7 @@ import { holeStrategy } from "@/lib/course";
 import { useConfirm } from "./Confirm";
 import { tapFx, bumpFx } from "@/lib/haptics";
 import { Icon } from "./Icon";
+import { Glyph } from "./Glyph";
 
 type PracticeFocus = { title: string; body: string };
 
@@ -310,7 +311,11 @@ function RoundPlay({
           </div>
           <button className="link-btn" onClick={quit}>Discard</button>
         </div>
-        <div className="pbar"><span style={{ transform: `scaleX(${(i + 1) / round.holes})` }} /></div>
+        <div className="stepdots" aria-hidden>
+          {Array.from({ length: round.holes }, (_, n) => (
+            <i key={n} className={n < i ? "done" : n === i ? "cur" : ""} />
+          ))}
+        </div>
       </header>
 
       <div className="screen log">
@@ -443,7 +448,9 @@ export function RoundSummary({
     <div className="welcome-wrap" style={{ alignItems: "flex-start", paddingTop: 34 }}>
       <div className="receipt">
         <div className="receipt-top">
-          <span className="icon-tile lg glow"><Icon name={fresh ? "check" : "golf_course"} size={26} fill /></span>
+          <span className="icon-tile lg glow">
+            {fresh ? <Glyph name="flag" /> : <Icon name="golf_course" size={26} fill />}
+          </span>
           <div className="receipt-h">{fresh ? "Round logged" : roundLabel(round)}</div>
           <div className="receipt-meta">
             {fresh && round.course?.trim() ? `${round.course.trim()} · ` : ""}
