@@ -320,7 +320,9 @@ body::before {
 button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
 .num { font-variant-numeric: tabular-nums; }
 
-/* skip link — off-screen until a keyboard user tabs to it */
+/* skip link — off-screen until a keyboard user tabs to it.
+   Disabled for now (the <a> in layout.tsx is commented out too). */
+/*
 .skip-link {
   position: fixed; top: 8px; left: 8px; z-index: 100;
   padding: 10px 16px; border-radius: 12px;
@@ -329,6 +331,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   transform: translateY(-160%); transition: transform var(--dur-base) var(--ease-out);
 }
 .skip-link:focus-visible { transform: translateY(0); outline: 2px solid var(--green); outline-offset: 2px; }
+*/
 .tabview:focus { outline: none; }
 
 /* keyboard focus — mouse/touch users never see it, keyboard users always do */

@@ -103,7 +103,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <script dangerouslySetInnerHTML={{ __html: recoveryScript }} />
-        <a href="#main" className="skip-link">Skip to content</a>
+        {/* <a href="#main" className="skip-link">Skip to content</a> */}
         <ToastProvider>
           <ConfirmProvider>
             <div className="app">{children}</div>
