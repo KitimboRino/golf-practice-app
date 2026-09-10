@@ -1,10 +1,10 @@
 import type { CSSProperties } from "react";
 
-// The RangeCard mark — the "Wedge": two tapered legs converging on a flag.
-// Renders in `currentColor`, so the surrounding element picks the colourway
-// (green on dark, ink on green, etc). Two cuts share one geometry — see
-// public/logo_kit/README.md. The Small cut keeps the 4u channel between the
-// legs open at <=24px, where the Regular cut would fill in.
+// The RangeCard mark — an organic fairway/green contour with a golf-ball accent.
+// Renders monochrome in `currentColor`, so the surrounding element picks the
+// colourway (green on dark, ink on green, parchment on green, …). The full-colour
+// treatments (app icon, favicon, splash, OG) live in /public as generated assets;
+// the source SVGs are in /brand.
 export function Mark({
   size = 24,
   className,
@@ -16,10 +16,9 @@ export function Mark({
   style?: CSSProperties;
   title?: string;
 }) {
-  const small = size <= 24;
   return (
     <svg
-      viewBox="0 0 100 100"
+      viewBox="-4 7 210 210"
       width={size}
       height={size}
       className={"mark" + (className ? " " + className : "")}
@@ -29,19 +28,8 @@ export function Mark({
       aria-hidden={title ? undefined : true}
     >
       {title ? <title>{title}</title> : null}
-      {small ? (
-        <>
-          <path d="M19 85L37 85L49 44L40.5 44Z" />
-          <path d="M81 85L63 85L51 44L59.5 44Z" />
-          <circle cx="50" cy="19" r="13.5" />
-        </>
-      ) : (
-        <>
-          <path d="M21 86L36 86L48 40L41 40Z" />
-          <path d="M79 86L64 86L52 40L59 40Z" />
-          <circle cx="50" cy="18" r="12" />
-        </>
-      )}
+      <path d="M42 20C22 20 6 36 6 56L6 130C6 172 40 206 82 206C124 206 174 192 188 152C198 124 182 96 156 94C132 92 108 84 94 66C82 50 68 20 42 20Z" />
+      <circle cx="168" cy="46" r="28" />
     </svg>
   );
 }

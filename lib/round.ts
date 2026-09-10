@@ -370,3 +370,73 @@ export function practiceNoun(areas: AreaKey[]): string {
   if (areas.length > 1) return "short game";
   return areas[0] ?? "";
 }
+
+// ===========================================================================
+// Approach breakdown — where the shot-detail data (distance bucket logged per
+// hole) earns its keep. Splits greens-hit rate by how far out the approach was,
+// so "your approach leaks" turns into "your approach leaks from 150+".
+// ---------------------------------------------------------------------------
+
+/** Canonical order of the approach-distance buckets captured on a hole. */
+export const APPROACH_BUCKETS = ["<75", "75–100", "100–125", "125–150", "150–175", "175+"] as const;
+
+export type ApproachBand = {
+  label: string;
+  girMade: number;
+  girOf: number;       // holes at this range with a green logged
+  girPct: number;
+  puttsPerHole: number | null;
+};
+
+export type ApproachReport = {
+  bands: ApproachBand[];   // only ranges with enough attempts, in distance order
+  attempts: number;        // holes with both a distance bucket and a GIR answer
+  bestLabel: string;
+  worstLabel: string;
+  worstPct: number;
+  spread: number;          // best girPct − worst girPct
+};
+
+/**
+ * Pool every logged hole that recorded an approach distance bucket AND a GIR
+ * answer, then bucket the greens-hit rate by range. Returns null until there's
+ * enough to say something — at least two ranges clearing `minPerBand`.
+ */
+export function approachBreakdown(
+  rounds: SavedRound[],
+  minPerBand = 2,
+): ApproachReport | null {
+  const holes = rounds
+    .flatMap((r) => r.holeData)
+    .filter((h) => h.approachYds && h.gir != null);
+  if (holes.length < 4) return null;
+
+  const bands: ApproachBand[] = APPROACH_BUCKETS.map((label) => {
+    const hs = holes.filter((h) => h.approachYds === label);
+    const girMade = hs.filter((h) => h.gir === true).length;
+    const puttHs = hs.filter((h) => h.putts != null);
+    const puttsTot = puttHs.reduce((n, h) => n + (h.putts as number), 0);
+    return {
+      label,
+      girMade,
+      girOf: hs.length,
+      girPct: hs.length ? Math.round((girMade / hs.length) * 100) : 0,
+      puttsPerHole: puttHs.length ? Math.round((puttsTot / puttHs.length) * 10) / 10 : null,
+    };
+  }).filter((b) => b.girOf >= minPerBand);
+
+  if (bands.length < 2) return null;
+
+  const byPct = [...bands].sort((a, b) => a.girPct - b.girPct);
+  const worst = byPct[0];
+  const best = byPct[byPct.length - 1];
+
+  return {
+    bands,
+    attempts: holes.length,
+    bestLabel: best.label,
+    worstLabel: worst.label,
+    worstPct: worst.girPct,
+    spread: best.girPct - worst.girPct,
+  };
+}

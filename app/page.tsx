@@ -22,6 +22,7 @@ import { Course } from "@/components/Course";
 import { Mark } from "@/components/Mark";
 import { LiveRound } from "@/lib/round";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { GlareToggle } from "@/components/GlareToggle";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/Confirm";
 import {
@@ -38,7 +39,7 @@ import { todaysOneThing, sessionsThisMonth } from "@/lib/verdict";
 import { SessionReceipt } from "@/components/SessionReceipt";
 import { About } from "@/components/About";
 import { APP_VERSION } from "@/lib/version";
-import { doneFx } from "@/lib/haptics";
+import { doneFx, tapFx } from "@/lib/haptics";
 
 type Tab = "home" | "session" | "trends" | "more" | "warmup" | "welcome" | "receipt" | "quickpick" | "firstrun" | "round";
 
@@ -84,10 +85,14 @@ function greeting(name: string, history: SavedSession[]): string {
 
 // the session in progress (new session or an edit). Per-ball taps live in `strips`;
 // every tally is derived from them so the two never drift.
+type AreaSetup = { dist?: number; club?: string };
+
 type Live = {
   weekId: string; sessionLabel: string; date: string; notes: string;
   bestClub: string; startedAt: number;
   strips: Strips;
+  // optional per-area setup picked while logging (target distance / club)
+  setup?: Partial<Record<keyof Strips, AreaSetup>>;
   // quick session only: which areas are in play, and an optional focus (e.g. from Fixes)
   areas?: (keyof Strips)[];
   focus?: QuickFocus;
@@ -130,6 +135,7 @@ function toLive(s: SavedSession): Live {
     weekId: s.weekId, sessionLabel: s.sessionLabel, date: s.date, notes: s.notes,
     bestClub: s.chipping.bestClub, startedAt: s.startedAt ?? Date.now(),
     strips: stripsFrom(s),
+    setup: s.setup ? JSON.parse(JSON.stringify(s.setup)) : undefined,
   };
 }
 
@@ -147,8 +153,20 @@ function fromLive(l: Live) {
     pitching: { close: countIn(c.pitching, "close"), short: countIn(c.pitching, "short"), long: countIn(c.pitching, "long") },
     putting: { in: countIn(c.putting, "in"), out: countIn(c.putting, "out") },
     strips: c,
+    setup: cleanSetup(l.setup),
     startedAt: l.startedAt,
   };
+}
+
+// drop empty area entries so a stray tap doesn't persist as {}
+function cleanSetup(s: Live["setup"]): SavedSession["setup"] {
+  if (!s) return undefined;
+  const out: NonNullable<SavedSession["setup"]> = {};
+  (Object.keys(s) as (keyof Strips)[]).forEach((a) => {
+    const e = s[a];
+    if (e && (e.dist != null || e.club)) out[a] = e;
+  });
+  return Object.keys(out).length ? out : undefined;
 }
 
 function anyLogged(l: Live) {
@@ -1006,7 +1024,7 @@ function Home({
     <>
       <header className="hdr">
         <div className="hdr-row">
-          <div>
+          <div style={{ flex: 1, minWidth: 0 }}>
             {!firstRun && (
               <button className="greeting" onClick={onEditName} aria-label="Edit your name">
                 <span>{greeting}</span><Icon name="edit" size={13} />
@@ -1017,10 +1035,12 @@ function Home({
           </div>
           <div className="hdr-actions">
             {monthCount >= 2 && (
-              <div className="chip" title="Sessions logged this calendar month">
-                <Icon name="event_available" size={15} />{monthCount} this month
+              <div className="chip" title={`${monthCount} sessions logged this calendar month`}>
+                <Icon name="event_available" size={15} />{monthCount}
+                <span className="chip-lbl"> this month</span>
               </div>
             )}
+            <GlareToggle />
             <ThemeToggle />
           </div>
         </div>
@@ -1187,37 +1207,42 @@ type AreaKey = "chipping" | "irons" | "driving" | "pitching" | "putting";
 type Tone = "good" | "sand" | "clay";
 type StepDef = {
   id: string; area: AreaKey; name: string; icon: string; drillIcon: string; target: number;
-  outcomes: { key: string; tone: Tone; icon: string; label: string }[];
+  outcomes: { key: string; tone: Tone; icon: string; label: string; hint: string }[];
+  distUnit?: "yd" | "ft"; dists?: number[]; clubs?: string[];
 };
 
 const STEPS: StepDef[] = [
   { id: "chip", area: "chipping", name: "Chipping", icon: "swipe_up", drillIcon: "crop_square", target: 10,
     outcomes: [
-      { key: "on", tone: "good", icon: "check", label: "On towel" },
-      { key: "off", tone: "clay", icon: "close", label: "Off towel" },
+      { key: "on", tone: "good", icon: "check", label: "On towel", hint: "landed on it" },
+      { key: "off", tone: "clay", icon: "close", label: "Off towel", hint: "missed the mark" },
     ] },
   { id: "pitch", area: "pitching", name: "Pitching", icon: "arrow_outward", drillIcon: "flag", target: 10,
+    distUnit: "yd", dists: [35, 45, 55, 65], clubs: ["54°", "56°", "58°", "60°"],
     outcomes: [
-      { key: "close", tone: "good", icon: "check", label: "Close" },
-      { key: "short", tone: "sand", icon: "arrow_downward", label: "Short" },
-      { key: "long", tone: "clay", icon: "arrow_upward", label: "Long" },
+      { key: "close", tone: "good", icon: "check", label: "Close", hint: "inside ~3 steps" },
+      { key: "short", tone: "sand", icon: "arrow_downward", label: "Short", hint: "front edge" },
+      { key: "long", tone: "clay", icon: "arrow_upward", label: "Long", hint: "carried past" },
     ] },
   { id: "iron", area: "irons", name: "Irons", icon: "golf_course", drillIcon: "stacked_line_chart", target: 9,
+    clubs: ["6i", "7i", "8i", "9i"],
     outcomes: [
-      { key: "solid", tone: "good", icon: "check", label: "Solid" },
-      { key: "fat", tone: "sand", icon: "south_east", label: "Fat" },
-      { key: "thin", tone: "clay", icon: "north_east", label: "Thin" },
+      { key: "solid", tone: "good", icon: "check", label: "Solid", hint: "flush contact" },
+      { key: "fat", tone: "sand", icon: "south_east", label: "Fat", hint: "ground first" },
+      { key: "thin", tone: "clay", icon: "north_east", label: "Thin", hint: "caught it low" },
     ] },
   { id: "drive", area: "driving", name: "Driving", icon: "sports_golf", drillIcon: "near_me", target: 10,
+    clubs: ["Driver", "3W", "5W", "Iron"],
     outcomes: [
-      { key: "fairway", tone: "good", icon: "check", label: "On line" },
-      { key: "left", tone: "sand", icon: "west", label: "Left" },
-      { key: "right", tone: "clay", icon: "east", label: "Right" },
+      { key: "fairway", tone: "good", icon: "check", label: "On line", hint: "started at target" },
+      { key: "left", tone: "sand", icon: "west", label: "Left", hint: "pulled / hooked" },
+      { key: "right", tone: "clay", icon: "east", label: "Right", hint: "pushed / sliced" },
     ] },
   { id: "putt", area: "putting", name: "Putting", icon: "adjust", drillIcon: "door_sliding", target: 10,
+    distUnit: "ft", dists: [3, 6, 10, 20],
     outcomes: [
-      { key: "in", tone: "good", icon: "golf_course", label: "In" },
-      { key: "out", tone: "clay", icon: "close", label: "Out" },
+      { key: "in", tone: "good", icon: "golf_course", label: "In", hint: "holed / through the gate" },
+      { key: "out", tone: "clay", icon: "close", label: "Out", hint: "missed" },
     ] },
 ];
 
@@ -1274,11 +1299,34 @@ function SessionScreen({
     ? areaFilter.map((a) => STEPS.find((s) => s.area === a)).filter((s): s is StepDef => !!s)
     : STEPS;
 
-  const [open, setOpen] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(steps.map((s, i) => [s.id, i === 0])),
-  );
+  // one area open at a time — the "active" area; the rest stay collapsed
+  const [openId, setOpenId] = useState<string | null>(() => steps[0]?.id ?? null);
   const set = (patch: Partial<Live>) => setLive({ ...live, ...patch });
-  const toggle = (k: string) => setOpen({ ...open, [k]: !open[k] });
+  const toggle = (k: string) => setOpenId((cur) => (cur === k ? null : k));
+
+  const setupFor = (a: AreaKey): AreaSetup => live.setup?.[a] ?? {};
+  const setSetup = (a: AreaKey, patch: AreaSetup) => {
+    tapFx();
+    set({ setup: { ...live.setup, [a]: { ...setupFor(a), ...patch } } });
+  };
+
+  // collapse the current area and open the next one (or drop to the finish
+  // section when it's the last), scrolling it into view
+  const advance = (fromId: string) => {
+    const idx = steps.findIndex((s) => s.id === fromId);
+    const next = steps[idx + 1];
+    if (next) {
+      setOpenId(next.id);
+      requestAnimationFrame(() =>
+        document.querySelector(`[data-block="${next.id}"]`)?.scrollIntoView({ block: "start", behavior: "smooth" }),
+      );
+    } else {
+      setOpenId(null);
+      requestAnimationFrame(() =>
+        document.querySelector(".session-finish")?.scrollIntoView({ block: "center", behavior: "smooth" }),
+      );
+    }
+  };
 
   const push = (area: AreaKey, key: string) => {
     const arr = live.strips[area];
@@ -1322,7 +1370,7 @@ function SessionScreen({
     <>
       <header className="hdr">
         <div className="hdr-row">
-          <div>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div className="hdr-eyebrow">
               {editMode ? "Editing session" : isQuick ? "Quick session" : "Session log"}
             </div>
@@ -1339,7 +1387,10 @@ function SessionScreen({
                   : `${week.title} block · 5 areas`}
             </div>
           </div>
-          <div className="chip"><Icon name="check_circle" size={16} fill={logged === total} />{logged}/{total}</div>
+          <div className="hdr-actions">
+            <GlareToggle />
+            <div className="chip"><Icon name="check_circle" size={16} fill={logged === total} />{logged}/{total}</div>
+          </div>
         </div>
         <div className="pbar"><span style={{ transform: `scaleX(${total ? logged / total : 0})` }} /></div>
       </header>
@@ -1367,17 +1418,18 @@ function SessionScreen({
           </details>
         )}
 
-        {steps.map((step) => {
+        {steps.map((step, stepIdx) => {
           const strip = live.strips[step.area];
           const done = areaLogged(step.area);
           const d = drillFor(step);
           const good = step.outcomes[0].key;
           const goodN = strip.reduce((a, x) => (x === good ? a + 1 : a), 0);
-          const tallyKeys = step.outcomes.map((o) => strip.reduce((a, x) => (x === o.key ? a + 1 : a), 0));
+          const goodPct = strip.length ? Math.round((goodN / strip.length) * 100) : null;
+          const nextStep = steps[stepIdx + 1];
           return (
             <Block key={step.id} id={step.id} name={step.name} icon={step.icon} logged={done}
-                   tally={tallyKeys.join("/")}
-                   open={open[step.id]} toggle={() => toggle(step.id)}>
+                   count={strip.length} target={step.target} goodPct={goodPct}
+                   open={openId === step.id} toggle={() => toggle(step.id)}>
               {!isQuick && (
                 <div className="drline">
                   <Icon name={step.drillIcon} size={17} color="var(--blue)" style={{ marginTop: 1 }} />{d.line}
@@ -1390,6 +1442,46 @@ function SessionScreen({
                   <button onClick={() => onRestoreDrill(step.area)}>Restore planned</button>
                 </div>
               )}
+
+              {step.dists && (() => {
+                const cur = setupFor(step.area).dist;
+                return (
+                  <div className="setup-row">
+                    <div className="rgrp-lbl">
+                      Target distance{cur != null && <span className="setup-sel"> · {cur} {step.distUnit}</span>}
+                    </div>
+                    <div className="chips">
+                      {step.dists!.map((v) => (
+                        <button key={v} className={"chip-btn" + (cur === v ? " on" : "")}
+                                aria-pressed={cur === v}
+                                onClick={() => setSetup(step.area, { dist: cur === v ? undefined : v })}>
+                          {v} {step.distUnit}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {step.clubs && (() => {
+                const cur = setupFor(step.area).club;
+                return (
+                  <div className="setup-row">
+                    <div className="rgrp-lbl">
+                      Club{cur && <span className="setup-sel"> · {cur}</span>}
+                    </div>
+                    <div className="chips">
+                      {step.clubs!.map((v) => (
+                        <button key={v} className={"chip-btn" + (cur === v ? " on" : "")}
+                                aria-pressed={cur === v}
+                                onClick={() => setSetup(step.area, { club: cur === v ? undefined : v })}>
+                          {v}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {step.area === "chipping" && (
                 <div className="grp" style={{ gap: 8 }}>
@@ -1436,7 +1528,7 @@ function SessionScreen({
 
               <div className="outcomes">
                 {step.outcomes.map((o) => (
-                  <Outcome key={o.key} tone={o.tone} icon={o.icon} label={o.label}
+                  <Outcome key={o.key} tone={o.tone} icon={o.icon} label={o.label} hint={o.hint}
                            count={strip.reduce((a, x) => (x === o.key ? a + 1 : a), 0)}
                            onInc={() => push(step.area, o.key)}
                            onDec={() => popType(step.area, o.key)} />
@@ -1452,11 +1544,17 @@ function SessionScreen({
 
               {!isQuick && d.cards.map((c, i) => <DrillCard key={i} how={c.how} name={c.name} />)}
               {!isQuick && d.sticks.map((s, i) => <Stick key={i} text={s} />)}
+
+              <button className="block-continue" onClick={() => advance(step.id)}>
+                {nextStep
+                  ? <>{strip.length ? "Done" : "Skip"} · next: {nextStep.name}<Icon name="arrow_forward" size={19} /></>
+                  : <>{strip.length ? "Done" : "Skip"} · review &amp; finish<Icon name="south" size={19} /></>}
+              </button>
             </Block>
           );
         })}
 
-        <div className="grp" style={{ paddingTop: 8 }}>
+        <div className="grp session-finish" style={{ paddingTop: 8 }}>
           <div className="label-row"><Icon name="event" size={16} />Session date</div>
           <input className="datefield num" type="date" value={live.date}
                  min="2000-01-01" max={today()}
@@ -1480,12 +1578,14 @@ function SessionScreen({
 }
 
 function Block({
-  id, name, icon, logged, tally, open, toggle, children,
+  id, name, icon, logged, count, target, goodPct, open, toggle, children,
 }: {
-  id: string; name: string; icon: string; logged: boolean; tally: string;
+  id: string; name: string; icon: string; logged: boolean;
+  count: number; target: number; goodPct: number | null;
   open: boolean; toggle: () => void; children: React.ReactNode;
 }) {
-  const cls = "block" + (!logged && !open ? " empty" : "") + (!open ? " collapsed" : "");
+  const full = count >= target;
+  const cls = "block" + (!logged && !open ? " empty" : "") + (!open ? " collapsed" : "") + (open ? " active" : "");
   return (
     <section className={cls} data-block={id}>
       <button className="block-head" onClick={toggle} aria-expanded={open}>
@@ -1493,9 +1593,11 @@ function Block({
           <Icon name={icon} size={21} color={logged || open ? "var(--green)" : "var(--icon-muted)"} />{name}
         </span>
         <span className="block-right">
-          {(logged || !open) && (
-            <span className={`block-tally${logged ? "" : " none"}`}>{logged ? tally : "not logged"}</span>
-          )}
+          <span className={"block-tally" + (!logged ? " none" : full ? " full" : "")}>
+            {logged
+              ? `${count}/${target}${goodPct !== null ? ` · ${goodPct}%` : ""}`
+              : "Not logged"}
+          </span>
           <Icon name="expand_more" size={22} color="var(--icon-muted)"
                 className={"rot-chev" + (open ? " open" : "")} />
         </span>

@@ -5,12 +5,14 @@ import { RoundHole, SavedRound, AreaKey } from "@/lib/db";
 import {
   LiveRound, RoundStats, freshHoles, roundStats, roundLabel,
   leakReport, practiceNoun, LeakCategory, LEAK_BENCHMARK,
+  approachBreakdown, ApproachReport,
 } from "@/lib/round";
 import { holeStrategy } from "@/lib/course";
 import { useConfirm } from "./Confirm";
 import { tapFx, bumpFx } from "@/lib/haptics";
 import { Icon } from "./Icon";
 import { Glyph } from "./Glyph";
+import { GlareToggle } from "./GlareToggle";
 
 type PracticeFocus = { title: string; body: string };
 
@@ -182,7 +184,7 @@ function RoundSetup({
               value={course}
               maxLength={80}
               onChange={(e) => setCourse(e.target.value)}
-              placeholder="e.g. Rosapenna, Old Tom Morris"
+              placeholder="e.g. Uganda Golf Club"
             />
           </div>
         </div>
@@ -260,17 +262,21 @@ function RoundSetup({
 // per-hole logger
 
 function Bin({
-  on, label, tone, icon, onClick,
+  on, label, hint, tone, icon, onClick,
 }: {
-  on: boolean; label: string; tone: "yes" | "no"; icon: string; onClick: () => void;
+  on: boolean; label: string; hint?: string; tone: "yes" | "no"; icon: string; onClick: () => void;
 }) {
   return (
-    <button className={`rbtn ${tone}` + (on ? " on" : "")} aria-pressed={on} onClick={onClick}>
-      <Icon name={icon} size={20} />
-      {label}
+    <button className={`rbtn ${tone}` + (on ? " on" : "") + (hint ? " tall" : "")} aria-pressed={on} onClick={onClick}>
+      <span className="rbtn-main"><Icon name={icon} size={20} />{label}</span>
+      {hint && <span className="rbtn-hint">{hint}</span>}
     </button>
   );
 }
+
+const TEE_CLUBS = ["Driver", "3W", "5W", "Hybrid", "Iron"];
+const APPROACH_CLUBS = ["3W", "Hybrid", "Long iron", "Mid iron", "Short iron", "Wedge"];
+const APPROACH_YDS = ["<75", "75–100", "100–125", "125–150", "150–175", "175+"];
 
 // A gentle, collapsed-by-default nudge from lib/course.ts, matched to the hole.
 function StrategyStrip({
@@ -361,6 +367,11 @@ function RoundPlay({
     tapFx();
     setHole({ penalties: v || undefined });
   };
+  const pick = (k: "teeClub" | "approachClub" | "approachYds", v: string) => {
+    tapFx();
+    setHole({ [k]: h[k] === v ? undefined : v });
+  };
+  const detailCount = [h.teeClub, h.approachClub, h.approachYds].filter(Boolean).length;
 
   const go = (d: number) => {
     const c = Math.max(0, Math.min(round.holes - 1, i + d));
@@ -397,7 +408,10 @@ function RoundPlay({
               ].filter(Boolean).join(" · ") || "Tap to log this hole"}
             </div>
           </div>
-          <button className="link-btn" onClick={quit}>{editing ? "Cancel" : "Discard"}</button>
+          <div className="hdr-actions">
+            <GlareToggle />
+            <button className="link-btn" onClick={quit}>{editing ? "Cancel" : "Discard"}</button>
+          </div>
         </div>
         <div className="stepdots" aria-hidden>
           {Array.from({ length: round.holes }, (_, n) => (
@@ -427,6 +441,7 @@ function RoundPlay({
                 onClick={() => setPar(p)}
               >
                 <span className="num">{p}</span>
+                {h.par === p && p === 4 && h.score == null && <span className="rbtn-std">std</span>}
               </button>
             ))}
           </div>
@@ -454,11 +469,14 @@ function RoundPlay({
 
         {h.par !== 3 && (
           <div className="rgrp">
-            <div className="rgrp-lbl">Fairway</div>
+            <div className="rgrp-lbl rgrp-lbl-row">
+              <span>Fairway <span className="rgrp-sub">tee shot</span></span>
+              {(h.fairwayHit != null) && <span className="rgrp-done">Drive logged</span>}
+            </div>
             <div className="rrow">
-              <Bin on={h.fairwayHit === true} label="Hit" tone="yes" icon="check" onClick={() => setFairway("hit")} />
-              <Bin on={h.fairwayMiss === "left"} label="Left" tone="no" icon="arrow_back" onClick={() => setFairway("left")} />
-              <Bin on={h.fairwayMiss === "right"} label="Right" tone="no" icon="arrow_forward" onClick={() => setFairway("right")} />
+              <Bin on={h.fairwayHit === true} label="Hit" hint="centre" tone="yes" icon="check" onClick={() => setFairway("hit")} />
+              <Bin on={h.fairwayMiss === "left"} label="Left" hint="rough / trees" tone="no" icon="arrow_back" onClick={() => setFairway("left")} />
+              <Bin on={h.fairwayMiss === "right"} label="Right" hint="rough / trees" tone="no" icon="arrow_forward" onClick={() => setFairway("right")} />
             </div>
           </div>
         )}
@@ -468,19 +486,6 @@ function RoundPlay({
           <div className="rrow">
             <Bin on={h.gir === true} label="Hit" tone="yes" icon="check" onClick={() => setGir(true)} />
             <Bin on={h.gir === false} label="Missed" tone="no" icon="close" onClick={() => setGir(false)} />
-          </div>
-        </div>
-
-        <div className="rgrp">
-          <div className="rgrp-lbl">Putts</div>
-          <div className="putt-step">
-            <button aria-label="One fewer putt" onClick={() => setPutts(-1)} disabled={h.putts != null && h.putts <= 0}>
-              <Icon name="remove" size={24} />
-            </button>
-            <span className="num">{h.putts ?? "–"}</span>
-            <button aria-label="One more putt" onClick={() => setPutts(1)}>
-              <Icon name="add" size={24} />
-            </button>
           </div>
         </div>
 
@@ -494,18 +499,72 @@ function RoundPlay({
           </div>
         )}
 
-        <div className="pen-row">
-          <span className="rgrp-lbl">Penalty strokes</span>
-          <div className="pen-step">
-            <button aria-label="One fewer penalty stroke" onClick={() => setPenalty(-1)} disabled={!(h.penalties ?? 0)}>
-              <Icon name="remove" size={18} />
-            </button>
-            <span className="num">{h.penalties ?? 0}</span>
-            <button aria-label="One more penalty stroke" onClick={() => setPenalty(1)}>
-              <Icon name="add" size={18} />
-            </button>
+        <div className="rstat-grid">
+          <div className="rstat">
+            <div className="rgrp-lbl">Putts</div>
+            <div className="putt-step">
+              <button aria-label="One fewer putt" onClick={() => setPutts(-1)} disabled={h.putts != null && h.putts <= 0}>
+                <Icon name="remove" size={22} />
+              </button>
+              <span className="num">{h.putts ?? "–"}</span>
+              <button aria-label="One more putt" onClick={() => setPutts(1)}>
+                <Icon name="add" size={22} />
+              </button>
+            </div>
+          </div>
+          <div className="rstat">
+            <div className="rgrp-lbl">Penalties</div>
+            <div className="putt-step">
+              <button aria-label="One fewer penalty stroke" onClick={() => setPenalty(-1)} disabled={!(h.penalties ?? 0)}>
+                <Icon name="remove" size={22} />
+              </button>
+              <span className="num">{h.penalties ?? 0}</span>
+              <button aria-label="One more penalty stroke" onClick={() => setPenalty(1)}>
+                <Icon name="add" size={22} />
+              </button>
+            </div>
           </div>
         </div>
+
+        <details className="shot-detail">
+          <summary>
+            <Icon name="sports_golf" size={15} color="var(--icon-muted)" />
+            Shot detail
+            {detailCount > 0 && <span className="shot-detail-n">{detailCount}</span>}
+            <Icon name="expand_more" size={18} className="flowstrip-chev" />
+          </summary>
+          <div className="shot-detail-body">
+            {h.par !== 3 && (
+              <div className="rgrp" style={{ gap: 7 }}>
+                <div className="rgrp-lbl">Tee club{h.teeClub && <span className="setup-sel"> · {h.teeClub}</span>}</div>
+                <div className="chips">
+                  {TEE_CLUBS.map((c) => (
+                    <button key={c} className={"chip-btn" + (h.teeClub === c ? " on" : "")}
+                            aria-pressed={h.teeClub === c} onClick={() => pick("teeClub", c)}>{c}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="rgrp" style={{ gap: 7 }}>
+              <div className="rgrp-lbl">Approach from{h.approachYds && <span className="setup-sel"> · {h.approachYds} yd</span>}</div>
+              <div className="chips">
+                {APPROACH_YDS.map((v) => (
+                  <button key={v} className={"chip-btn" + (h.approachYds === v ? " on" : "")}
+                          aria-pressed={h.approachYds === v} onClick={() => pick("approachYds", v)}>{v}</button>
+                ))}
+              </div>
+            </div>
+            <div className="rgrp" style={{ gap: 7 }}>
+              <div className="rgrp-lbl">Approach club{h.approachClub && <span className="setup-sel"> · {h.approachClub}</span>}</div>
+              <div className="chips">
+                {APPROACH_CLUBS.map((c) => (
+                  <button key={c} className={"chip-btn" + (h.approachClub === c ? " on" : "")}
+                          aria-pressed={h.approachClub === c} onClick={() => pick("approachClub", c)}>{c}</button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </details>
 
         {last && (
           <div className="rgrp">
@@ -522,8 +581,8 @@ function RoundPlay({
         )}
 
         <div className="rnav">
-          <button className="btn-ghost" onClick={() => go(-1)} disabled={i === 0}>
-            <Icon name="arrow_back" size={18} />Back
+          <button className="btn-ghost rnav-back" onClick={() => go(-1)} disabled={i === 0} aria-label="Previous hole">
+            <Icon name="arrow_back" size={20} />
           </button>
           {last ? (
             <button className="cta rnav-finish" onClick={finish}>
@@ -531,7 +590,7 @@ function RoundPlay({
             </button>
           ) : (
             <button className="cta rnav-next" onClick={() => go(1)}>
-              Next hole<Icon name="arrow_forward" size={20} />
+              Save &amp; go to hole {i + 2}<Icon name="arrow_forward" size={20} />
             </button>
           )}
         </div>
@@ -701,12 +760,46 @@ function LeakSpark({ values, tone }: { values: number[]; tone: "up" | "down" | "
   );
 }
 
+// approach-distance breakdown, shown under the Approach leak card once a few
+// holes have logged how far out the approach was
+function ApproachStrip({ report }: { report: ApproachReport }) {
+  const worst = report.spread >= 15;
+  return (
+    <div className="leak-appr">
+      <div className="leak-appr-h">
+        <span>By distance</span>
+        <span>{report.attempts} approach{report.attempts === 1 ? "" : "es"} logged</span>
+      </div>
+      {report.bands.map((b) => (
+        <div className="leak-appr-row" key={b.label}>
+          <span className="leak-appr-band num">{b.label}</span>
+          <span className="leak-appr-track">
+            <span
+              className={"leak-appr-fill" + (b.label === report.worstLabel && worst ? " weak" : "")}
+              style={{ width: `${Math.max(3, b.girPct)}%` }}
+            />
+          </span>
+          <span className="leak-appr-val num">{b.girPct}%</span>
+          <span className="leak-appr-of num">{b.girMade}/{b.girOf}</span>
+        </div>
+      ))}
+      {worst && (
+        <p className="leak-appr-note">
+          Greens-hit rate drops to {report.worstPct}% from {report.worstLabel} yd,
+          against your best from {report.bestLabel}. Practise the range that&apos;s leaking.
+        </p>
+      )}
+    </div>
+  );
+}
+
 function LeakCard({
-  cat, rank, onPractice,
+  cat, rank, onPractice, approach,
 }: {
   cat: LeakCategory;
   rank: number;
   onPractice: (areas: AreaKey[], focus: PracticeFocus) => void;
+  approach?: ApproachReport | null;
 }) {
   const g = barGeom(cat);
   const isTop = rank === 0 && cat.status === "below";
@@ -740,6 +833,8 @@ function LeakCard({
       )}
 
       <p className="leak-read">{cat.read}</p>
+
+      {cat.key === "approach" && approach && <ApproachStrip report={approach} />}
 
       {cat.trend.length >= 2 && cat.trendDir && (
         <div className="leak-trend">
@@ -777,6 +872,7 @@ export function RoundDiagnostic({
   onPractice: (areas: AreaKey[], focus: PracticeFocus) => void;
 }) {
   const report = leakReport(rounds);
+  const approach = approachBreakdown(rounds);
   const noLeak = !!report && !report.categories.some((c) => c.status === "below");
 
   return (
@@ -817,7 +913,8 @@ export function RoundDiagnostic({
             )}
 
             {report.categories.map((c, i) => (
-              <LeakCard key={c.key} cat={c} rank={i} onPractice={onPractice} />
+              <LeakCard key={c.key} cat={c} rank={i} onPractice={onPractice}
+                        approach={c.key === "approach" ? approach : null} />
             ))}
           </>
         )}

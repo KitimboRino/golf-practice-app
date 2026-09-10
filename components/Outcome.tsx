@@ -11,9 +11,10 @@ const HOLD_MS = 450;
 // Tap to add · press-and-hold (or right-click) to subtract, floored at 0.
 // The hold shows a filling bar so the hidden gesture is discoverable.
 export function Outcome({
-  label, icon, count, tone, onInc, onDec,
+  label, hint, icon, count, tone, onInc, onDec,
 }: {
   label: string;
+  hint?: string;
   icon: string;
   count: number;
   tone: Tone;
@@ -61,6 +62,7 @@ export function Outcome({
       {/* key forces the pop animation to replay each time the tally changes */}
       <span className="outcome-count num" key={count}>{count}</span>
       <span className="outcome-label"><Icon name={icon} size={15} />{label}</span>
+      {hint && <span className="outcome-hint">{hint}</span>}
     </button>
   );
 }

@@ -26,6 +26,8 @@ export type SavedSession = {
   pitching: { close: number; short: number; long: number };
   putting: { in: number; out: number };
   strips?: Strips;            // v3 — per-ball order for the shot strip
+  // v4 — optional per-area setup captured while logging (target distance / club)
+  setup?: Partial<Record<keyof Strips, { dist?: number; club?: string }>>;
   startedAt?: number;         // v3 — when logging began, for session duration
   createdAt: number;
   updatedAt: number;          // last local write — drives last-write-wins on sync
@@ -47,6 +49,10 @@ export type RoundHole = {
   putts?: number;
   upAndDown?: boolean | null;    // scrambling — only asked once gir === false
   penalties?: number;            // penalty strokes taken on the hole (0 default)
+  // optional per-shot detail (collapsed section) — for the leak diagnostic
+  teeClub?: string;              // "Driver" | "3W" | … (par 4/5)
+  approachClub?: string;         // grouped: "Short iron" | "Wedge" | …
+  approachYds?: string;          // bucket label: "100–125" | "150+" | …
 };
 
 export type SavedRound = {
@@ -335,6 +341,18 @@ export async function importBackup(text: string): Promise<{ added: number; skipp
         chipping: strip(r.strips.chipping), pitching: strip(r.strips.pitching),
         putting: strip(r.strips.putting),
       } : undefined,
+      setup: r.setup && typeof r.setup === "object" ? (() => {
+        const out: Record<string, { dist?: number; club?: string }> = {};
+        for (const a of ["driving", "irons", "chipping", "pitching", "putting"] as const) {
+          const s = r.setup[a];
+          if (!s || typeof s !== "object") continue;
+          const e: { dist?: number; club?: string } = {};
+          if (typeof s.dist === "number" && isFinite(s.dist)) e.dist = Math.max(0, Math.min(400, Math.round(s.dist)));
+          if (typeof s.club === "string" && s.club.trim()) e.club = s.club.slice(0, 24);
+          if (e.dist != null || e.club) out[a] = e;
+        }
+        return Object.keys(out).length ? out : undefined;
+      })() : undefined,
       startedAt: typeof r.startedAt === "number" && isFinite(r.startedAt) ? r.startedAt : undefined,
       createdAt: ts(r.createdAt),
       updatedAt: ts(r.updatedAt),
@@ -368,6 +386,9 @@ export async function importBackup(text: string): Promise<{ added: number; skipp
         putts: h.putts == null ? undefined : Math.max(0, Math.min(20, Math.round(Number(h.putts) || 0))),
         upAndDown: h.gir === true ? null : optBool(h.upAndDown),
         penalties: h.penalties == null ? undefined : Math.max(0, Math.min(10, Math.round(Number(h.penalties) || 0))),
+        teeClub: typeof h.teeClub === "string" && h.teeClub.trim() ? h.teeClub.slice(0, 20) : undefined,
+        approachClub: typeof h.approachClub === "string" && h.approachClub.trim() ? h.approachClub.slice(0, 20) : undefined,
+        approachYds: typeof h.approachYds === "string" && h.approachYds.trim() ? h.approachYds.slice(0, 12) : undefined,
       };
     });
     roundRecs.push({

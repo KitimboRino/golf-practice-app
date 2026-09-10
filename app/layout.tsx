@@ -63,6 +63,7 @@ export const viewport: Viewport = {
 const themeScript = `try{
   var d=document.documentElement,t=localStorage.getItem('theme');
   if(t==='light'||t==='dark')d.setAttribute('data-theme',t);
+  if(localStorage.getItem('glare')==='on')d.setAttribute('data-glare','on');
   var bg=getComputedStyle(d).getPropertyValue('--bg').trim();
   var m=document.querySelector('meta[name="theme-color"]');
   if(m&&bg)m.setAttribute('content',bg);

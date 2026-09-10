@@ -4,6 +4,7 @@ import { useState } from "react";
 import { GameAttempt } from "@/lib/db";
 import { GAMES, Game, gameById, GAME_AREA, gamePB, isPersonalBest } from "@/lib/games";
 import { Icon } from "./Icon";
+import { GlareToggle } from "./GlareToggle";
 import { tapFx, doneFx } from "@/lib/haptics";
 
 const fmtDate = (iso: string) => {
@@ -21,6 +22,10 @@ export function Games({
 }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const forGame = (id: string) => attempts.filter((a) => a.gameId === id);
+  const rollRandom = () => {
+    tapFx();
+    setOpenId(GAMES[Math.floor(Math.random() * GAMES.length)].id);
+  };
 
   const open = openId ? gameById(openId) : undefined;
   if (open) {
@@ -46,14 +51,20 @@ export function Games({
             <div className="hdr-title">Practice games</div>
             <div className="hdr-sub">Practise with a number on the line</div>
           </div>
+          <div className="hdr-actions">
+            <GlareToggle />
+          </div>
         </div>
       </header>
 
       <div className="screen">
-        <p className="games-intro">
-          Each game gives you one score to write down and beat next time. You&apos;re
-          competing against your own personal best, not a leaderboard.
-        </p>
+        <div className="games-intro">
+          <span className="icon-tile sm"><Icon name="target" size={15} /></span>
+          <p>
+            Each game gives you one score to write down and beat next time. You&apos;re
+            competing against your own personal best, not a leaderboard.
+          </p>
+        </div>
 
         {GAMES.map((g) => {
           const pb = gamePB(forGame(g.id));
@@ -62,17 +73,29 @@ export function Games({
             <button key={g.id} className="more-row game-row" onClick={() => setOpenId(g.id)}>
               <span className="more-ic"><Icon name={meta.icon} size={22} color="var(--green)" /></span>
               <span className="more-txt">
-                <b>{g.name}</b>
-                <span>{meta.label} · {g.scoring}</span>
+                <b className="game-row-name">{g.name}<span className="game-tag">{meta.label}</span></b>
+                <span>{g.scoring}</span>
               </span>
-              <span className="game-row-pb">
-                {pb.best === null
-                  ? <span className="game-row-none">No score</span>
-                  : <><b className="num">{pb.best}</b><small>best</small></>}
+              <span className="game-row-side">
+                <span className="game-row-best">
+                  {pb.best === null
+                    ? <span className="game-row-none">No score</span>
+                    : <>Best <b className="num">{pb.best}</b></>}
+                </span>
+                <span className="game-row-play">Play <Icon name="chevron_right" size={16} /></span>
               </span>
             </button>
           );
         })}
+
+        <button className="more-row game-random" onClick={rollRandom}>
+          <span className="more-ic"><Icon name="shuffle" size={22} color="var(--green)" /></span>
+          <span className="more-txt">
+            <b>Quick random challenge</b>
+            <span>A short pressure test, picked for you</span>
+          </span>
+          <span className="game-row-play">Roll <Icon name="arrow_forward" size={16} /></span>
+        </button>
       </div>
     </>
   );

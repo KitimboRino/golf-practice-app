@@ -25,12 +25,18 @@ export function SessionReceipt({
   const mins = sessionMinutes(session);
 
   const p = session.pitching ?? { close: 0, short: 0, long: 0 };
-  const rows: { label: string; made: number; of: number }[] = [
-    { label: "Chipping · on towel", made: session.chipping.on, of: session.chipping.on + session.chipping.off },
-    { label: "Pitching · close", made: p.close, of: p.close + p.short + p.long },
-    { label: "Irons · solid", made: session.irons.solid, of: session.irons.solid + session.irons.fat + session.irons.thin },
-    { label: "Driving · on line", made: session.driving.fairway, of: session.driving.fairway + session.driving.left + session.driving.right },
-    { label: "Putting · made", made: session.putting.in, of: session.putting.in + session.putting.out },
+  const tag = (a: "chipping" | "pitching" | "irons" | "driving" | "putting") => {
+    const s = session.setup?.[a];
+    if (!s) return undefined;
+    const bits = [s.dist != null ? `${s.dist}${a === "putting" ? "ft" : "yd"}` : null, s.club].filter(Boolean);
+    return bits.length ? bits.join(" ") : undefined;
+  };
+  const rows: { label: string; note?: string; made: number; of: number }[] = [
+    { label: "Chipping · on towel", note: tag("chipping"), made: session.chipping.on, of: session.chipping.on + session.chipping.off },
+    { label: "Pitching · close", note: tag("pitching"), made: p.close, of: p.close + p.short + p.long },
+    { label: "Irons · solid", note: tag("irons"), made: session.irons.solid, of: session.irons.solid + session.irons.fat + session.irons.thin },
+    { label: "Driving · on line", note: tag("driving"), made: session.driving.fairway, of: session.driving.fairway + session.driving.left + session.driving.right },
+    { label: "Putting · made", note: tag("putting"), made: session.putting.in, of: session.putting.in + session.putting.out },
   ].filter((r) => r.of > 0);
 
   const worst = [...rows].sort((a, b) => a.made / a.of - b.made / b.of)[0];
@@ -60,7 +66,7 @@ export function SessionReceipt({
     const lines = [
       head,
       `${headCap[0].toUpperCase() + headCap.slice(1)} ${solidNow}%${delta !== null ? ` (${delta >= 0 ? "+" : ""}${delta})` : ""}`,
-      ...rows.map((r) => `${r.label}: ${r.made} of ${r.of}`),
+      ...rows.map((r) => `${r.label}${r.note ? ` (${r.note})` : ""}: ${r.made} of ${r.of}`),
     ].join("\n");
     if (navigator.share) navigator.share({ text: lines }).catch(() => {});
     else navigator.clipboard?.writeText(lines).catch(() => {});
@@ -95,7 +101,7 @@ export function SessionReceipt({
           <div className="receipt-rows">
             {rows.map((r) => (
               <div className="receipt-row" key={r.label}>
-                <span>{r.label}</span>
+                <span>{r.label}{r.note && <span className="receipt-row-tag">{r.note}</span>}</span>
                 <b className={r === worst && r.made / r.of < 0.5 ? "low" : ""}>{r.made} of {r.of}</b>
               </div>
             ))}

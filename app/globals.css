@@ -194,6 +194,87 @@
   --rings: none;
 }
 
+/* ============================================================================
+   SUN MODE — high-contrast overrides for logging outdoors in bright light.
+   Toggled via GlareToggle (data-glare="on"), applied pre-paint in layout.tsx.
+   Flattens the tinted glass surfaces, darkens/lightens muted text to the limit,
+   thickens hairlines, drops the page wash. Shared rules first, then a dark tweak.
+   ============================================================================ */
+:root[data-glare="on"] {
+  --text: #050704;
+  --text-2: #1B2016;
+  --muted: #2C3227;      /* secondary text goes almost as dark as body */
+  --hint: #333A2E;
+  --icon-muted: #333A2C;
+  --bg: #DFE2D6;
+  --card: #FFFFFF;
+  --recessed: #FFFFFF;
+  --inset: #ECEEE3;
+  --hairline: #B7BFA7;
+  --border: #8D9880;
+  --border-recessed: #9AA48C;
+  --edge: rgba(16,20,12,0.42);
+  --edge-glow: var(--green);
+  --glass: linear-gradient(0deg, var(--card), var(--card));
+  --glass-glow: linear-gradient(0deg, var(--card), var(--card));
+  --focus-grad: var(--inset);
+  --page-grad: none;
+  --card-shadow: 0 2px 8px rgba(22,30,16,0.2), 0 1px 3px rgba(22,30,16,0.16);
+  --green: #1F5230;
+  --green-label: #1F5230;
+  --on-green: #FFFFFF;
+  --clay: #8E2A22;
+  --clay-label: #6E241D;
+  --sand: #6A470C;
+  --sand-label: #4E360C;
+  --blue: #204A63;
+  --blue-strong: #1C4157;
+  --blue-text: #253A48;
+  --chip-bg: rgba(31,82,48,0.16);
+  --chip-border: rgba(31,82,48,0.7);
+  --pill-cur-border: rgba(31,82,48,0.85);
+  --good-face: rgba(31,82,48,0.15);
+  --good-border: rgba(31,82,48,0.7);
+  --sand-face: rgba(106,71,12,0.15);
+  --sand-border: rgba(106,71,12,0.65);
+  --clay-face: rgba(142,42,34,0.14);
+  --clay-border: rgba(142,42,34,0.65);
+  --track: #B7BFA7;
+}
+/* structural bumps that a token swap can't reach */
+:root[data-glare="on"] .block,
+:root[data-glare="on"] .field,
+:root[data-glare="on"] .notes,
+:root[data-glare="on"] .datefield,
+:root[data-glare="on"] .shotstrip,
+:root[data-glare="on"] .block-tally,
+:root[data-glare="on"] .strip-dot,
+:root[data-glare="on"] .chip { border-width: 1.5px; }
+:root[data-glare="on"] .hint,
+:root[data-glare="on"] .outcome-hint,
+:root[data-glare="on"] .hdr-sub,
+:root[data-glare="on"] .drline { opacity: 1; color: var(--text-2); }
+:root[data-glare="on"] .flowstrip > summary { color: var(--text-2); }
+/* dark base + sun mode: keep it dark but crank contrast (rare combo, still handled) */
+@media (prefers-color-scheme: dark) {
+  :root[data-glare="on"]:not([data-theme="light"]) {
+    --text: #FFFFFF; --text-2: #EAEEE2; --muted: #D4DAC9; --hint: #CAD1BD; --icon-muted: #CDD4C0;
+    --bg: #04060A; --card: #1C231A; --recessed: #131810; --inset: #262E22;
+    --hairline: #454E3C; --border: #5E6852; --border-recessed: #515A44;
+    --edge: rgba(246,251,236,0.38); --card-shadow: 0 2px 8px rgba(0,0,0,0.6);
+    --green: #8AD6A8; --green-label: #A8DCBE; --on-green: #05110A;
+    --clay: #EC998C; --sand: #F0BE77; --track: #454E3C;
+  }
+}
+:root[data-glare="on"][data-theme="dark"] {
+  --text: #FFFFFF; --text-2: #EAEEE2; --muted: #D4DAC9; --hint: #CAD1BD; --icon-muted: #CDD4C0;
+  --bg: #04060A; --card: #1C231A; --recessed: #131810; --inset: #262E22;
+  --hairline: #454E3C; --border: #5E6852; --border-recessed: #515A44;
+  --edge: rgba(246,251,236,0.38); --card-shadow: 0 2px 8px rgba(0,0,0,0.6);
+  --green: #8AD6A8; --green-label: #A8DCBE; --on-green: #05110A;
+  --clay: #EC998C; --sand: #F0BE77; --track: #454E3C;
+}
+
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
 html, body {
@@ -274,11 +355,11 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 .msr.fill { font-variation-settings: 'FILL' 1; }
 
-/* brand mark (components/Mark.tsx) — inline SVG Wedge, inherits currentColor */
+/* brand mark (components/Mark.tsx) — inline SVG fairway contour, inherits currentColor */
 .mark { display: block; flex: none; }
-/* brand lockup (components/Lockup.tsx) — mark + Manrope wordmark */
+/* brand lockup (components/Lockup.tsx) — mark + display-serif wordmark */
 .lockup { display: block; flex: none; }
-.lockup text { font-family: var(--font-sans), -apple-system, "Segoe UI", system-ui, sans-serif; }
+.lockup text { font-family: var(--font-display), Georgia, "Times New Roman", serif; }
 
 .app {
   max-width: 430px;
@@ -305,7 +386,10 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   gap: 16px;
 }
 .hdr-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
-.hdr-actions { display: flex; align-items: center; gap: 8px; flex: none; }
+.hdr-actions {
+  display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+  flex: none; flex-wrap: wrap;
+}
 .hdr-eyebrow {
   font-size: 10px; font-weight: 800; letter-spacing: 0.19em; text-transform: uppercase;
   color: var(--green); margin-bottom: 9px; display: flex; align-items: center; gap: 7px;
@@ -404,7 +488,10 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   height: 32px; padding: 0 12px; border-radius: 999px;
   background: var(--chip-bg); border: 1px solid var(--chip-border);
   color: var(--green); font-size: 12px; font-weight: 800; letter-spacing: 0.02em; flex: none;
+  white-space: nowrap;
 }
+.chip .chip-lbl { display: none; }
+@media (min-width: 400px) { .chip .chip-lbl { display: inline; } }
 /* per-step dot rail — the round tracker (one dot per hole), routine rehearse etc.
    indicator only; the header text and the Back/Next buttons do the navigating */
 .stepdots { display: flex; align-items: center; justify-content: center; gap: 5px; flex-wrap: wrap; padding: 1px 0; }
@@ -622,9 +709,15 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 /* reduced-motion handling for .arealist is folded into the block at end of file */
 
 /* ---------- blocks ---------- */
-.block { background: var(--glass); border: 1px solid var(--edge); border-radius: 20px; overflow: hidden; }
+.block { position: relative; background: var(--glass); border: 1px solid var(--edge); border-radius: 20px; overflow: hidden; scroll-margin-top: 92px; }
 .block.empty { background: transparent; border-color: var(--edge); }
 .block.open { border-color: var(--edge-glow); }
+/* the "active" area — one open at a time; a green rail on the leading edge */
+.block.active { border-color: var(--edge-glow); }
+.block.active::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--green); border-radius: 3px 0 0 3px;
+}
 .block-head { display: flex; align-items: center; justify-content: space-between; min-height: 66px; padding: 12px 16px; width: 100%; gap: 10px; }
 .block-name { display: flex; align-items: center; gap: 12px; font-size: 16px; font-weight: 800; letter-spacing: -0.02em; }
 .block-name .msr {
@@ -640,7 +733,18 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .block-tally.none { color: var(--hint); font-weight: 600; }
+.block-tally.full { color: var(--green); background: var(--chip-bg); border-color: var(--chip-border); }
 .block-body { padding: 4px 16px 18px; display: flex; flex-direction: column; gap: 14px; }
+
+/* "next area" hand-off button at the foot of the active block */
+.block-continue {
+  display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+  min-height: 50px; border-radius: 999px; margin-top: 2px;
+  background: var(--chip-bg); border: 1px solid var(--chip-border); color: var(--green);
+  font-size: 14px; font-weight: 800; letter-spacing: -0.01em;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.block-continue:active { transform: scale(0.985); }
 
 .drline { display: flex; align-items: flex-start; gap: 9px; font-size: 14px; color: var(--muted); line-height: 1.4; text-wrap: pretty; }
 .drswap {
@@ -670,13 +774,29 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .rgrp-lbl {
   font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
 }
+.rgrp-lbl-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.rgrp-sub { color: var(--hint); font-weight: 700; letter-spacing: 0.06em; }
+.rgrp-done {
+  font-size: 10px; font-weight: 800; letter-spacing: 0.04em; text-transform: none;
+  color: var(--green); display: inline-flex; align-items: center; gap: 4px; flex: none;
+}
 .rrow { display: flex; gap: 10px; }
 .rbtn {
+  position: relative;
   flex: 1; min-height: 72px; border-radius: 16px;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
   font-size: 16px; font-weight: 800; letter-spacing: -0.01em;
   border: 1.5px solid var(--edge); background: var(--glass); color: var(--text-2);
   transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+.rbtn-main { display: flex; align-items: center; gap: 8px; }
+.rbtn-hint { font-size: 10.5px; font-weight: 600; color: var(--muted); letter-spacing: 0; }
+.rbtn.tall { min-height: 80px; }
+.rbtn-std {
+  position: absolute; top: 8px; right: 8px;
+  font-size: 8.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--green); background: var(--chip-bg); border: 1px solid var(--chip-border);
+  border-radius: 5px; padding: 1px 4px;
 }
 .rbtn:active { transform: scale(0.97); }
 .rbtn.par { flex: 1; min-height: 64px; font-size: 24px; }
@@ -699,6 +819,34 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .putt-step button:active, .score-step button:active { transform: scale(0.94); }
 .putt-step button:disabled, .score-step button:disabled { opacity: 0.35; }
 .putt-step > .num { font-size: 40px; font-weight: 800; letter-spacing: -0.05em; color: var(--text); }
+
+/* putts + penalties, side by side */
+.rstat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.rstat { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.rstat .putt-step { gap: 8px; padding: 10px 10px; }
+.rstat .putt-step button { width: 46px; height: 46px; }
+.rstat .putt-step > .num { font-size: 32px; }
+
+/* optional per-shot detail — collapsed by default, like the strategy strip */
+.shot-detail { background: var(--recessed); border: 1px solid var(--border-recessed); border-radius: 14px; overflow: hidden; }
+.shot-detail > summary {
+  list-style: none; display: flex; align-items: center; gap: 8px;
+  padding: 13px 14px; font-size: 12px; font-weight: 800; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--muted); cursor: pointer;
+}
+.shot-detail > summary::-webkit-details-marker { display: none; }
+.shot-detail > summary > .flowstrip-chev { margin-left: auto; }
+.shot-detail[open] .flowstrip-chev { transform: rotate(180deg); }
+.shot-detail-n {
+  font-size: 10px; font-weight: 800; color: var(--green);
+  background: var(--chip-bg); border: 1px solid var(--chip-border);
+  border-radius: 999px; min-width: 16px; height: 16px; padding: 0 4px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.shot-detail-body { padding: 2px 14px 16px; display: flex; flex-direction: column; gap: 14px; }
+
+/* compact back button on the hole nav */
+.rnav .btn-ghost.rnav-back { width: 54px; height: 56px; flex: none; padding: 0; }
 .score-step-val { display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .score-step-val .num { font-size: 38px; font-weight: 800; letter-spacing: -0.05em; color: var(--text); line-height: 1; }
 .score-step-val small {
@@ -772,6 +920,35 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .leak-read { font-size: 14px; line-height: 1.5; color: var(--text); text-wrap: pretty; margin: 0; }
 
+/* approach-by-distance breakdown under the Approach card */
+.leak-appr {
+  display: flex; flex-direction: column; gap: 7px;
+  padding: 12px; border-radius: 14px;
+  background: var(--track); border: 1px solid var(--edge);
+}
+.leak-appr-h {
+  display: flex; justify-content: space-between; gap: 10px;
+  font-size: 11px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--hint);
+}
+.leak-appr-row {
+  display: grid; grid-template-columns: 52px 1fr 34px 34px; align-items: center; gap: 8px;
+  font-size: 12px; font-variant-numeric: tabular-nums;
+}
+.leak-appr-band { font-weight: 700; color: var(--muted); }
+.leak-appr-track {
+  position: relative; height: 7px; border-radius: 4px; background: var(--card); overflow: hidden;
+}
+.leak-appr-fill {
+  position: absolute; left: 0; top: 0; height: 100%; border-radius: 4px; background: var(--sand);
+}
+.leak-appr-fill.weak { background: var(--clay); }
+.leak-appr-val { font-weight: 800; color: var(--text); text-align: right; }
+.leak-appr-of { color: var(--hint); text-align: right; }
+.leak-appr-note {
+  margin: 2px 0 0; font-size: 12.5px; line-height: 1.45; color: var(--muted); text-wrap: pretty;
+}
+
 .leak-trend { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .leak-spark { width: 74px; height: 22px; flex: none; display: block; overflow: visible; }
 .leak-spark path {
@@ -801,14 +978,43 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 /* ---------- practice games ---------- */
-.games-intro { font-size: 14px; line-height: 1.5; color: var(--text-2); text-wrap: pretty; margin: 0; }
-
-.game-row-pb {
-  flex: none; display: flex; flex-direction: column; align-items: flex-end; min-width: 42px;
+.games-intro {
+  display: flex; gap: 12px; align-items: flex-start;
+  background: var(--glass); border: 1px solid var(--edge); border-radius: 16px;
+  padding: 14px 16px; box-shadow: var(--card-shadow);
 }
-.game-row-pb > b { font-size: 22px; font-weight: 800; letter-spacing: -0.03em; color: var(--green); line-height: 1; }
-.game-row-pb > small { font-size: 10px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
-.game-row-none { font-size: 12px; font-weight: 600; color: var(--hint); }
+.games-intro p {
+  margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--text-2); text-wrap: pretty;
+}
+
+.game-row-name { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.game-tag {
+  font-size: 9.5px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--green); background: var(--good-face); border: 1px solid var(--good-border);
+  padding: 3px 6px; border-radius: 6px;
+}
+
+.game-row-side {
+  flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 6px;
+}
+.game-row-best { font-size: 11.5px; font-weight: 700; color: var(--muted); }
+.game-row-best > b { font-size: 14px; font-weight: 800; letter-spacing: -0.02em; color: var(--green); }
+.game-row-none { font-size: 11.5px; font-weight: 700; color: var(--hint); }
+.game-row-play {
+  display: inline-flex; align-items: center; gap: 2px;
+  font-size: 12.5px; font-weight: 700; letter-spacing: -0.01em; color: var(--text-2);
+  padding: 6px 8px 6px 12px; border-radius: 999px;
+  background: var(--inset); border: 1px solid var(--edge);
+}
+.game-row:active .game-row-play,
+.game-random:active .game-row-play { background: var(--chip-bg); border-color: var(--chip-border); color: var(--green); }
+
+.game-random {
+  border-style: dashed; border-color: var(--border); background: transparent;
+  box-shadow: none;
+}
+.game-random .more-ic { background: var(--inset); border-color: var(--edge); }
+.game-random .more-txt > b { color: var(--text); }
 
 .game-rules {
   background: var(--glass); border: 1px solid var(--edge); border-radius: 16px;
@@ -928,10 +1134,15 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .outcomes { display: flex; gap: 10px; }
 .outcome {
   position: relative; overflow: hidden;
-  flex: 1; height: 112px; border-radius: 16px;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+  flex: 1; min-height: 118px; border-radius: 16px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  padding: 8px 6px;
   border: 1px solid transparent;
   transition: background var(--dur-base) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+.outcome-hint {
+  font-size: 10px; font-weight: 600; line-height: 1.25; text-align: center;
+  color: var(--muted); opacity: 0.85; text-wrap: balance;
 }
 .outcome:active { transform: scale(0.965); }
 /* press-and-hold to subtract: a bar fills over the hold, snaps back on early release */
@@ -1261,35 +1472,40 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .lib-sub { font-weight: 400; color: var(--hint); margin-left: 6px; }
 .lib {
   background: var(--glass); border: 1px solid var(--edge); border-radius: 16px;
-  padding: 15px 16px 14px; box-shadow: var(--card-shadow);
-  display: flex; flex-direction: column; gap: 8px;
+  padding: 16px 16px 14px; box-shadow: var(--card-shadow);
+  display: flex; flex-direction: column; gap: 10px;
 }
 .lib.swapped { border-color: var(--chip-border); background: linear-gradient(150deg, var(--chip-bg), var(--glass) 60%); }
 .lib-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
-.lib-name { font-size: 15px; font-weight: 700; letter-spacing: -0.015em; }
+.lib-name { font-size: 16px; font-weight: 800; letter-spacing: -0.02em; }
 .lib-ref {
   flex: none; font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em;
   color: var(--hint); padding: 2px 7px; border-radius: 6px;
   background: var(--inset); border: 1px solid var(--hairline);
 }
 .lib-how, .lib-why {
-  font-size: 13px; line-height: 1.55; text-wrap: pretty;
-  display: grid; grid-template-columns: auto 1fr; gap: 9px; align-items: start;
+  font-size: 13px; line-height: 1.55; text-wrap: pretty; color: var(--text-2);
+  display: grid; grid-template-columns: 40px 1fr; gap: 10px; align-items: start;
 }
-.lib-how { color: var(--text-2); }
-.lib-why { color: var(--blue-text); }
-.lib-k {
-  font-size: 9.5px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase;
-  padding: 3px 0 0; color: var(--hint); user-select: none;
+.lib-tag {
+  justify-self: start; margin-top: 1px;
+  font-size: 9.5px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase;
+  padding: 3px 6px; border-radius: 6px; user-select: none;
 }
-.lib-why .lib-k { color: var(--blue-strong); }
+.lib-tag.do { color: var(--green); background: var(--good-face); border: 1px solid var(--good-border); }
+.lib-tag.why { color: var(--sand-label); background: var(--sand-face); border: 1px solid var(--sand-border); }
 .lib-swap {
-  display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; margin-top: 3px;
-  font-size: 12.5px; font-weight: 700; letter-spacing: -0.01em;
-  padding: 7px 12px; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; margin-top: 4px;
+  font-size: 13px; font-weight: 700; letter-spacing: -0.01em;
+  padding: 8px 14px; border-radius: 999px;
   background: var(--inset); border: 1px solid var(--edge); color: var(--text-2);
 }
 .lib-swap.on { background: var(--chip-bg); border-color: var(--chip-border); color: var(--green); }
+
+/* "For my miss" — the smart-sort toggle, weighted above the plain area chips */
+.chip-btn.chip-miss.on {
+  background: var(--cta-face); border-color: transparent; color: var(--on-green);
+}
 
 .lib-focus {
   display: flex; gap: 12px; align-items: flex-start;
@@ -1474,6 +1690,25 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   transition: border-color var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out);
 }
 .chip-btn.on { background: var(--chip-bg); border-color: var(--chip-border); color: var(--green); }
+
+/* per-area setup (target distance / club) on the log screen */
+.setup-row { display: flex; flex-direction: column; gap: 7px; }
+.setup-sel { color: var(--green); font-weight: 800; }
+.setup-row .chips { gap: 8px; }
+.setup-row .chip-btn {
+  flex: 1; min-width: 58px; height: 42px; border-radius: 12px;
+  justify-content: center; font-size: 13.5px; font-weight: 700; color: var(--text-2);
+  transition: border-color var(--dur-base) var(--ease-out), background var(--dur-base) var(--ease-out),
+              color var(--dur-base) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+.setup-row .chip-btn:active { transform: scale(0.96); }
+.setup-row .chip-btn.on { font-weight: 800; }
+
+.receipt-row-tag {
+  margin-left: 7px; font-size: 11px; font-weight: 700; color: var(--green);
+  padding: 1px 7px; border-radius: 999px; background: var(--chip-bg); border: 1px solid var(--chip-border);
+  white-space: nowrap;
+}
 
 /* ---------- empty state ---------- */
 .empty-wrap { position: relative; display: flex; flex-direction: column; gap: 22px; padding: 22px; min-height: 62vh; justify-content: center; }
@@ -1970,7 +2205,7 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
   background: var(--cta-face); color: var(--on-green);
   box-shadow: 0 12px 26px -6px var(--tile-glow), inset 0 1px 2px rgba(255,255,255,0.4);
 }
-.about-name { font-size: 24px; font-weight: 800; letter-spacing: -0.04em; }
+.about-name { font-family: var(--font-display), Georgia, serif; font-size: 25px; font-weight: 700; letter-spacing: -0.03em; }
 .about-ver { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
 .about-ver .tag { margin: 0; }
 .about-p { font-size: 15px; line-height: 1.55; color: var(--text-2); text-wrap: pretty; text-align: center; max-width: 40ch; margin: 0 auto; }

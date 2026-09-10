@@ -5,6 +5,7 @@ import { LIBRARY } from "@/lib/library";
 import { DrillOverrides, DrillOverride } from "@/lib/db";
 import { Fault } from "@/lib/faults";
 import { Icon } from "./Icon";
+import { GlareToggle } from "./GlareToggle";
 
 const iconFor = (area: string) => {
   const a = area.toLowerCase();
@@ -117,7 +118,10 @@ export function Library({
           <div style={{ flex: 1 }}>
             <div className="hdr-eyebrow">Bench · {total} drills</div>
             <div className="hdr-title">Drill library</div>
-            <div className="hdr-sub">Swap any of these into today&apos;s session</div>
+            <div className="hdr-sub">Swap any into today&apos;s session</div>
+          </div>
+          <div className="hdr-actions">
+            <GlareToggle />
           </div>
         </div>
       </header>
@@ -141,8 +145,9 @@ export function Library({
 
         <div className="chips">
           {missTarget && (
-            <button className={"chip-btn" + (forMiss ? " on" : "")}
+            <button className={"chip-btn chip-miss" + (forMiss ? " on" : "")}
                     onClick={() => { setForMiss(!forMiss); if (!forMiss) setArea(missTarget); }}>
+              <Icon name="crisis_alert" size={14} fill={forMiss} />
               For my miss
             </button>
           )}
@@ -178,12 +183,12 @@ export function Library({
                       <div className="lib-name">{d.name}</div>
                       {d.ref && <span className="lib-ref">{d.ref}</span>}
                     </div>
-                    <div className="lib-how"><span className="lib-k">Do</span>{d.how}</div>
-                    {d.why && <div className="lib-why"><span className="lib-k">Why</span>{d.why}</div>}
+                    <div className="lib-how"><span className="lib-tag do">Do</span>{d.how}</div>
+                    {d.why && <div className="lib-why"><span className="lib-tag why">Why</span>{d.why}</div>}
                     {onSwap && ak && (
                       <button className={"lib-swap" + (active ? " on" : "")}
                               onClick={() => onSwap(ak, active ? null : { name: d.name, how: d.how })}>
-                        <Icon name={active ? "check" : "swap_horiz"} size={14} />
+                        <Icon name={active ? "check" : "swap_vert"} size={15} />
                         {active ? "In today’s session" : "Use in today’s session"}
                       </button>
                     )}
