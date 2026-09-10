@@ -284,14 +284,24 @@ html, body {
   color: var(--text);
   font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
-  overscroll-behavior-y: none;
-  overflow-x: hidden;
   font-variant-numeric: tabular-nums;
-  /* Android Chrome: stop auto text-inflation, and drop double-tap-to-zoom (the
-     "it keeps zooming" bug) while leaving pinch-zoom — an accessibility need —
-     intact. `manipulation` = panning + pinch-zoom only. */
+  /* Android Chrome: stop auto text-inflation */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+}
+
+/* Scrolling lives on <html> only. `overflow-x: hidden` forces the other axis to
+   compute as `auto`, so whichever element carries it becomes a scroll container.
+   Put it on <body> as well and the body turns into a *nested* scroller the same
+   height as <html> — on Android the touch-scroll gesture then targets the body,
+   which has nothing to scroll, and never reaches the real <html> scroller. That
+   is the "can't scroll on Android" bug (wheel / programmatic scroll still work,
+   which is why it looks so odd). Keep it on <html> alone.
+   `touch-action: manipulation` drops double-tap-to-zoom (the "it keeps zooming"
+   bug) while leaving pinch-zoom — an accessibility need — intact. */
+html {
+  overflow-x: hidden;
+  overscroll-behavior-y: none;
   touch-action: manipulation;
 }
 
