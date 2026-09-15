@@ -27,7 +27,7 @@ export const CATALOG: Fault[] = [
     pattern: "Starts left, curves hard right",
     fault: "An out-to-in path from an address aimed left, with an open clubface.",
     fix: "Square your stance and shoulders to the target line, then feel the ball start right of target on an inside path into impact. Soften grip pressure for a free release.",
-    ref: "p.162",
+    ref: "",
   },
   {
     id: "push",
@@ -36,7 +36,7 @@ export const CATALOG: Fault[] = [
     pattern: "Starts right, stays right",
     fault: "The clubhead swinging in-to-out with the face square to that path.",
     fix: "Address with your left toe in line with your right heel so the left side is cleared, and swing more left through impact. Then rebuild the feel from a normal stance.",
-    ref: "p.168",
+    ref: "",
   },
   {
     id: "hook",
@@ -45,7 +45,7 @@ export const CATALOG: Fault[] = [
     pattern: "Starts right, then curves left",
     fault: "An in-to-out path with a closed face, hips sliding toward the target.",
     fix: "Put a headcover on the ground ~6in inside the target line to block the inside path. Unwind your hips instead of sliding them. Check your grip shows only two knuckles.",
-    ref: "p.163",
+    ref: "",
   },
   {
     id: "sky",
@@ -54,7 +54,7 @@ export const CATALOG: Fault[] = [
     pattern: "Flies straight but very short (pops up)",
     fault: "A too-steep, narrow takeaway chopping down on the ball.",
     fix: "Widen the arc: sweep away low and slow, turn your back on the target, swing more around your body. In the downswing, sweep the ball away rather than hitting down.",
-    ref: "p.166",
+    ref: "",
   },
   {
     id: "top",
@@ -63,7 +63,7 @@ export const CATALOG: Fault[] = [
     pattern: "Clips the top, ball scuttles along the ground",
     fault: "Posture rising through the swing, lifting the arc off the ball.",
     fix: "Hold your spine angle from address to impact. Practice clipping a tee from the ground with the driver at a constant height, then hit drives focusing on solid contact.",
-    ref: "p.167",
+    ref: "",
   },
   {
     id: "heavy-chip",
@@ -72,7 +72,7 @@ export const CATALOG: Fault[] = [
     pattern: "Lots of fat / heavy contact on chips",
     fault: "Trying to help the ball up, so the clubhead passes the hands before impact.",
     fix: "Keep your hands ahead of the clubhead through impact. Hold the angle in your right wrist so the low point is at the ball, leaving the smallest divot after it.",
-    ref: "p.164",
+    ref: "",
   },
   {
     id: "shank",
@@ -81,7 +81,7 @@ export const CATALOG: Fault[] = [
     pattern: "Ball shoots ~45° sideways",
     fault: "Struck from the hosel, with the clubhead thrown out on an out-to-in path.",
     fix: "Place an obstacle behind the ball ~3in outside the target line and hit short irons. It forces the club onto the correct path so the sweet spot meets the ball.",
-    ref: "p.165",
+    ref: "",
   },
   {
     id: "pull",
@@ -90,7 +90,7 @@ export const CATALOG: Fault[] = [
     pattern: "Starts left, stays left",
     fault: "An out-to-in path with the face square to that path.",
     fix: "Feel the club approach from inside the line: draw your right foot back so your right toe is level with your left heel (shoulders square) to make room for an inside path.",
-    ref: "p.169",
+    ref: "",
   },
 ];
 

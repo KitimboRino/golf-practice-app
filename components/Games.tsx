@@ -5,6 +5,7 @@ import { GameAttempt } from "@/lib/db";
 import { GAMES, Game, gameById, GAME_AREA, gamePB, isPersonalBest } from "@/lib/games";
 import { Icon } from "./Icon";
 import { GlareToggle } from "./GlareToggle";
+import { Burst } from "./Burst";
 import { tapFx, doneFx } from "@/lib/haptics";
 
 const fmtDate = (iso: string) => {
@@ -175,6 +176,7 @@ function GameDetail({
 
           {flash && (
             <div className={"game-flash" + (flash.kind === "pb" ? " pb" : "")}>
+              {flash.kind === "pb" && <Burst />}
               <Icon name={flash.kind === "pb" ? "emoji_events" : "check_circle"} size={18} fill={flash.kind === "pb"} />
               {flash.kind === "pb"
                 ? `New personal best — ${flash.score}`

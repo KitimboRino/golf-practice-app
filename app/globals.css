@@ -1064,8 +1064,36 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .game-score:active { transform: scale(0.92); }
 .game-score.on { background: var(--chip-bg); border-color: var(--green); color: var(--green); }
 
-.game-flash { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 700; color: var(--text-2); }
+.game-flash { position: relative; display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 700; color: var(--text-2); }
 .game-flash.pb { color: var(--green); }
+
+/* milestone burst (see components/Burst.tsx) — a new personal best in Games,
+   a best-ever round on the round summary. Default anchor is dead centre of
+   whatever `position: relative` element it's dropped into (an icon tile);
+   .game-flash isn't icon-sized (icon + text share the row), so it keeps the
+   old fixed anchor over just the icon. */
+.pb-burst { position: absolute; left: 50%; top: 50%; width: 0; height: 0; pointer-events: none; }
+.game-flash .pb-burst { left: 9px; top: 9px; }
+.pb-burst i {
+  position: absolute; left: -3px; top: -3px; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green); opacity: 0;
+}
+.pb-burst i:nth-child(3n+2) { background: var(--sand); }
+.pb-burst i:nth-child(3n) { width: 4px; height: 4px; left: -2px; top: -2px; }
+@media (prefers-reduced-motion: no-preference) {
+  .pb-burst i { animation: pb-burst 650ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+}
+@keyframes pb-burst {
+  0% { opacity: 1; transform: translate(0, 0) scale(1); }
+  100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0.3); }
+}
+
+.receipt-best {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11.5px; font-weight: 800; letter-spacing: 0.02em;
+  color: var(--green); background: var(--chip-bg); border: 1px solid var(--chip-border);
+  border-radius: 999px; padding: 3px 10px 3px 8px;
+}
 
 .game-pbline { font-size: 13px; color: var(--muted); text-wrap: pretty; padding: 0 2px; }
 .game-pbline b { color: var(--text); font-weight: 800; }
@@ -1725,7 +1753,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 /* ---------- empty state ---------- */
 .empty-wrap { position: relative; display: flex; flex-direction: column; gap: 22px; padding: 22px; min-height: 62vh; justify-content: center; }
-/* the Wedge, oversized and cropped — a quiet brand watermark on the empty page */
+/* the brand mark, oversized and cropped — a quiet watermark on the empty page */
 .empty-watermark {
   position: absolute; right: -92px; bottom: -72px; z-index: 0;
   width: 320px; height: 320px; color: var(--text); opacity: 0.035;
@@ -1737,6 +1765,16 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .empty-p { font-size: 15px; line-height: 1.55; color: var(--muted); text-wrap: pretty; }
 .empty-drills { display: flex; flex-direction: column; gap: 11px; font-size: 15px; color: var(--text-2); }
 .empty-drills div { display: flex; gap: 10px; align-items: center; }
+
+/* Round setup, no rounds yet — a compact cousin of .empty-card: same sketch-chart
+   idiom (see the Trends empty state) but small, since the real CTA (Start round)
+   already sits above this rather than living inside the card. */
+.round-empty {
+  background: var(--focus-grad); border: 1px solid var(--border); border-radius: 18px;
+  padding: 18px 18px 16px; display: flex; flex-direction: column; gap: 12px;
+}
+.round-empty-h { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; }
+.round-empty-p { font-size: 13.5px; line-height: 1.5; color: var(--muted); text-wrap: pretty; }
 
 /* ---------- install prompt ---------- */
 .install { position: fixed; left: 0; right: 0; bottom: calc(88px + env(safe-area-inset-bottom)); z-index: 25; max-width: 430px; margin: 0 auto; padding: 0 14px; }

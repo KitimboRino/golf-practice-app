@@ -13,6 +13,7 @@ import { tapFx, bumpFx } from "@/lib/haptics";
 import { Icon } from "./Icon";
 import { Glyph } from "./Glyph";
 import { GlareToggle } from "./GlareToggle";
+import { Burst } from "./Burst";
 
 type PracticeFocus = { title: string; body: string };
 
@@ -194,7 +195,7 @@ function RoundSetup({
           Start {holes}-hole round
         </button>
 
-        {rounds.length > 0 && (
+        {rounds.length > 0 ? (
           <button className="more-row" style={{ marginTop: 4 }} onClick={onDiagnostic}>
             <span className="more-ic"><Icon name="troubleshoot" size={22} color="var(--green)" /></span>
             <span className="more-txt">
@@ -207,6 +208,25 @@ function RoundSetup({
             </span>
             <Icon name="chevron_right" size={20} color="var(--icon-muted)" />
           </button>
+        ) : (
+          <div className="round-empty">
+            <svg viewBox="0 0 260 70" style={{ width: "100%", height: 62, display: "block" }} aria-hidden>
+              <line x1="6" y1="58" x2="254" y2="58" className="chart-base" />
+              <path d="M6 52 L70 44 L130 48 L190 34 L244 20" fill="none" stroke="var(--border)"
+                    strokeWidth="2.2" strokeDasharray="4 7" strokeLinecap="round" />
+              <circle cx="6" cy="52" r="5" fill="var(--green)" />
+              <circle cx="6" cy="52" r="11" fill="none" stroke="var(--green)" strokeOpacity="0.3" strokeWidth="1.5" />
+              <g transform="translate(244 20)" stroke="var(--green)" strokeWidth="2" strokeLinecap="round" fill="none">
+                <line x1="0" y1="0" x2="0" y2="-22" />
+                <path d="M0 -22 L15 -17 L0 -12 Z" fill="var(--green)" stroke="none" />
+              </g>
+            </svg>
+            <div className="round-empty-h">Your first round starts the card</div>
+            <div className="round-empty-p">
+              Log fairways, greens and putts hole by hole. After a couple of rounds this tab
+              turns into a scoring trend and a report on where you&apos;re actually losing shots.
+            </div>
+          </div>
         )}
 
         {trend.length >= 2 && latest && <ScoringTrend trend={trend} latest={latest} />}
@@ -603,14 +623,27 @@ function RoundPlay({
 // summary (a just-finished round, or a saved one from the list)
 
 export function RoundSummary({
-  round, fresh, onDone, onEdit,
+  round, fresh, onDone, onEdit, rounds = [],
 }: {
   round: SavedRound;
   fresh: boolean;
   onDone: () => void;
   onEdit?: () => void;
+  rounds?: SavedRound[]; // all saved rounds, for the "new best" check below
 }) {
   const s = roundStats(round.holeData);
+
+  // best-round check — normalised to-par-per-18, same maths as the Scoring
+  // trend, so "best" here means the same thing it means on that chart.
+  // Needs at least one earlier round to beat, and only fires on a fresh finish
+  // (not when just viewing/editing an old one).
+  const norm = (st: RoundStats) => (st.toPar / st.scoredHoles) * 18;
+  const priorNorms = rounds
+    .filter((r) => r.id !== round.id)
+    .map((r) => roundStats(r.holeData))
+    .filter((st) => st.scoredHoles > 0)
+    .map(norm);
+  const isBest = fresh && s.scoredHoles > 0 && priorNorms.length > 0 && norm(s) < Math.min(...priorNorms);
 
   const breakdown = [
     s.birdies && `${s.birdies} birdie${s.birdies === 1 ? "" : "s"}`,
@@ -681,10 +714,16 @@ export function RoundSummary({
     <div className="welcome-wrap" style={{ alignItems: "flex-start", paddingTop: "calc(34px + env(safe-area-inset-top))" }}>
       <div className="receipt">
         <div className="receipt-top">
-          <span className="icon-tile lg glow">
+          <span className="icon-tile lg glow" style={{ position: "relative" }}>
+            {isBest && <Burst />}
             {fresh ? <Glyph name="flag" /> : <Icon name="golf_course" size={26} fill />}
           </span>
           <div className="receipt-h">{fresh ? "Round logged" : roundLabel(round)}</div>
+          {isBest && (
+            <span className="receipt-best">
+              <Icon name="emoji_events" size={13} fill />Your best round yet
+            </span>
+          )}
           <div className="receipt-meta">
             {fresh && round.course?.trim() ? `${round.course.trim()} · ` : ""}
             {fmtDate(round.date)} · {round.holes} holes

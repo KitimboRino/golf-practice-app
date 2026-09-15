@@ -33,12 +33,12 @@ export const COURSE: CourseGroup[] = [
       {
         "rule": "Avoid 'sucker' pins",
         "detail": "A pin tucked behind a bunker or over water is bait. Stray a few paces and the penalty is severe. Aim centre; a long putt beats a hard bunker shot.",
-        "ref": "p.68"
+        "ref": ""
       },
       {
         "rule": "Divide a par 5 into mini-challenges",
         "detail": "Don't think 'reach in two'. Plan it as a series of positional shots \u2014 divide and conquer \u2014 so each shot has a clear, safe job.",
-        "ref": "p.68"
+        "ref": ""
       }
     ]
   },
@@ -48,22 +48,22 @@ export const COURSE: CourseGroup[] = [
       {
         "rule": "The 10-pace rough rule",
         "detail": "If you can't see the ball from 10 paces away, don't be a hero. Pitch out safely to the middle of the fairway and take your medicine \u2014 it saves big numbers.",
-        "ref": "p.69"
+        "ref": ""
       },
       {
         "rule": "Add ~5% distance from the rough at an angle",
         "detail": "Course planners measure from the fairway centre. From the rough the angle adds distance \u2014 a 165yd shot can play ~8yd longer. Check the flag position too.",
-        "ref": "p.69"
+        "ref": ""
       },
       {
         "rule": "Bare lie: ball back, no sand wedge",
         "detail": "Never a sand wedge off a bare lie (the sole bounces into the ball). Play the ball ~1in back in the stance for a clean, ball-first strike and a low, checking flight.",
-        "ref": "p.152"
+        "ref": ""
       },
       {
         "rule": "Divot: more loft, ball back, punch it",
         "detail": "In an old divot, take one more club's loft, move the ball back, hinge the wrists steeply and punch down into the back of the ball.",
-        "ref": "p.153"
+        "ref": ""
       }
     ]
   },
@@ -73,7 +73,7 @@ export const COURSE: CourseGroup[] = [
       {
         "rule": "Into wind: keep it low, club up",
         "detail": "No joy hitting a high ball into wind. Take less loft \u2014 e.g. a 5-iron for a normal 150yd 7-iron \u2014 tee lower, widen the stance ~5in, and sweep it away smoothly.",
-        "ref": "p.154"
+        "ref": ""
       }
     ]
   },
@@ -83,17 +83,17 @@ export const COURSE: CourseGroup[] = [
       {
         "rule": "Greenside: open everything, hit the sand",
         "detail": "You don't hit the ball \u2014 you splash the sand 1\u20132.5in behind it. Open feet/hips/shoulders left of target, clubface open right (flag 12, face 2 o'clock, stance 10). Accelerate; follow-through longer than backswing.",
-        "ref": "p.110"
+        "ref": ""
       },
       {
         "rule": "Vary distance by swing length, same sand",
         "detail": "Take the same amount of sand each time and change how far the ball goes by changing backswing length \u2014 the more reliable method for most players.",
-        "ref": "p.117"
+        "ref": ""
       },
       {
         "rule": "Fairway bunker: clean strike, choke down",
         "detail": "Here you DO strike ball-first. Shuffle feet in for footing, choke down ~1in to offset it, and make a descending blow \u2014 ball then sand. Don't scoop.",
-        "ref": "p.119"
+        "ref": ""
       }
     ]
   },
@@ -103,12 +103,12 @@ export const COURSE: CourseGroup[] = [
       {
         "rule": "Window of opportunity (trees)",
         "detail": "In trouble among trees, look for 'windows' to hit through \u2014 the bigger the safer. Visualise a ball through each gap, pick the least risky, then match club and swing to it.",
-        "ref": "p.250"
+        "ref": ""
       },
       {
         "rule": "Ruler image (bunker)",
         "detail": "Picture a 4in ruler behind the ball: the club should enter the sand and slide through about four inches beneath the ball. A mental key, not a technique change.",
-        "ref": "p.252"
+        "ref": ""
       }
     ]
   }

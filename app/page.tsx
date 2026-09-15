@@ -753,6 +753,7 @@ export default function Page() {
       <RoundSummary
         round={roundView.round}
         fresh={roundView.fresh}
+        rounds={rounds}
         onDone={() => { setRoundView(null); if (roundView.fresh) setTab("home"); }}
         onEdit={() => editRound(roundView.round)}
       />
