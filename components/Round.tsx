@@ -14,6 +14,7 @@ import { Icon } from "./Icon";
 import { Glyph } from "./Glyph";
 import { GlareToggle } from "./GlareToggle";
 import { Burst } from "./Burst";
+import { CourseDiagram, COURSE_DIAGRAM } from "./CourseDiagram";
 
 type PracticeFocus = { title: string; body: string };
 
@@ -281,6 +282,24 @@ function RoundSetup({
 // ---------------------------------------------------------------------------
 // per-hole logger
 
+// A tiny top-down fairway — pin at top, ball where it actually finished. Same
+// zero-asset inline-SVG idiom as the Fixes ball-flight sketches, but spatial
+// rather than a shape: the tap updates a position, not a curve. Sits at rest
+// on the tee (bottom centre, faint) until the hole answers Hit/Left/Right.
+function FairwaySketch({ hit, miss }: { hit?: boolean; miss?: "left" | "right" }) {
+  const pos: [number, number] =
+    hit === true ? [50, 52] : miss === "left" ? [16, 58] : miss === "right" ? [84, 58] : [50, 100];
+  const cls = hit === true ? "hit" : miss ? "miss" : "wait";
+  return (
+    <svg viewBox="0 0 100 110" width={44} height={48} className="fw-sketch" aria-hidden>
+      <rect x="0" y="0" width="100" height="110" rx="8" className="fw-rough" />
+      <path d="M30 108 L40 8 L60 8 L70 108 Z" className="fw-strip" />
+      <circle cx="50" cy="8" r="4" className="fw-pin" />
+      <circle cx={pos[0]} cy={pos[1]} r="6.5" className={"fw-ball " + cls} />
+    </svg>
+  );
+}
+
 function Bin({
   on, label, hint, tone, icon, onClick,
 }: {
@@ -316,12 +335,18 @@ function StrategyStrip({
         <Icon name="expand_more" size={18} className="flowstrip-chev" />
       </summary>
       <div className="strat-body">
-        {strat.rules.map((r) => (
-          <div className="strat-rule" key={r.rule}>
-            <b>{r.rule}</b>
-            <span>{r.detail}</span>
-          </div>
-        ))}
+        {strat.rules.map((r) => {
+          const diagram = COURSE_DIAGRAM[r.rule];
+          return (
+            <div className={"strat-rule" + (diagram ? " with-diagram" : "")} key={r.rule}>
+              {diagram && <CourseDiagram variant={diagram} size={46} />}
+              <div>
+                <b>{r.rule}</b>
+                <span>{r.detail}</span>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </details>
   );
@@ -491,7 +516,10 @@ function RoundPlay({
           <div className="rgrp">
             <div className="rgrp-lbl rgrp-lbl-row">
               <span>Fairway <span className="rgrp-sub">tee shot</span></span>
-              {(h.fairwayHit != null) && <span className="rgrp-done">Drive logged</span>}
+              <span className="fw-head-right">
+                {(h.fairwayHit != null) && <span className="rgrp-done">Drive logged</span>}
+                <FairwaySketch hit={h.fairwayHit ?? undefined} miss={h.fairwayMiss} />
+              </span>
             </div>
             <div className="rrow">
               <Bin on={h.fairwayHit === true} label="Hit" hint="centre" tone="yes" icon="check" onClick={() => setFairway("hit")} />

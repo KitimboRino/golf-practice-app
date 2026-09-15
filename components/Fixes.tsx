@@ -13,6 +13,33 @@ const GROUPS: { area: Area; label: string; icon: string }[] = [
 
 const MISS_TO_FAULT: Record<string, string> = { right: "slice", left: "hook", strike: "fat" };
 
+// Ball-flight sketch for each fault — the shape of the miss, at a glance,
+// instead of only reading the pattern text. Address (green dot, bottom-centre)
+// → path (clay) → landing (clay dot), against a dashed "where you aimed" line.
+// Same inline-SVG, zero-asset idiom as the Trends/Round empty-state sketches.
+const FLIGHT: Record<string, { d: string; end: [number, number] }> = {
+  slice:        { d: "M50 90 C40 66 40 40 70 12", end: [70, 12] },
+  push:         { d: "M50 90 L66 12", end: [66, 12] },
+  hook:         { d: "M50 90 C64 66 64 40 34 12", end: [34, 12] },
+  sky:          { d: "M50 90 C46 60 48 40 50 22", end: [50, 22] },
+  top:          { d: "M50 90 C60 89 72 87 84 85", end: [84, 85] },
+  "heavy-chip": { d: "M50 90 C55 82 60 78 64 80", end: [64, 80] },
+  shank:        { d: "M50 90 L88 58", end: [88, 58] },
+  pull:         { d: "M50 90 L34 12", end: [34, 12] },
+};
+
+function FlightPath({ id, size = 84 }: { id: string; size?: number }) {
+  const f = FLIGHT[id] ?? FLIGHT.push;
+  return (
+    <svg viewBox="0 0 100 100" width={size} height={size} className="flight-path" aria-hidden>
+      <line x1="50" y1="90" x2="50" y2="10" className="flight-target" />
+      <path d={f.d} fill="none" className="flight-line" />
+      <circle cx="50" cy="90" r="3.5" className="flight-ball" />
+      <circle cx={f.end[0]} cy={f.end[1]} r="3.5" className="flight-land" />
+    </svg>
+  );
+}
+
 function yourMiss(history: SavedSession[], plannedMiss: string): { fault: Fault; context: string | null } | null {
   const latest = history[history.length - 1];
   if (latest) {
@@ -65,11 +92,16 @@ export function Fixes({
       <div className="screen">
         {hero ? (
           <div className="fault-hero">
-            <div className="eyebrow" style={{ color: "var(--clay)" }}>
-              <Icon name="my_location" size={15} />
-              {heroContext ?? "Your miss"}
+            <div className="fault-hero-top">
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="eyebrow" style={{ color: "var(--clay)" }}>
+                  <Icon name="my_location" size={15} />
+                  {heroContext ?? "Your miss"}
+                </div>
+                <div className="fault-hero-pat">{hero.pattern}</div>
+              </div>
+              <FlightPath id={hero.id} size={76} />
             </div>
-            <div className="fault-hero-pat">{hero.pattern}</div>
             <div className="fault-hero-lines">
               <div className="fault-line"><span className="fault-k">Likely</span><b>{hero.name}.</b> {hero.fault}</div>
               <div className="fault-line"><span className="fault-k fix">Fix</span>{hero.fix}</div>
@@ -112,6 +144,7 @@ export function Fixes({
               <div className="hist">
                 {rows.map((f) => (
                   <button key={f.id} className="fault-row" onClick={() => setSelected(f)}>
+                    <FlightPath id={f.id} size={34} />
                     <span>
                       <b>{f.pattern}</b>
                       <small>{f.name}</small>

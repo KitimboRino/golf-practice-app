@@ -2,6 +2,7 @@
 
 import { COURSE } from "@/lib/course";
 import { Icon } from "./Icon";
+import { CourseDiagram, COURSE_DIAGRAM } from "./CourseDiagram";
 
 const GROUP_ICON: Record<string, string> = {
   "OFF THE TEE": "sports_golf",
@@ -50,15 +51,21 @@ export function Course({ onBack }: { onBack: () => void }) {
               <span className="count-pill">{g.rules.length}</span>
             </div>
             <div className="course-rules">
-              {g.rules.map((r) => (
-                <div className="course-rule" key={r.rule}>
-                  <div className="course-rule-top">
-                    <b>{r.rule}</b>
-                    {r.ref && <span className="course-rule-ref">{r.ref}</span>}
+              {g.rules.map((r) => {
+                const diagram = COURSE_DIAGRAM[r.rule];
+                return (
+                  <div className="course-rule" key={r.rule}>
+                    <div className="course-rule-top">
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <b>{r.rule}</b>
+                        {r.ref && <span className="course-rule-ref">{r.ref}</span>}
+                      </div>
+                      {diagram && <CourseDiagram variant={diagram} size={64} />}
+                    </div>
+                    <p>{r.detail}</p>
                   </div>
-                  <p>{r.detail}</p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         ))}

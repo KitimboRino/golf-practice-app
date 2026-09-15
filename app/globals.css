@@ -787,12 +787,35 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .rgrp-lbl {
   font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
 }
-.rgrp-lbl-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.rgrp-lbl-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .rgrp-sub { color: var(--hint); font-weight: 700; letter-spacing: 0.06em; }
 .rgrp-done {
   font-size: 10px; font-weight: 800; letter-spacing: 0.04em; text-transform: none;
   color: var(--green); display: inline-flex; align-items: center; gap: 4px; flex: none;
 }
+
+/* top-down fairway sketch — see FairwaySketch in components/Round.tsx */
+.fw-head-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex: none; }
+.fw-sketch { flex: none; display: block; }
+.fw-rough { fill: var(--track); }
+.fw-strip { fill: var(--good-face); stroke: var(--good-border); stroke-width: 2; }
+.fw-pin { fill: var(--hint); }
+.fw-ball { transition: cx 320ms var(--ease-out), cy 320ms var(--ease-out); }
+.fw-ball.wait { fill: var(--hint); opacity: 0.4; }
+.fw-ball.hit { fill: var(--green); }
+.fw-ball.miss { fill: var(--clay); }
+
+/* pin-strategy green diagram — see components/CourseDiagram.tsx */
+.crs-diagram { flex: none; display: block; overflow: visible; }
+.crs-green { fill: var(--good-face); stroke: var(--good-border); stroke-width: 2; }
+.crs-margin { fill: none; stroke: var(--green); stroke-width: 2; stroke-dasharray: 2 5; stroke-linecap: round; opacity: 0.7; }
+.crs-margin.danger { stroke: var(--clay); stroke-dasharray: 1.5 4; }
+.crs-shot { stroke: var(--hint); stroke-width: 2; stroke-dasharray: 1.5 5; stroke-linecap: round; opacity: 0.8; }
+.crs-ball { fill: var(--green); }
+.crs-pin { color: var(--green); stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; }
+.crs-pin.danger { color: var(--clay); }
+.crs-pin.safe { color: var(--green); opacity: 0.85; }
+.crs-hazard { fill: var(--sand); opacity: 0.55; }
 .rrow { display: flex; gap: 10px; }
 .rbtn {
   position: relative;
@@ -1318,6 +1341,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   background: linear-gradient(158deg, color-mix(in srgb, var(--clay) 14%, var(--card)) 0%, var(--card) 62%);
   border: 1px solid var(--clay-border);
 }
+.fault-hero-top { display: flex; align-items: flex-start; gap: 14px; }
 .fault-hero .eyebrow { display: flex; align-items: center; gap: 7px; }
 .fault-hero-pat { font-size: 24px; font-weight: 800; letter-spacing: -0.035em; line-height: 1.15; text-wrap: pretty; }
 .fault-hero-lines {
@@ -1395,9 +1419,16 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .fault-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; min-height: 66px; padding: 12px 16px; border-bottom: 1px solid var(--hairline); text-align: left; }
 .fault-row:last-child { border-bottom: none; }
-.fault-row span { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.fault-row span { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .fault-row b { font-size: 15px; font-weight: 700; }
 .fault-row small { font-size: 13px; color: var(--muted); }
+
+/* ball-flight sketch — see FlightPath in components/Fixes.tsx */
+.flight-path { flex: none; display: block; overflow: visible; }
+.flight-target { stroke: var(--muted); stroke-width: 3; stroke-dasharray: 1 7; stroke-linecap: round; opacity: 0.8; }
+.flight-line { stroke: var(--clay); stroke-width: 4; stroke-linecap: round; }
+.flight-ball { fill: var(--green); }
+.flight-land { fill: var(--clay); }
 
 /* ---------- reactive coaching callout (Trends) ---------- */
 .coach { display: flex; gap: 11px; border-left: 2px solid var(--blue); background: var(--blue-note-bg); border-radius: 0 14px 14px 0; padding: 14px 16px; }
@@ -1483,7 +1514,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   padding: 13px 15px; display: flex; flex-direction: column; gap: 4px;
   box-shadow: var(--card-shadow);
 }
-.course-rule-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.course-rule-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .course-rule-top b { font-size: 14px; font-weight: 700; letter-spacing: -0.01em; }
 .course-rule-ref {
   flex: none; font-size: 11px; font-weight: 600; color: var(--hint);
@@ -1508,6 +1539,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .strat-rule { display: flex; flex-direction: column; gap: 3px; }
 .strat-rule b { font-size: 12.5px; font-weight: 700; color: var(--blue-strong); letter-spacing: -0.01em; }
 .strat-rule span { font-size: 12px; line-height: 1.5; color: var(--blue-text); text-wrap: pretty; }
+.strat-rule.with-diagram { flex-direction: row; align-items: flex-start; gap: 10px; }
+.strat-rule.with-diagram > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 
 /* ---------- drill library ---------- */
 .lib-sub { font-weight: 400; color: var(--hint); margin-left: 6px; }
