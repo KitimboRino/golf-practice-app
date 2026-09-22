@@ -185,14 +185,14 @@ export function Trends({
 
   return (
     <>
-      <header className="hdr">
-        <div className="hdr-row" style={{ alignItems: "center" }}>
+      <header className="hero">
+        <div className="hero-row">
           <button className="icon-btn" onClick={onBack} aria-label="Back">
             <Icon name="arrow_back" size={22} />
           </button>
           <div style={{ flex: 1 }}>
-            <div className="hdr-title">Trends</div>
-            <div className="hdr-sub">
+            <div className="hero-h">Trends</div>
+            <div className="hero-sub">
               {history.length} {history.length === 1 ? "session" : "sessions"} · weeks 1-4
             </div>
           </div>
@@ -207,7 +207,7 @@ export function Trends({
         </div>
       </header>
 
-      <div className="screen">
+      <div className="sheet">
         {showData && (
           <div className="datamenu">
             <button onClick={doExport}>

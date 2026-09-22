@@ -1,10 +1,15 @@
 import type { CSSProperties } from "react";
 
 // Mark + wordmark, horizontal. The mark is the organic fairway contour from
-// components/Mark.tsx; the wordmark is live text in the app's display serif
-// (Fraunces — see the `.lockup text` rule in globals.css), matching the brand
-// lockup in /brand/rangecard_refined_vector_logo. The whole thing
+// components/Mark.tsx; the wordmark is live text in the app's display face
+// (Archivo, stretched — see the `.lockup text` rule in globals.css), matching
+// the brand lockup in /brand/rangecard_refined_vector_logo. The whole thing
 // inherits `currentColor`.
+// viewBox is 285 wide (not 250): Archivo at font-stretch 118% sets wider than
+// the Fraunces this was tuned for, and at the original 250 the trailing "d"
+// clipped off. Confirmed by measuring the rendered text's getBBox() width —
+// widening the viewBox (rather than fighting it with tighter letter-spacing)
+// keeps the original x/fontSize/letterSpacing intact.
 export function Lockup({
   height = 24,
   className,
@@ -16,9 +21,9 @@ export function Lockup({
 }) {
   return (
     <svg
-      viewBox="0 0 250 60"
+      viewBox="0 0 285 60"
       height={height}
-      width={height * (250 / 60)}
+      width={height * (285 / 60)}
       className={"lockup" + (className ? " " + className : "")}
       style={style}
       role="img"

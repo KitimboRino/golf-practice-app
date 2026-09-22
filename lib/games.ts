@@ -69,11 +69,12 @@ export const GAMES: Game[] = [
 
 export const gameById = (id: string): Game | undefined => GAMES.find((g) => g.id === id);
 
-export const GAME_AREA: Record<GameArea, { label: string; icon: string }> = {
-  putting:  { label: "Putting",  icon: "adjust" },
-  chipping: { label: "Chipping", icon: "swipe_up" },
-  pitching: { label: "Pitching", icon: "arrow_outward" },
-  driving:  { label: "Driving",  icon: "sports_golf" },
+// icon now comes from AreaIcon (components/AreaIcon.tsx), keyed by area directly
+export const GAME_AREA: Record<GameArea, { label: string }> = {
+  putting:  { label: "Putting" },
+  chipping: { label: "Chipping" },
+  pitching: { label: "Pitching" },
+  driving:  { label: "Driving" },
 };
 
 // ---------------------------------------------------------------------------

@@ -6,18 +6,10 @@ import { DrillOverrides, DrillOverride } from "@/lib/db";
 import { Fault } from "@/lib/faults";
 import { Icon } from "./Icon";
 import { GlareToggle } from "./GlareToggle";
+import { AreaIcon } from "./AreaIcon";
 
-const iconFor = (area: string) => {
-  const a = area.toLowerCase();
-  if (a.startsWith("driv")) return "sports_golf";
-  if (a.startsWith("iron")) return "golf_course";
-  if (a.startsWith("chip")) return "swipe_up";
-  if (a.startsWith("pitch")) return "arrow_outward";
-  if (a.startsWith("putt")) return "adjust";
-  return "sports_golf";
-};
-
-// which session area a LIBRARY group maps to (for the "use in session" swap)
+// which session area a LIBRARY group maps to (for the "use in session" swap,
+// and for picking that group's icon below)
 const areaKeyFor = (raw: string): keyof DrillOverrides | null => {
   const a = raw.toLowerCase();
   if (a.startsWith("driv")) return "driving";
@@ -171,7 +163,7 @@ export function Library({
           return (
             <div className="grp" key={group.area}>
               <div className="sec-head">
-                <span className="icon-tile sm"><Icon name={iconFor(group.area)} size={15} /></span>
+                <span className="icon-tile sm"><AreaIcon area={areaKeyFor(group.area) ?? "driving"} size={15} /></span>
                 <h3>{name}{sub && <span className="lib-sub">{sub}</span>}</h3>
                 <span className="count-pill">{group.drills.length}</span>
               </div>

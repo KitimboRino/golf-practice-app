@@ -5,4 +5,8 @@ out
 *.log
 *.tsbuildinfo
 stitch_rangecard_golf_practice_tracker
+v3
+tokens.css
+overrides.css
+RangeCard v2.dc.html
 *.md

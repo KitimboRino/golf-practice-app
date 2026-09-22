@@ -4,11 +4,12 @@ import { useState } from "react";
 import { CATALOG, Area, Fault, detectFaults } from "@/lib/faults";
 import { SavedSession } from "@/lib/db";
 import { Icon } from "./Icon";
+import { AreaIcon } from "./AreaIcon";
 
-const GROUPS: { area: Area; label: string; icon: string }[] = [
-  { area: "driving", label: "Driving", icon: "sports_golf" },
-  { area: "irons", label: "Irons", icon: "golf_course" },
-  { area: "chipping", label: "Chipping", icon: "swipe_up" },
+const GROUPS: { area: Area; label: string }[] = [
+  { area: "driving", label: "Driving" },
+  { area: "irons", label: "Irons" },
+  { area: "chipping", label: "Chipping" },
 ];
 
 const MISS_TO_FAULT: Record<string, string> = { right: "slice", left: "hook", strike: "fat" };
@@ -137,7 +138,7 @@ export function Fixes({
           return (
             <div className="grp" key={g.area}>
               <div className="sec-head">
-                <span className="icon-tile sm"><Icon name={g.icon} size={15} /></span>
+                <span className="icon-tile sm"><AreaIcon area={g.area} size={15} /></span>
                 <h3>{g.label}</h3>
                 <span className="count-pill">{rows.length}</span>
               </div>

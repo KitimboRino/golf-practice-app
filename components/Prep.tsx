@@ -30,9 +30,9 @@ export function Prep({ onBack }: { onBack?: () => void }) {
             <div className="hdr-title">Prep</div>
           </div>
         </div>
-        <div className="segmented">
+        <div className="seg" role="tablist" aria-label="Prep stage">
           {(["before", "during", "home"] as Tab[]).map((t) => (
-            <button key={t} className={tab === t ? "on" : ""} onClick={() => setTab(t)}>
+            <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)}>
               {t === "before" ? "Before" : t === "during" ? "During" : "At home"}
             </button>
           ))}

@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import { manrope, fraunces, materialSymbols } from "./fonts";
+import { manrope, archivo, materialSymbols } from "./fonts";
 import { ToastProvider } from "@/components/Toast";
 import { ConfirmProvider } from "@/components/Confirm";
 import { InstallPrompt } from "@/components/InstallPrompt";
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0B1013", // dark default; the inline script corrects it per theme
+  themeColor: "#EEF2F4", // light default; the inline script corrects it per theme
   width: "device-width",
   initialScale: 1,
   // pinch-zoom is left enabled — capping it fails WCAG 1.4.4
@@ -99,7 +99,7 @@ const recoveryScript = `setTimeout(function(){
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${manrope.variable} ${fraunces.variable} ${materialSymbols.variable}`}>
+    <html lang="en" className={`${manrope.variable} ${archivo.variable} ${materialSymbols.variable}`}>
       <body>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <script dangerouslySetInnerHTML={{ __html: recoveryScript }} />

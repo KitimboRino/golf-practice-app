@@ -7,6 +7,7 @@ import { PITCH_FOCUS, PITCHING_DRILL, LIBRARY } from "@/lib/library";
 import { CATALOG } from "@/lib/faults";
 import { Outcome } from "@/components/Outcome";
 import { Icon } from "@/components/Icon";
+import { AreaIcon } from "@/components/AreaIcon";
 import { Trends } from "@/components/Trends";
 import { Fixes } from "@/components/Fixes";
 import { Prep } from "@/components/Prep";
@@ -832,28 +833,29 @@ export default function Page() {
         )}
       </main>
 
-      <nav className="nav">
-        <button className={`nav-item${tab === "home" ? " active" : ""}`} onClick={() => setTab("home")}>
-          <Icon name="flag" size={24} fill={tab === "home"} />Plan
+      <nav className="navpill">
+        <button className="nav-item" aria-current={tab === "home" ? "page" : undefined} onClick={() => setTab("home")}>
+          <Icon name="flag" size={22} fill={tab === "home"} /><span className="nav-lbl">Plan</span>
         </button>
-        <button className={`nav-item${tab === "session" || tab === "warmup" || tab === "quickpick" ? " active" : ""}`}
+        <button className="nav-item"
+                aria-current={tab === "session" || tab === "warmup" || tab === "quickpick" ? "page" : undefined}
                 onClick={() => (live ? setTab("session") : startSession())}>
           <span className="nav-glyph">
-            <Icon name="sports_golf" size={24} fill={tab === "session" || tab === "warmup" || tab === "quickpick"} />
+            <Icon name="sports_golf" size={22} fill={tab === "session" || tab === "warmup" || tab === "quickpick"} />
             {isDraft && <span className="nav-dot" />}
           </span>
-          Log
+          <span className="nav-lbl">Log</span>
         </button>
-        <button className={`nav-item${tab === "round" ? " active" : ""}`} onClick={() => setTab("round")}>
+        <button className="nav-item" aria-current={tab === "round" ? "page" : undefined} onClick={() => setTab("round")}>
           <span className="nav-glyph">
-            <Icon name="golf_course" size={24} fill={tab === "round"} />
+            <Icon name="golf_course" size={22} fill={tab === "round"} />
             {round && <span className="nav-dot" />}
           </span>
-          Round
+          <span className="nav-lbl">Round</span>
         </button>
-        <button className={`nav-item${tab === "more" || tab === "trends" ? " active" : ""}`}
+        <button className="nav-item" aria-current={tab === "more" || tab === "trends" ? "page" : undefined}
                 onClick={() => setTab("more")}>
-          <Icon name="more_horiz" size={24} fill={tab === "more" || tab === "trends"} />More
+          <Icon name="more_horiz" size={22} fill={tab === "more" || tab === "trends"} /><span className="nav-lbl">More</span>
         </button>
       </nav>
     </>
@@ -1023,16 +1025,16 @@ function Home({
 
   return (
     <>
-      <header className="hdr">
-        <div className="hdr-row">
+      <header className="hero">
+        <div className="hero-row">
           <div style={{ flex: 1, minWidth: 0 }}>
             {!firstRun && (
               <button className="greeting" onClick={onEditName} aria-label="Edit your name">
                 <span>{greeting}</span><Icon name="edit" size={13} />
               </button>
             )}
-            <div className="hdr-title">Week {cursor.week + 1} · {week.title}</div>
-            <div className="hdr-sub">Session {cursor.session + 1} of {week.sessions.length}</div>
+            <div className="hero-h">Week {cursor.week + 1} · {week.title}</div>
+            <div className="hero-sub">Session {cursor.session + 1} of {week.sessions.length}</div>
           </div>
           <div className="hdr-actions">
             {monthCount >= 2 && (
@@ -1047,7 +1049,7 @@ function Home({
         </div>
       </header>
 
-      <div className="screen">
+      <div className="sheet">
         {draftLabel && !draftHere && (
           <button className="draft-banner" onClick={onResume}>
             <Icon name="pending_actions" size={18} />
@@ -1079,7 +1081,7 @@ function Home({
         )}
 
         {oneThing && (
-          <div className="onething">
+          <div className="onething plancard">
             <div className="lbl">
               <span className="icon-tile sm"><Icon name="target" size={15} /></span>
               <span className="eyebrow">Today&apos;s one thing</span>
@@ -1428,7 +1430,7 @@ function SessionScreen({
           const goodPct = strip.length ? Math.round((goodN / strip.length) * 100) : null;
           const nextStep = steps[stepIdx + 1];
           return (
-            <Block key={step.id} id={step.id} name={step.name} icon={step.icon} logged={done}
+            <Block key={step.id} id={step.id} name={step.name} area={step.area} logged={done}
                    count={strip.length} target={step.target} goodPct={goodPct}
                    open={openId === step.id} toggle={() => toggle(step.id)}>
               {!isQuick && (
@@ -1579,9 +1581,9 @@ function SessionScreen({
 }
 
 function Block({
-  id, name, icon, logged, count, target, goodPct, open, toggle, children,
+  id, name, area, logged, count, target, goodPct, open, toggle, children,
 }: {
-  id: string; name: string; icon: string; logged: boolean;
+  id: string; name: string; area: AreaKey; logged: boolean;
   count: number; target: number; goodPct: number | null;
   open: boolean; toggle: () => void; children: React.ReactNode;
 }) {
@@ -1591,7 +1593,7 @@ function Block({
     <section className={cls} data-block={id}>
       <button className="block-head" onClick={toggle} aria-expanded={open}>
         <span className="block-name">
-          <Icon name={icon} size={21} color={logged || open ? "var(--green)" : "var(--icon-muted)"} />{name}
+          <AreaIcon area={area} size={21} color={logged || open ? "var(--green)" : "var(--icon-muted)"} />{name}
         </span>
         <span className="block-right">
           <span className={"block-tally" + (!logged ? " none" : full ? " full" : "")}>

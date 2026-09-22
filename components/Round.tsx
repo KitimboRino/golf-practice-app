@@ -739,8 +739,8 @@ export function RoundSummary({
   }
 
   return (
-    <div className="welcome-wrap" style={{ alignItems: "flex-start", paddingTop: "calc(34px + env(safe-area-inset-top))" }}>
-      <div className="receipt">
+    <>
+      <header className="hero">
         <div className="receipt-top">
           <span className="icon-tile lg glow" style={{ position: "relative" }}>
             {isBest && <Burst />}
@@ -757,7 +757,9 @@ export function RoundSummary({
             {fmtDate(round.date)} · {round.holes} holes
           </div>
         </div>
+      </header>
 
+      <div className="sheet">
         <div className="receipt-moved">
           <div className="round-stat-grid">
             {rows.map((r) => (
@@ -789,7 +791,7 @@ export function RoundSummary({
           <button className="btn-ghost" onClick={onDone}>Done</button>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

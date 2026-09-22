@@ -1,8 +1,8 @@
-import { Manrope, Fraunces } from "next/font/google";
+import { Manrope, Archivo } from "next/font/google";
 import localFont from "next/font/local";
 
-// Body / UI face. Self-hosted at build time by next/font — no render-blocking
-// @import, no third-party DNS, size-adjusted fallback metrics to hold CLS at 0.
+// Body / UI face. Unchanged — Manrope survives the restyle and holds CLS at 0
+// with its size-adjusted fallback metrics.
 export const manrope = Manrope({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
@@ -10,16 +10,17 @@ export const manrope = Manrope({
   variable: "--font-sans",
 });
 
-// Display face — editorial headlines only (see app/globals.css `--font-display`).
-// Fraunces is an old-style serif with a warm, soft character; used at 400–500 for
-// presence, not weight. Self-hosted alongside Manrope. Falls back to Georgia,
-// itself a screen-first editorial serif on every OS.
-export const fraunces = Fraunces({
+// Display face — headlines, hero numbers, card titles.
+// Archivo is a variable font with a width axis; pushing wdth to ~118% gives the
+// squarish extended bold of the reference (Square721 BdEx, which is licensed).
+// Requesting the `wdth` axis means the weight axis stays variable too, so any
+// font-weight 400-800 works without shipping extra files.
+// NOTE the variable renamed from --font-fraunces to --font-display-face.
+export const archivo = Archivo({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
+  axes: ["wdth"],
   display: "swap",
-  variable: "--font-fraunces",
+  variable: "--font-display-face",
 });
 
 // Material Symbols Rounded (variable: opsz, wght, FILL, GRAD). Self-hosted so the

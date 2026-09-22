@@ -73,8 +73,8 @@ export function SessionReceipt({
   }
 
   return (
-    <div className="welcome-wrap" style={{ alignItems: "flex-start", paddingTop: "calc(34px + env(safe-area-inset-top))" }}>
-      <div className="receipt">
+    <>
+      <header className="hero">
         <div className="receipt-top">
           <span className="icon-tile lg glow">
             {quick ? <Icon name="bolt" size={26} fill /> : <Glyph name="flag" />}
@@ -86,7 +86,9 @@ export function SessionReceipt({
               : `W${wkNum(session.weekId)}${ownWeek ? ` · ${ownWeek.title}` : ""} · ${balls} balls${mins ? ` · ${mins} min` : ""}`}
           </div>
         </div>
+      </header>
 
+      <div className="sheet">
         <div className="receipt-moved">
           <div className="eyebrow">{headRow ? "Where you landed" : "What moved"}</div>
           <div className="receipt-big">
@@ -132,6 +134,6 @@ export function SessionReceipt({
           <button className="btn-ghost" onClick={onDone}>Done</button>
         </div>
       </div>
-    </div>
+    </>
   );
 }

@@ -6,6 +6,7 @@ import { GAMES, Game, gameById, GAME_AREA, gamePB, isPersonalBest } from "@/lib/
 import { Icon } from "./Icon";
 import { GlareToggle } from "./GlareToggle";
 import { Burst } from "./Burst";
+import { AreaIcon } from "./AreaIcon";
 import { tapFx, doneFx } from "@/lib/haptics";
 
 const fmtDate = (iso: string) => {
@@ -72,7 +73,7 @@ export function Games({
           const meta = GAME_AREA[g.area];
           return (
             <button key={g.id} className="more-row game-row" onClick={() => setOpenId(g.id)}>
-              <span className="more-ic"><Icon name={meta.icon} size={22} color="var(--green)" /></span>
+              <span className="more-ic"><AreaIcon area={g.area} size={22} color="var(--green)" /></span>
               <span className="more-txt">
                 <b className="game-row-name">{g.name}<span className="game-tag">{meta.label}</span></b>
                 <span>{g.scoring}</span>

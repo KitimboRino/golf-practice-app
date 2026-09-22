@@ -1,247 +1,295 @@
 /* Fonts are self-hosted via next/font — see app/fonts.ts (no render-blocking @import). */
 
+/* ============================================================================
+   RangeCard — aqua palette
+   Drop-in replacement for the token blocks at the top of app/globals.css.
+
+   Replace everything from `:root {` down to the end of the
+   `:root[data-glare="on"][data-theme="dark"]` block with this file.
+   Everything below that line in globals.css stays exactly as it is.
+
+   Two structural changes from the old file:
+   1. LIGHT IS NOW THE DEFAULT. :root is light; dark lives under
+      prefers-color-scheme:dark and [data-theme="dark"]. The inline theme
+      script in layout.tsx works unchanged.
+   2. The accent slot splits in two.
+        --green  = INK-ADJACENT ACCENT for text and icons (#2C5F6E, 5.6:1 on
+                   white). Every existing `color: var(--green)` still passes AA.
+        --state  = AQUA FILL (#96D6E2) for progress, hits, verdicts. Surface
+                   only — never put text in this colour.
+        --cta-face = INK (#0F1321). Primary actions are ink, not accent; that
+                   is what makes the reference read the way it does.
+   ============================================================================ */
+
 :root {
-  color-scheme: dark;
-  --bg: #0B1013;
-  --card: #141B1F;
-  --inset: #1C2529;
-  --recessed: #11181B;
-  --hairline: #1B2429;
-  --border: #263237;
-  --border-recessed: #1F292E;
-  --text: #E9F0EE;
-  --text-2: #B4C2BE;
-  --muted: #8A9A96;
-  --hint: #74837D;        /* ~4.5:1 on --bg — was #5D6C68 (failed AA) */
-  --icon-muted: #7C8B86;  /* >=3:1 for UI-icon contrast (WCAG 1.4.11) */
-  --green: #5E9E7A;
-  --green-hover: #72B08C;
-  --on-green: #08120D;
-  --green-label: #8FC0A6;
-  --sand: #E8B15A;
-  --sand-label: #D2B588;
-  --clay: #D2726B;
-  --clay-label: #CE9B97;
-  --blue: #5B93C4;
-  --blue-icon: #7FB0D8;
-  --blue-text: #A9C2D6;
-  --blue-strong: #8CB8DC;
-  --track: #1B2429;
-  --card-shadow: none;
-  /* tinted toward the green-black base, never pure black */
-  --shadow-dock: 0 18px 40px -12px rgba(4,11,8,0.58), inset 0 1px 1px rgba(255,255,255,0.06);
-  --shadow-pop: 0 12px 28px -12px rgba(4,11,8,0.52);
+  color-scheme: light;
 
-  --good-face: rgba(94,158,122,0.12);
-  --good-border: rgba(94,158,122,0.36);
-  --good-active: rgba(94,158,122,0.22);
-  --sand-face: rgba(232,177,90,0.12);
-  --sand-border: rgba(232,177,90,0.32);
-  --sand-active: rgba(232,177,90,0.22);
-  --clay-face: rgba(210,114,107,0.12);
-  --clay-border: rgba(210,114,107,0.32);
-  --clay-active: rgba(210,114,107,0.22);
+  /* surfaces */
+  --bg: #EEF2F4;
+  --card: #FFFFFF;
+  --inset: #F3F6F8;
+  --recessed: #FFFFFF;
+  --hairline: #E7EBEF;
+  --border: #DCE2E7;
+  --border-recessed: #E4E9ED;
+
+  /* ink */
+  --text: #0F1321;
+  --text-2: #3E4856;       /* 8.9:1 on white */
+  --muted: #5A6673;        /* 5.9:1 on white — the AA floor for 13-14px */
+  --hint: #5A6673;         /* was a lighter step; at this size it cannot be */
+  --icon-muted: #6B7784;   /* >=3:1, icons only (WCAG 1.4.11) */
+
+  /* accent — text-safe teal, paired with the aqua fill below */
+  --green: #2C5F6E;
+  --green-hover: #23505D;
+  --on-green: #FFFFFF;
+  --green-label: #2C5F6E;
+  --state: #96D6E2;        /* NEW — aqua fill */
+  --on-state: #0F1321;     /* NEW — ink on aqua */
+  --ink: #0F1321;          /* NEW — action surface */
+  --on-ink: #FFFFFF;       /* NEW */
+
+  /* supporting hues, re-pitched against the light ground */
+  --sand: #8A5A10;
+  --sand-label: #714B0F;
+  --clay: #A93F37;
+  --clay-label: #8A342D;
+  --blue: #2F6588;
+  --blue-icon: #2F6588;
+  --blue-text: #35505F;
+  --blue-strong: #2A5A7A;
+
+  --track: #E4E9ED;
+  --card-shadow: 0 1px 2px rgba(15,19,33,0.05);
+  --shadow-dock: 0 18px 34px -14px rgba(15,19,33,0.28), inset 0 1px 1px rgba(255,255,255,0.6);
+  --shadow-pop: 0 18px 40px -28px rgba(15,19,33,0.4);
+
+  /* tinted faces — aqua for "good", unchanged roles */
+  --good-face: rgba(150,214,226,0.34);
+  --good-border: rgba(44,95,110,0.34);
+  --good-active: rgba(150,214,226,0.52);
+  --sand-face: rgba(138,90,16,0.10);
+  --sand-border: rgba(138,90,16,0.30);
+  --sand-active: rgba(138,90,16,0.16);
+  --clay-face: rgba(169,63,55,0.08);
+  --clay-border: rgba(169,63,55,0.28);
+  --clay-active: rgba(169,63,55,0.15);
   --focus-grad: var(--inset);
-  --blue-note-bg: rgba(91,147,196,0.10);
-  --chip-bg: rgba(94,158,122,0.11);
-  --chip-border: rgba(94,158,122,0.26);
-  --pill-cur-bg: rgba(94,158,122,0.15);
-  --pill-cur-border: rgba(94,158,122,0.46);
-  --area-stop: 0.24;
+  --blue-note-bg: rgba(47,101,136,0.07);
+  --chip-bg: rgba(150,214,226,0.30);
+  --chip-border: rgba(44,95,110,0.26);
+  --pill-cur-bg: rgba(150,214,226,0.40);
+  --pill-cur-border: rgba(44,95,110,0.42);
+  --area-stop: 0.18;
 
-  /* flat editorial surfaces — one matte overlay, no glass/glow/orbs */
-  --page-grad: linear-gradient(180deg, #0E1418 0%, #0B1013 55%);
-  --glass: linear-gradient(0deg, rgba(255,255,255,0.028), rgba(255,255,255,0.028));
-  --glass-glow: linear-gradient(0deg, rgba(94,158,122,0.055), rgba(94,158,122,0.055));
-  --edge: rgba(255,255,255,0.07);
-  --edge-glow: rgba(94,158,122,0.26);
-  --cta-glow: 0 10px 24px -14px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.3);
-  --cta-face: var(--green);
-  --tile-glow: rgba(94,158,122,0.06);
+  /* flat surfaces — the reference has no glass, no glow */
+  --page-grad: linear-gradient(180deg, #DCE7EB 0%, #EEF2F4 34%);
+  --glass: linear-gradient(0deg, #FFFFFF, #FFFFFF);
+  --glass-glow: linear-gradient(0deg, rgba(150,214,226,0.22), rgba(150,214,226,0.22));
+  --edge: rgba(15,19,33,0.08);
+  --edge-glow: rgba(44,95,110,0.28);
+  --cta-glow: 0 14px 30px -14px rgba(15,19,33,0.45);
+  --cta-face: var(--ink);
+  --tile-glow: rgba(150,214,226,0.30);
   --orb: transparent;
   --rings: none;
 
-  /* type — Manrope for UI/body, Fraunces (serif) for editorial headlines */
-  --font-display: var(--font-fraunces), Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, serif;
+  /* type — Archivo (extended bold) for display, Manrope for UI/body */
+  --font-display: var(--font-display-face), "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --display-stretch: 118%;
 
-  /* motion */
-  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);       /* entrances, exits, presses, hovers */
-  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);   /* on-screen movement / morphing */
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); /* a tap landing — small overshoot, never on big moves */
-  --dur-fast: 120ms;    /* press feedback, small state flips */
-  --dur-base: 180ms;    /* hovers, reveals, chevrons */
-  --dur-slow: 260ms;    /* sheets, progress, larger moves */
+  /* motion — unchanged */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 120ms;
+  --dur-base: 180ms;
+  --dur-slow: 260ms;
 
   font-synthesis: none;
 }
 
-/* Light palette. Applied when the OS prefers light (and the user hasn't forced dark),
-   or when the user explicitly picks light via ThemeToggle. Keep both blocks in sync. */
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) {
-    color-scheme: light;
-    --bg: #EFF1EC;
-    --card: #FFFFFF;
-    --inset: #EDEEE8;
-    --recessed: #FFFFFF;
-    --hairline: #E7E9E1;
-    --border: #DBDDD2;
-    --border-recessed: #E1E2D9;
-    --text: #0E1613;
-    --text-2: #3E4C47;
-    --muted: #5E6E68;
-    --hint: #66756F;
-    --icon-muted: #79867F;
-    --green: #3C6E4C;
-    --green-hover: #325C3F;
-    --on-green: #FFFFFF;
-    --green-label: #3A6349;
-    --sand: #A9701C;
-    --sand-label: #8A6222;
-    --clay: #AE4A46;
-    --clay-label: #8F443F;
-    --blue: #2F6588;
-    --blue-icon: #2F6588;
-    --blue-text: #37505F;
-    --blue-strong: #2F6588;
-    --track: #E0E2D8;
-    --card-shadow: 0 1px 2px rgba(14,22,19,0.05);
-    --shadow-dock: 0 16px 36px -14px rgba(20,45,35,0.18), inset 0 1px 1px rgba(255,255,255,0.5);
-    --shadow-pop: 0 12px 26px -14px rgba(20,45,35,0.15);
-    --good-face: rgba(60,110,76,0.10);
-    --good-border: rgba(60,110,76,0.34);
-    --good-active: rgba(60,110,76,0.16);
-    --sand-face: rgba(169,112,28,0.10);
-    --sand-border: rgba(169,112,28,0.30);
-    --sand-active: rgba(169,112,28,0.16);
-    --clay-face: rgba(174,74,70,0.09);
-    --clay-border: rgba(174,74,70,0.28);
-    --clay-active: rgba(174,74,70,0.16);
+/* ---------------------------------------------------------------------------
+   DARK — ink-navy base, aqua accent. Applied when the OS prefers dark and the
+   user hasn't forced light, or when ThemeToggle sets data-theme="dark".
+   Keep both blocks in sync.
+   --------------------------------------------------------------------------- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0B0E18;
+    --card: #161B29;
+    --inset: #1E2433;
+    --recessed: #121622;
+    --hairline: #222839;
+    --border: #2E3547;
+    --border-recessed: #272D3E;
+    --text: #F2F5F9;
+    --text-2: #C3CBD8;
+    --muted: #9AA4B4;
+    --hint: #9AA4B4;
+    --icon-muted: #8A94A5;
+    --green: #96D6E2;
+    --green-hover: #ADE0EA;
+    --on-green: #0F1321;
+    --green-label: #96D6E2;
+    --state: #96D6E2;
+    --on-state: #0F1321;
+    --ink: #96D6E2;          /* in dark, the aqua IS the action surface */
+    --on-ink: #0F1321;
+    --sand: #E8B15A;
+    --sand-label: #D2B588;
+    --clay: #E8938B;
+    --clay-label: #D6A5A0;
+    --blue: #8CB8DC;
+    --blue-icon: #8CB8DC;
+    --blue-text: #B9CBDD;
+    --blue-strong: #A6C6E0;
+    --track: #232A3B;
+    --card-shadow: none;
+    --shadow-dock: 0 18px 40px -12px rgba(2,4,10,0.7), inset 0 1px 1px rgba(255,255,255,0.06);
+    --shadow-pop: 0 12px 28px -12px rgba(2,4,10,0.6);
+    --good-face: rgba(150,214,226,0.14);
+    --good-border: rgba(150,214,226,0.38);
+    --good-active: rgba(150,214,226,0.24);
+    --sand-face: rgba(232,177,90,0.12);
+    --sand-border: rgba(232,177,90,0.32);
+    --sand-active: rgba(232,177,90,0.22);
+    --clay-face: rgba(232,147,139,0.12);
+    --clay-border: rgba(232,147,139,0.32);
+    --clay-active: rgba(232,147,139,0.22);
     --focus-grad: var(--inset);
-    --blue-note-bg: rgba(47,101,136,0.07);
-    --chip-bg: rgba(60,110,76,0.10);
-    --chip-border: rgba(60,110,76,0.30);
-    --pill-cur-bg: rgba(60,110,76,0.12);
-    --pill-cur-border: rgba(60,110,76,0.45);
-    --area-stop: 0.18;
-
-    --page-grad: linear-gradient(180deg, #F3F4EF 0%, #EFF1EC 60%);
-    --glass: linear-gradient(0deg, rgba(255,255,255,0.62), rgba(255,255,255,0.62));
-    --glass-glow: linear-gradient(0deg, rgba(60,110,76,0.045), rgba(60,110,76,0.045));
-    --edge: rgba(14,22,19,0.06);
-    --edge-glow: rgba(60,110,76,0.28);
-    --cta-glow: 0 10px 26px -8px rgba(60,110,76,0.35), 0 2px 8px rgba(60,110,76,0.14);
-    --cta-face: var(--green);
-    --tile-glow: rgba(60,110,76,0.05);
+    --blue-note-bg: rgba(140,184,220,0.10);
+    --chip-bg: rgba(150,214,226,0.13);
+    --chip-border: rgba(150,214,226,0.28);
+    --pill-cur-bg: rgba(150,214,226,0.17);
+    --pill-cur-border: rgba(150,214,226,0.48);
+    --area-stop: 0.24;
+    --page-grad: linear-gradient(180deg, #101524 0%, #0B0E18 55%);
+    --glass: linear-gradient(0deg, rgba(255,255,255,0.03), rgba(255,255,255,0.03));
+    --glass-glow: linear-gradient(0deg, rgba(150,214,226,0.06), rgba(150,214,226,0.06));
+    --edge: rgba(255,255,255,0.08);
+    --edge-glow: rgba(150,214,226,0.28);
+    --cta-glow: 0 10px 24px -14px rgba(0,0,0,0.6), 0 2px 6px rgba(0,0,0,0.35);
+    --cta-face: var(--ink);
+    --tile-glow: rgba(150,214,226,0.07);
     --orb: transparent;
     --rings: none;
   }
 }
-:root[data-theme="light"] {
-  color-scheme: light;
-  --bg: #EFF1EC;
-  --card: #FFFFFF;
-  --inset: #EDEEE8;
-  --recessed: #FFFFFF;
-  --hairline: #E7E9E1;
-  --border: #DBDDD2;
-  --border-recessed: #E1E2D9;
-  --text: #0E1613;
-  --text-2: #3E4C47;
-  --muted: #5E6E68;
-  --hint: #66756F;
-  --icon-muted: #79867F;
-  --green: #3C6E4C;
-  --green-hover: #325C3F;
-  --on-green: #FFFFFF;
-  --green-label: #3A6349;
-  --sand: #A9701C;
-  --sand-label: #8A6222;
-  --clay: #AE4A46;
-  --clay-label: #8F443F;
-  --blue: #2F6588;
-  --blue-icon: #2F6588;
-  --blue-text: #37505F;
-  --blue-strong: #2F6588;
-  --track: #E0E2D8;
-  --card-shadow: 0 1px 2px rgba(14,22,19,0.05);
-  --good-face: rgba(60,110,76,0.10);
-  --good-border: rgba(60,110,76,0.34);
-  --good-active: rgba(60,110,76,0.16);
-  --sand-face: rgba(169,112,28,0.10);
-  --sand-border: rgba(169,112,28,0.30);
-  --sand-active: rgba(169,112,28,0.16);
-  --clay-face: rgba(174,74,70,0.09);
-  --clay-border: rgba(174,74,70,0.28);
-  --clay-active: rgba(174,74,70,0.16);
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0B0E18;
+  --card: #161B29;
+  --inset: #1E2433;
+  --recessed: #121622;
+  --hairline: #222839;
+  --border: #2E3547;
+  --border-recessed: #272D3E;
+  --text: #F2F5F9;
+  --text-2: #C3CBD8;
+  --muted: #9AA4B4;
+  --hint: #9AA4B4;
+  --icon-muted: #8A94A5;
+  --green: #96D6E2;
+  --green-hover: #ADE0EA;
+  --on-green: #0F1321;
+  --green-label: #96D6E2;
+  --state: #96D6E2;
+  --on-state: #0F1321;
+  --ink: #96D6E2;
+  --on-ink: #0F1321;
+  --sand: #E8B15A;
+  --sand-label: #D2B588;
+  --clay: #E8938B;
+  --clay-label: #D6A5A0;
+  --blue: #8CB8DC;
+  --blue-icon: #8CB8DC;
+  --blue-text: #B9CBDD;
+  --blue-strong: #A6C6E0;
+  --track: #232A3B;
+  --card-shadow: none;
+  --shadow-dock: 0 18px 40px -12px rgba(2,4,10,0.7), inset 0 1px 1px rgba(255,255,255,0.06);
+  --shadow-pop: 0 12px 28px -12px rgba(2,4,10,0.6);
+  --good-face: rgba(150,214,226,0.14);
+  --good-border: rgba(150,214,226,0.38);
+  --good-active: rgba(150,214,226,0.24);
+  --sand-face: rgba(232,177,90,0.12);
+  --sand-border: rgba(232,177,90,0.32);
+  --sand-active: rgba(232,177,90,0.22);
+  --clay-face: rgba(232,147,139,0.12);
+  --clay-border: rgba(232,147,139,0.32);
+  --clay-active: rgba(232,147,139,0.22);
   --focus-grad: var(--inset);
-  --blue-note-bg: rgba(47,101,136,0.07);
-  --chip-bg: rgba(60,110,76,0.10);
-  --chip-border: rgba(60,110,76,0.30);
-  --pill-cur-bg: rgba(60,110,76,0.12);
-  --pill-cur-border: rgba(60,110,76,0.45);
-  --area-stop: 0.18;
-
-  --page-grad: linear-gradient(180deg, #F3F4EF 0%, #EFF1EC 60%);
-  --glass: linear-gradient(0deg, rgba(255,255,255,0.62), rgba(255,255,255,0.62));
-  --glass-glow: linear-gradient(0deg, rgba(60,110,76,0.045), rgba(60,110,76,0.045));
-  --edge: rgba(14,22,19,0.06);
-  --edge-glow: rgba(60,110,76,0.28);
-  --cta-glow: 0 10px 26px -8px rgba(60,110,76,0.35), 0 2px 8px rgba(60,110,76,0.14);
-  --cta-face: var(--green);
-  --tile-glow: rgba(60,110,76,0.05);
+  --blue-note-bg: rgba(140,184,220,0.10);
+  --chip-bg: rgba(150,214,226,0.13);
+  --chip-border: rgba(150,214,226,0.28);
+  --pill-cur-bg: rgba(150,214,226,0.17);
+  --pill-cur-border: rgba(150,214,226,0.48);
+  --area-stop: 0.24;
+  --page-grad: linear-gradient(180deg, #101524 0%, #0B0E18 55%);
+  --glass: linear-gradient(0deg, rgba(255,255,255,0.03), rgba(255,255,255,0.03));
+  --glass-glow: linear-gradient(0deg, rgba(150,214,226,0.06), rgba(150,214,226,0.06));
+  --edge: rgba(255,255,255,0.08);
+  --edge-glow: rgba(150,214,226,0.28);
+  --cta-glow: 0 10px 24px -14px rgba(0,0,0,0.6), 0 2px 6px rgba(0,0,0,0.35);
+  --cta-face: var(--ink);
+  --tile-glow: rgba(150,214,226,0.07);
   --orb: transparent;
   --rings: none;
 }
 
 /* ============================================================================
-   SUN MODE — high-contrast overrides for logging outdoors in bright light.
-   Toggled via GlareToggle (data-glare="on"), applied pre-paint in layout.tsx.
-   Flattens the tinted glass surfaces, darkens/lightens muted text to the limit,
-   thickens hairlines, drops the page wash. Shared rules first, then a dark tweak.
+   SUN MODE — unchanged in purpose, re-pitched against the aqua palette.
+   Flattens the tints, pushes secondary text to near-black, thickens hairlines.
    ============================================================================ */
 :root[data-glare="on"] {
-  --text: #050704;
-  --text-2: #1B2016;
-  --muted: #2C3227;      /* secondary text goes almost as dark as body */
-  --hint: #333A2E;
-  --icon-muted: #333A2C;
-  --bg: #DFE2D6;
+  --text: #04060C;
+  --text-2: #141A26;
+  --muted: #232B3A;
+  --hint: #232B3A;
+  --icon-muted: #2A3243;
+  --bg: #D7DEE2;
   --card: #FFFFFF;
   --recessed: #FFFFFF;
-  --inset: #ECEEE3;
-  --hairline: #B7BFA7;
-  --border: #8D9880;
-  --border-recessed: #9AA48C;
-  --edge: rgba(16,20,12,0.42);
+  --inset: #EDF1F3;
+  --hairline: #A9B5BC;
+  --border: #7F8C95;
+  --border-recessed: #8C98A1;
+  --edge: rgba(10,14,22,0.42);
   --edge-glow: var(--green);
   --glass: linear-gradient(0deg, var(--card), var(--card));
   --glass-glow: linear-gradient(0deg, var(--card), var(--card));
   --focus-grad: var(--inset);
   --page-grad: none;
-  --card-shadow: 0 2px 8px rgba(22,30,16,0.2), 0 1px 3px rgba(22,30,16,0.16);
-  --green: #1F5230;
-  --green-label: #1F5230;
+  --card-shadow: 0 2px 8px rgba(15,19,33,0.22), 0 1px 3px rgba(15,19,33,0.18);
+  --green: #12414F;
+  --green-label: #12414F;
   --on-green: #FFFFFF;
+  --state: #7FCBDA;
+  --on-state: #04060C;
+  --ink: #04060C;
+  --on-ink: #FFFFFF;
   --clay: #8E2A22;
   --clay-label: #6E241D;
-  --sand: #6A470C;
-  --sand-label: #4E360C;
+  --sand: #5E3E08;
+  --sand-label: #4A3106;
   --blue: #204A63;
   --blue-strong: #1C4157;
-  --blue-text: #253A48;
-  --chip-bg: rgba(31,82,48,0.16);
-  --chip-border: rgba(31,82,48,0.7);
-  --pill-cur-border: rgba(31,82,48,0.85);
-  --good-face: rgba(31,82,48,0.15);
-  --good-border: rgba(31,82,48,0.7);
-  --sand-face: rgba(106,71,12,0.15);
-  --sand-border: rgba(106,71,12,0.65);
-  --clay-face: rgba(142,42,34,0.14);
-  --clay-border: rgba(142,42,34,0.65);
-  --track: #B7BFA7;
+  --blue-text: #233848;
+  --chip-bg: rgba(127,203,218,0.45);
+  --chip-border: rgba(18,65,79,0.75);
+  --pill-cur-border: rgba(18,65,79,0.9);
+  --good-face: rgba(127,203,218,0.45);
+  --good-border: rgba(18,65,79,0.7);
+  --sand-face: rgba(94,62,8,0.14);
+  --sand-border: rgba(94,62,8,0.65);
+  --clay-face: rgba(142,42,34,0.12);
+  --clay-border: rgba(142,42,34,0.68);
+  --track: #A9B5BC;
 }
-/* structural bumps that a token swap can't reach */
+/* structural bumps a token swap can't reach — unchanged from the old file */
 :root[data-glare="on"] .block,
 :root[data-glare="on"] .field,
 :root[data-glare="on"] .notes,
@@ -255,24 +303,26 @@
 :root[data-glare="on"] .hdr-sub,
 :root[data-glare="on"] .drline { opacity: 1; color: var(--text-2); }
 :root[data-glare="on"] .flowstrip > summary { color: var(--text-2); }
-/* dark base + sun mode: keep it dark but crank contrast (rare combo, still handled) */
+
 @media (prefers-color-scheme: dark) {
   :root[data-glare="on"]:not([data-theme="light"]) {
-    --text: #FFFFFF; --text-2: #EAEEE2; --muted: #D4DAC9; --hint: #CAD1BD; --icon-muted: #CDD4C0;
-    --bg: #04060A; --card: #1C231A; --recessed: #131810; --inset: #262E22;
-    --hairline: #454E3C; --border: #5E6852; --border-recessed: #515A44;
-    --edge: rgba(246,251,236,0.38); --card-shadow: 0 2px 8px rgba(0,0,0,0.6);
-    --green: #8AD6A8; --green-label: #A8DCBE; --on-green: #05110A;
-    --clay: #EC998C; --sand: #F0BE77; --track: #454E3C;
+    --text: #FFFFFF; --text-2: #E6ECF4; --muted: #CED6E2; --hint: #CED6E2; --icon-muted: #D2DAE5;
+    --bg: #03050C; --card: #1A2030; --recessed: #10141F; --inset: #232A3C;
+    --hairline: #424A5E; --border: #5A6376; --border-recessed: #4E5668;
+    --edge: rgba(240,245,252,0.38); --card-shadow: 0 2px 8px rgba(0,0,0,0.6);
+    --green: #BDE7EF; --green-label: #BDE7EF; --on-green: #04060C;
+    --state: #BDE7EF; --ink: #BDE7EF; --on-ink: #04060C;
+    --clay: #F3B2AB; --sand: #F0BE77; --track: #424A5E;
   }
 }
 :root[data-glare="on"][data-theme="dark"] {
-  --text: #FFFFFF; --text-2: #EAEEE2; --muted: #D4DAC9; --hint: #CAD1BD; --icon-muted: #CDD4C0;
-  --bg: #04060A; --card: #1C231A; --recessed: #131810; --inset: #262E22;
-  --hairline: #454E3C; --border: #5E6852; --border-recessed: #515A44;
-  --edge: rgba(246,251,236,0.38); --card-shadow: 0 2px 8px rgba(0,0,0,0.6);
-  --green: #8AD6A8; --green-label: #A8DCBE; --on-green: #05110A;
-  --clay: #EC998C; --sand: #F0BE77; --track: #454E3C;
+  --text: #FFFFFF; --text-2: #E6ECF4; --muted: #CED6E2; --hint: #CED6E2; --icon-muted: #D2DAE5;
+  --bg: #03050C; --card: #1A2030; --recessed: #10141F; --inset: #232A3C;
+  --hairline: #424A5E; --border: #5A6376; --border-recessed: #4E5668;
+  --edge: rgba(240,245,252,0.38); --card-shadow: 0 2px 8px rgba(0,0,0,0.6);
+  --green: #BDE7EF; --green-label: #BDE7EF; --on-green: #04060C;
+  --state: #BDE7EF; --ink: #BDE7EF; --on-ink: #04060C;
+  --clay: #F3B2AB; --sand: #F0BE77; --track: #424A5E;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -504,7 +554,12 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   white-space: nowrap;
 }
 .chip .chip-lbl { display: none; }
-@media (min-width: 400px) { .chip .chip-lbl { display: inline; } }
+/* raised from 400px: .hero-h runs bigger than the old .hdr-title did, so on
+   the Plan header specifically (title + greeting + this chip + two toggles,
+   all in one row) the label was tipping the title into a 3-line wrap. Icon +
+   count alone is enough information; the full "N this month" only shows on
+   wide-enough screens that there's room to spare. */
+@media (min-width: 460px) { .chip .chip-lbl { display: inline; } }
 /* per-step dot rail — the round tracker (one dot per hole), routine rehearse etc.
    indicator only; the header text and the Back/Next buttons do the navigating */
 .stepdots { display: flex; align-items: center; justify-content: center; gap: 5px; flex-wrap: wrap; padding: 1px 0; }
@@ -1475,17 +1530,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .prep-card .pitem + .pitem { border-top: 1px solid var(--hairline); padding-top: 13px; }
 .prep-sub { font-size: 12px; font-weight: 700; color: var(--muted); margin: 16px 0 9px; }
 
-/* segmented control (Prep tabs) — underline style, editorial */
-.segmented { display: flex; gap: 2px; border-bottom: 1px solid var(--hairline); }
-.segmented button {
-  flex: 1; height: 42px; position: relative; font-size: 13px; font-weight: 700; color: var(--muted);
-  transition: color var(--dur-base) var(--ease-out);
-}
-.segmented button.on { color: var(--text); }
-.segmented button.on::after {
-  content: ""; position: absolute; left: 20%; right: 20%; bottom: -1px; height: 2px;
-  border-radius: 2px 2px 0 0; background: var(--green);
-}
 
 .prep-acc { background: var(--glass); border: 1px solid var(--edge); border-radius: 16px; overflow: hidden; }
 .prep-acc.open { border-color: var(--edge-glow); }
@@ -1636,30 +1680,17 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .notes::placeholder { color: var(--hint); }
 .notes:focus { outline: none; border-color: var(--green); }
 
-/* ---------- bottom nav: floating frosted dock ---------- */
-.nav {
-  position: fixed; left: 50%; bottom: calc(10px + env(safe-area-inset-bottom)); z-index: 20;
-  transform: translateX(-50%);
-  width: calc(100% - 20px); max-width: 400px;
-  display: grid; grid-template-columns: repeat(4, 1fr);
-  background: color-mix(in srgb, var(--card) 82%, transparent);
-  backdrop-filter: blur(20px) saturate(1.5);
-  -webkit-backdrop-filter: blur(20px) saturate(1.5);
-  border: 1px solid var(--edge);
-  border-radius: 20px;
-  padding: 7px 6px;
-  box-shadow: var(--shadow-dock);
-}
+/* ---------- bottom nav ----------
+   .nav (the old grid dock) and .nav-item.active are gone — the app-wide nav
+   is .navpill now (below, in the aqua overrides block). .nav-item itself
+   stays: it's still the button class inside .navpill, just restyled there. */
 .nav-item {
-  height: 52px; border-radius: 16px;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
   color: var(--icon-muted); font-size: 10px; font-weight: 700;
 }
 .nav-item .msr {
   width: 34px; height: 30px; border-radius: 10px;
   transition: background var(--dur-base) var(--ease-out);
 }
-.nav-item.active { color: var(--green); font-weight: 800; }
 .nav-item.active .msr { background: var(--chip-bg); box-shadow: 0 0 14px -2px var(--tile-glow); }
 .nav-glyph { position: relative; display: flex; }
 .nav-dot { position: absolute; top: 0; right: 1px; width: 7px; height: 7px; border-radius: 50%; background: var(--sand); border: 1.5px solid var(--card); }
@@ -2413,4 +2444,316 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
   .datamenu button:active, .warm-todo:active, .count-pill:active, .hist-del:active {
     transition: transform 100ms linear !important;
   }
+}
+
+/* ============================================================================
+   RangeCard — aqua skin, part 2: the things a token swap can't reach.
+   Append this file to the END of app/globals.css (or @import it last).
+
+   Three groups:
+     A. Display type — Fraunces was a serif at weight 500; Archivo is an
+        extended grotesque and needs different weight, width and tracking.
+     B. Radii — the reference reads at 26-30px; you're at 16-20px.
+     C. Four new patterns — hero+sheet, segmented pill, nav pill, round button.
+        These need markup too; see README.md.
+   ============================================================================ */
+
+/* ---------- A. display type ------------------------------------------------ */
+
+.home-hero-h,
+.onething-title,
+.verdict-h,
+.receipt-h,
+.deal-h,
+.reveal-verdict,
+.routine-stage-title,
+.routine-complete-h,
+.empty-h,
+.notfound-h,
+.warm-now-name,
+.coach-head,
+.fault-hero-pat,
+.hdr-title {
+  font-family: var(--font-display);
+  font-stretch: var(--display-stretch);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+/* Fraunces carried its presence in the serifs; Archivo carries it in the width,
+   so the big sizes can come down a touch and still feel bigger. */
+.home-hero-h { font-size: clamp(29px, 8.2vw, 38px); line-height: 1.06; }
+.verdict-h { font-size: 29px; line-height: 1.12; }
+.reveal-verdict { font-size: clamp(28px, 8.2vw, 35px); line-height: 1.1; }
+.hdr-title { font-size: 27px; line-height: 1.1; }
+.hdr-title.sm { font-size: 22px; }
+
+/* The emphasis device changes. Archivo has no italic worth using, so an
+   emphasised fragment is marked by colour, not slope. */
+.home-hero-h em, .deal-h em, .onething-title em, .reveal-verdict em {
+  font-style: normal;
+  font-weight: 700;
+  color: var(--green);
+}
+
+/* Archivo sets wider than Fraunces at the same size — Lockup.tsx's viewBox was
+   widened (250 → 285) to stop the wordmark clipping; see its own comment. */
+.lockup text {
+  font-family: var(--font-display);
+  font-stretch: var(--display-stretch);
+  font-weight: 700;
+}
+
+/* Numbers: hero figures want the display face too, tabular as always. */
+.tile-val, .round-stat-v, .score-step-val .num, .putt-step > .num, .hole-opt-n {
+  font-family: var(--font-display);
+  font-stretch: var(--display-stretch);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+
+/* ---------- B. radii -------------------------------------------------------- */
+
+.block, .onething, .focuscard, .game-entry { border-radius: 28px; }
+.tile, .leak, .games-intro, .game-rules, .hole-opt { border-radius: 26px; }
+.icon-btn, .rbtn, .spill, .venue-opt, .leak-appr { border-radius: 18px; }
+.block-name .msr, .icon-tile.lg { border-radius: 16px; }
+
+/* The primary button stops being a full pill — the reference uses a soft
+   rectangle for actions and saves the pill for chips and nav. */
+.cta { border-radius: 22px; height: 62px; }
+.block-continue { border-radius: 18px; }
+
+/* Flat surfaces: the tinted "accent" tile glow was a dark-theme device and
+   reads as smudge on white. */
+.tile.accent::after { display: none; }
+.pbar > span { background: var(--green); box-shadow: none; }
+
+/* Progress rails use the AQUA FILL, not the text accent — this is the one place
+   the two halves of the old --green token visibly separate. */
+.stepdots i.done { background: var(--state); opacity: 1; }
+.stepdots i.cur { background: var(--green); }
+
+/* ---------- C. new patterns ------------------------------------------------- */
+
+/* C1. Tinted hero + white sheet.
+   Replaces the sticky blurred .hdr on Plan, Trends and the receipt. The hero is
+   NOT sticky — the sheet scrolls over it, which is the whole effect. */
+.hero {
+  background: var(--state);
+  color: var(--on-state);
+  padding: calc(18px + env(safe-area-inset-top)) 24px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+/* flex-start, not center: RangeCard's own Plan header (greeting + title + sub,
+   plus a month chip and two toggles on the right) is denser than anything in
+   the reference — when the title wraps to more than one line, centering the
+   actions puts them floating beside the middle line instead of the top one. */
+.hero-row { display: flex; align-items: flex-start; gap: 12px; }
+.hero-row > :last-child { margin-left: auto; }
+.hero-h {
+  font-family: var(--font-display);
+  font-stretch: var(--display-stretch);
+  font-weight: 700;
+  font-size: clamp(26px, 7.8vw, 31px);
+  line-height: 1.14;
+  letter-spacing: -0.02em;
+  text-wrap: pretty;
+}
+.hero-sub { font-size: 15px; font-weight: 600; color: #294450; }
+/* circular well for icon buttons sitting on the aqua */
+.hero-ic {
+  width: 46px; height: 46px; border-radius: 50%; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.55); color: var(--on-state); border: none;
+}
+.hero-ic.ink { background: var(--ink); color: var(--on-ink); }
+
+/* Existing shared toggles (GlareToggle, ThemeToggle) render as .icon-btn, which
+   in dark mode is a near-transparent well meant for the app's dark --card/--bg
+   — on the aqua hero (same --state in both themes) that reads as almost
+   invisible. Scoped to .hero only; .icon-btn itself is untouched everywhere
+   else it's used. */
+.hero .icon-btn {
+  background: rgba(255,255,255,0.55); border-color: transparent; color: var(--on-state);
+}
+.hero .icon-btn.on { background: var(--ink); border-color: transparent; color: var(--on-ink); }
+/* same problem, same fix: .chip's --chip-bg is a low-opacity aqua tint, meant
+   to sit on --card/--bg. In dark mode --chip-bg is 13% aqua and --green (its
+   text colour) IS aqua — both nearly disappear on the --state aqua hero. */
+.hero .chip { background: rgba(255,255,255,0.55); border-color: transparent; color: var(--on-state); }
+/* same problem, same fix, for the receipt's own icon-tile + meta line sitting
+   directly in .hero (not inside .plancard — that one's fixed separately below). */
+.hero .icon-tile { background: rgba(15,19,33,0.12); border-color: transparent; color: var(--on-state); }
+.hero .receipt-meta { color: rgba(15,19,33,0.65); }
+/* .receipt-best (RoundSummary's "your best round yet" badge) is new to .hero —
+   SessionReceipt never used it. Same ink-on-aqua treatment as everything else
+   here: var(--green)/--chip-bg are tuned for --card/--bg and --green literally
+   equals --state in dark mode, so left alone this badge would vanish. */
+.hero .receipt-best { background: rgba(15,19,33,0.12); border-color: rgba(15,19,33,0.18); color: var(--on-state); }
+
+.sheet {
+  background: var(--card);
+  border-radius: 34px 34px 0 0;
+  margin-top: -18px;
+  padding: 12px 22px calc(26px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  position: relative;
+  z-index: 1;
+}
+.sheet::before {
+  content: ""; width: 44px; height: 5px; border-radius: 99px;
+  background: var(--border); align-self: center; flex: none;
+}
+
+/* C2. Segmented pill — Sessions / Trends / Bests */
+.seg {
+  background: var(--inset);
+  border-radius: 999px;
+  padding: 5px;
+  display: flex;
+  gap: 4px;
+}
+.seg button {
+  flex: 1; min-height: 46px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; color: var(--muted);
+  transition: background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out);
+}
+.seg button[aria-selected="true"] { background: var(--ink); color: var(--on-ink); }
+
+/* C3. Floating nav pill — narrower than the old dock, labels the active item
+   only. Apply alongside (or instead of) your existing .nav rules. */
+.navpill {
+  position: fixed;
+  left: 50%;
+  bottom: calc(22px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 20;
+  height: 68px;
+  padding: 0 10px;
+  border-radius: 999px;
+  /* fixed dark, not var(--ink) — in dark mode --ink IS --state (aqua, "the
+     aqua is the action surface" elsewhere), which would make this pill's own
+     background and its active-item highlight the same colour. The reference
+     hardcodes this dock as #0F1321 regardless of theme for exactly that
+     reason: a constant dark shelf so the aqua highlight always reads. */
+  background: #0F1321;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: var(--shadow-dock);
+}
+.navpill .nav-item {
+  width: 48px; height: 48px; border-radius: 999px;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  color: rgba(255,255,255,0.6);
+  font-size: 15px; font-weight: 700;
+  transition: width var(--dur-base) var(--ease-out), background var(--dur-base) var(--ease-out),
+              color var(--dur-fast) var(--ease-out);
+}
+.navpill .nav-item[aria-current="page"] {
+  width: auto; padding: 0 18px;
+  background: color-mix(in srgb, var(--state) 18%, transparent);
+  color: var(--state);
+}
+/* the icon gets a droplet-style squash/stretch bounce on activation — landing,
+   rebounding, then settling slightly enlarged — plus an expanding ring that
+   fades out around it, like a drop hitting water. The label's own reveal
+   (below) is a plain width/opacity fade, so the bounce reads as "the icon did
+   something", not the whole pill wobbling. */
+.navpill .nav-item .msr {
+  position: relative;
+  transition: transform var(--dur-base) var(--ease-spring);
+}
+.navpill .nav-item[aria-current="page"] .msr {
+  transform: scale(1.1);
+  animation: navDroplet 560ms var(--ease-spring);
+}
+.navpill .nav-item .msr::after {
+  content: "";
+  position: absolute;
+  inset: -9px;
+  border-radius: 999px;
+  border: 1.5px solid var(--state);
+  opacity: 0;
+  transform: scale(0.4);
+  pointer-events: none;
+}
+.navpill .nav-item[aria-current="page"] .msr::after {
+  animation: navRipple 560ms var(--ease-out);
+}
+@keyframes navDroplet {
+  0%   { transform: scale(1, 1); }
+  32%  { transform: scale(0.8, 1.25); }
+  56%  { transform: scale(1.25, 0.82); }
+  78%  { transform: scale(0.95, 1.07); }
+  100% { transform: scale(1.1, 1.1); }
+}
+@keyframes navRipple {
+  0%   { opacity: 0.55; transform: scale(0.4); }
+  100% { opacity: 0; transform: scale(1.9); }
+}
+/* label reveal: animated max-width + opacity, not display:none/inline. That
+   toggle is instant — with the pill's own width transition taking 180ms, the
+   label would render (wrapping inside a still-narrow circle) before the pill
+   had actually finished widening, which is what read as "the word sits below
+   the icon". Animating both in step keeps the label appearing exactly as
+   there's room for it, to the icon's right the whole time. */
+.navpill .nav-lbl {
+  display: inline-block; max-width: 0; opacity: 0; overflow: hidden; white-space: nowrap;
+  transition: max-width var(--dur-base) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
+}
+.navpill .nav-item[aria-current="page"] .nav-lbl {
+  max-width: 90px; opacity: 1;
+  transition: max-width var(--dur-base) var(--ease-out), opacity var(--dur-base) var(--ease-out) 60ms;
+}
+/* .nav-dot's border is a cutout ring matched to whatever sits behind it — was
+   --card (the old dock's background); .navpill is a fixed #0F1321 (see above,
+   not var(--ink), which drifts in dark mode), so match that fixed value too. */
+.navpill .nav-dot { border-color: #0F1321; }
+
+/* C4. Round action button — the arrow on the plan card */
+.roundbtn {
+  width: 56px; height: 56px; border-radius: 50%; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--ink); color: var(--on-ink);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.roundbtn:active { transform: scale(0.94); }
+.roundbtn.quiet { background: var(--inset); color: var(--text); border: 1.5px solid var(--border); }
+
+/* The plan card itself: aqua fill, ink progress, round button. */
+.plancard {
+  background: var(--state);
+  color: var(--on-state);
+  border: none;
+  border-radius: 30px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.plancard .pbar { background: rgba(15,19,33,0.2); height: 8px; border-radius: 99px; }
+.plancard .pbar > span { background: var(--ink); }
+/* .plancard's children (when it's applied over .onething, as on Plan) carry
+   colour tokens tuned for sitting on --card/--bg — muted greys, --green text,
+   --chip-bg wells. None of that reads on the --state aqua fill; several
+   resolve to aqua itself in dark mode (--green *is* --state there), which
+   made the eyebrow/icon disappear entirely. --on-state is a fixed ink value
+   in both themes, so these use it directly (plus fixed-opacity ink for the
+   muted tiers) rather than tokens tuned for a different surface. */
+.plancard .eyebrow { color: var(--on-state); }
+.plancard .icon-tile { background: rgba(15,19,33,0.12); border-color: transparent; color: var(--on-state); }
+.plancard .onething-body { color: rgba(15,19,33,0.72); }
+.plancard .onething-src { color: rgba(15,19,33,0.6); border-top-color: rgba(15,19,33,0.16); }
+.plancard .onething-src .msr { color: rgba(15,19,33,0.6); }
+
+@media (prefers-reduced-motion: reduce) {
+  .navpill .nav-item, .navpill .nav-item .msr, .navpill .nav-lbl, .seg button, .roundbtn { transition: none; }
+  .navpill .nav-item .msr, .navpill .nav-item .msr::after { animation: none; }
+  .navpill .nav-item .msr::after { opacity: 0; }
 }
