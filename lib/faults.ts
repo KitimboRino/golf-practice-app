@@ -7,7 +7,7 @@
 //  2) Reactive coaching — after a session is logged, call detectFaults(session)
 //     and surface any returned cards ("Seeing lots of right misses? …").
 
-export type Area = "driving" | "irons" | "chipping";
+export type Area = "driving" | "irons" | "chipping" | "pitching" | "putting";
 
 export type Fault = {
   id: string;
@@ -92,6 +92,24 @@ export const CATALOG: Fault[] = [
     fix: "Feel the club approach from inside the line: draw your right foot back so your right toe is level with your left heel (shoulders square) to make room for an inside path.",
     ref: "",
   },
+  {
+    id: "putt-tension",
+    area: "putting",
+    name: "Tense grip",
+    pattern: "Missing a lot of putts, pace and line both off",
+    fault: "Gripping too tightly, which stiffens the stroke and costs both distance control and direction.",
+    fix: "Soften your grip pressure. Tiger Woods has described his own as about a 5 out of 10 on an average tour green — light enough that the putter can swing freely, firm enough to stay in control.",
+    ref: "",
+  },
+  {
+    id: "pitch-dig",
+    area: "pitching",
+    name: "Digging pitches",
+    pattern: "Pitches coming up short, contact feels heavy or inconsistent",
+    fault: "The leading edge digging into the turf instead of the wedge's bounce gliding through it.",
+    fix: "Set the shaft close to vertical at address and keep the clubhead low through the hitting zone. Tiger Woods describes this as using the bounce to glide across the turf rather than dig in — think \"slide,\" not \"smash.\"",
+    ref: "",
+  },
 ];
 
 // --- Reactive detection -------------------------------------------------
@@ -104,6 +122,8 @@ export function detectFaults(s: {
   driving: { fairway: number; left: number; right: number };
   irons: { solid: number; fat: number; thin: number };
   chipping: { on: number; off: number };
+  pitching?: { close: number; short: number; long: number };
+  putting?: { in: number; out: number };
 }): FaultHit[] {
   const hits: FaultHit[] = [];
   const driveTotal = s.driving.fairway + s.driving.left + s.driving.right;
@@ -138,6 +158,26 @@ export function detectFaults(s: {
     hits.push({
       fault: byId("heavy-chip"),
       note: `Most chips missed the towel. If contact felt heavy, work the hands-ahead fix; otherwise revisit the height-and-roll focus drill.`,
+    });
+  }
+
+  // Pitching: short-heavy session (the usual signature of digging rather than gliding)
+  const p = s.pitching ?? { close: 0, short: 0, long: 0 };
+  const pitchTotal = p.close + p.short + p.long;
+  if (pitchTotal >= 6 && p.short / pitchTotal >= 0.4) {
+    hits.push({
+      fault: byId("pitch-dig"),
+      note: `${p.short} of ${pitchTotal} pitches came up short this session. Often that's the leading edge digging rather than the bounce gliding through.`,
+    });
+  }
+
+  // Putting: missing more than half, enough putts to rule out a stray round
+  const putt = s.putting ?? { in: 0, out: 0 };
+  const puttTotal = putt.in + putt.out;
+  if (puttTotal >= 6 && putt.out / puttTotal >= 0.5) {
+    hits.push({
+      fault: byId("putt-tension"),
+      note: `${putt.out} of ${puttTotal} putts missed this session. Grip tension is the most common cause of inconsistent pace and line.`,
     });
   }
 

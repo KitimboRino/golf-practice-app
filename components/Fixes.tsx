@@ -10,6 +10,8 @@ const GROUPS: { area: Area; label: string }[] = [
   { area: "driving", label: "Driving" },
   { area: "irons", label: "Irons" },
   { area: "chipping", label: "Chipping" },
+  { area: "pitching", label: "Pitching" },
+  { area: "putting", label: "Putting" },
 ];
 
 const MISS_TO_FAULT: Record<string, string> = { right: "slice", left: "hook", strike: "fat" };
@@ -27,6 +29,13 @@ const FLIGHT: Record<string, { d: string; end: [number, number] }> = {
   "heavy-chip": { d: "M50 90 C55 82 60 78 64 80", end: [64, 80] },
   shank:        { d: "M50 90 L88 58", end: [88, 58] },
   pull:         { d: "M50 90 L34 12", end: [34, 12] },
+  // some height, but the dig costs enough energy that it comes up well short
+  // of a full pitch's normal arc (contrast with the driving faults above,
+  // which all reach near the top of the frame)
+  "pitch-dig":  { d: "M50 90 C52 72 56 58 62 46", end: [62, 46] },
+  // a putt doesn't fly, it rolls — this stays near the ground line the whole
+  // way rather than arcing, the one shape here that isn't a flight at all
+  "putt-tension": { d: "M50 90 C54 89 60 88 68 87", end: [68, 87] },
 };
 
 function FlightPath({ id, size = 84 }: { id: string; size?: number }) {
@@ -41,18 +50,42 @@ function FlightPath({ id, size = 84 }: { id: string; size?: number }) {
   );
 }
 
+// A terse, one-line stat for the hero card's eyebrow — not h.note (that's a
+// full explanatory sentence, meant for the Trends "coach" card instead).
+// Scoped per fault id rather than always reading driving data: that used to
+// be hardcoded here regardless of which fault actually matched, so a
+// putting or pitching fault would show a driving tee-shot stat next to it.
+// "heavy-chip" is left out on purpose — it's reused for both an irons- and
+// a chipping-triggered pattern, so there's no single area to report here
+// without knowing which one actually fired; falls back to "Your miss".
+function contextFor(fault: Fault, latest: SavedSession): string | null {
+  if (fault.id === "slice" || fault.id === "hook") {
+    const d = latest.driving;
+    const total = d.fairway + d.left + d.right;
+    const missed = d.left + d.right;
+    return total >= 4 && missed
+      ? `${missed} of ${total} tee shots missed ${d.right >= d.left ? "right" : "left"} last session`
+      : null;
+  }
+  if (fault.id === "pitch-dig") {
+    const p = latest.pitching ?? { close: 0, short: 0, long: 0 };
+    const total = p.close + p.short + p.long;
+    return total >= 4 ? `${p.short} of ${total} pitches came up short last session` : null;
+  }
+  if (fault.id === "putt-tension") {
+    const putt = latest.putting;
+    const total = putt.in + putt.out;
+    return total >= 4 ? `${putt.out} of ${total} putts missed last session` : null;
+  }
+  return null;
+}
+
 function yourMiss(history: SavedSession[], plannedMiss: string): { fault: Fault; context: string | null } | null {
   const latest = history[history.length - 1];
   if (latest) {
     const hits = detectFaults(latest);
     if (hits.length) {
-      const d = latest.driving;
-      const total = d.fairway + d.left + d.right;
-      const missed = d.left + d.right;
-      const context = total >= 4 && missed
-        ? `${missed} of ${total} tee shots missed ${d.right >= d.left ? "right" : "left"} last session`
-        : null;
-      return { fault: hits[0].fault, context };
+      return { fault: hits[0].fault, context: contextFor(hits[0].fault, latest) };
     }
   }
   const id = MISS_TO_FAULT[plannedMiss];

@@ -508,7 +508,7 @@ function RoundPlay({
           ))}
         </div>
         {showGrid && (
-          <div className="hole-jump-grid">
+          <div className="hole-jump-grid" role="group" aria-label="Jump to hole">
             {Array.from({ length: round.holes }, (_, n) => {
               const logged = round.holeData[n]?.score != null;
               return (
@@ -516,6 +516,7 @@ function RoundPlay({
                   key={n}
                   className={"hole-jump-cell" + (n === i ? " cur" : logged ? " done" : "")}
                   aria-current={n === i ? "step" : undefined}
+                  aria-label={`Hole ${n + 1}${n === i ? ", current" : logged ? ", logged" : ", not yet logged"}`}
                   onClick={() => { tapFx(); setShowGrid(false); goTo(n); }}
                 >
                   {n + 1}
