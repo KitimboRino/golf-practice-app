@@ -6,6 +6,8 @@ import { SESSION_FLOW } from "@/lib/prep";
 import { PITCH_FOCUS, PITCHING_DRILL, LIBRARY } from "@/lib/library";
 import { CATALOG } from "@/lib/faults";
 import { Outcome } from "@/components/Outcome";
+import { VoiceLogButton } from "@/components/VoiceLog";
+import { Goal } from "@/lib/goal";
 import { Icon } from "@/components/Icon";
 import { AreaIcon } from "@/components/AreaIcon";
 import { Trends } from "@/components/Trends";
@@ -358,6 +360,8 @@ function QuickPick({
 
 export default function Page() {
   const [tab, setTab] = useState<Tab>("home");
+  const [trendsOpenData, setTrendsOpenData] = useState(false);
+  const [goal, setGoalState] = useState<Goal | null>(null);
   const [history, setHistory] = useState<SavedSession[]>([]);
   const [cursor, setCursor] = useState<{ week: number; session: number }>({ week: 0, session: 0 });
   const [live, setLive] = useState<Live | null>(null);
@@ -368,6 +372,7 @@ export default function Page() {
   const [onb, setOnb] = useState<Onboarding | null>(null);
   const [readShots, setReadShots] = useState<Shot[]>([]);
   const [plannedMiss, setPlannedMiss] = useState<string>("");
+  const [nudgeDismissedAt, setNudgeDismissedAt] = useState<string | null>(null);
   const [overrides, setOverrides] = useState<DrillOverrides>({});
   const [receipt, setReceipt] = useState<
     { session: SavedSession; history: SavedSession[]; nextCursor: { week: number; session: number } } | null
@@ -401,6 +406,8 @@ export default function Page() {
         setRound((await getMeta<LiveRound>("roundDraft")) ?? null);
         setName((await getMeta<string>("name")) ?? "");
         setPlannedMiss((await getMeta<string>("plannedMiss")) ?? "");
+        setNudgeDismissedAt((await getMeta<string>("nudgeDismissedAt")) ?? null);
+        setGoalState((await getMeta<Goal>("goal")) ?? null);
         setOverrides((await getMeta<DrillOverrides>("drillOverrides")) ?? {});
         const ob = (await getMeta<string>("onboardedAt")) ?? null;
         setOnboardedAt(ob);
@@ -620,6 +627,23 @@ export default function Page() {
     openLog();
   }
 
+  // "Haven't practiced in a while" nudge — dismissal is keyed to the date of
+  // the session it was shown for, so it naturally reopens once that gap grows
+  // again (no separate "last shown" timer to drift out of sync with reality).
+  async function dismissNudge(lastSessionDate: string) {
+    setNudgeDismissedAt(lastSessionDate);
+    await setMeta("nudgeDismissedAt", lastSessionDate);
+  }
+
+  async function saveGoal(g: Goal) {
+    setGoalState(g);
+    await setMeta("goal", g);
+  }
+  async function clearGoal() {
+    setGoalState(null);
+    await delMeta("goal");
+  }
+
   function resumeDraft() {
     if (!live) return;
     const loc = locate(live.weekId, live.sessionLabel);
@@ -788,7 +812,8 @@ export default function Page() {
                 oneThing={todaysOneThing(history, plannedMiss)} monthCount={sessionsThisMonth(history)}
                 onStart={startSession} onQuick={() => setTab("quickpick")}
                 draftLabel={isDraft ? live!.sessionLabel : null}
-                draftHere={draftHere} onResume={resumeDraft} />
+                draftHere={draftHere} onResume={resumeDraft}
+                nudgeDismissedAt={nudgeDismissedAt} onDismissNudge={dismissNudge} />
         )}
         {tab === "quickpick" && (
           <QuickPick plannedMiss={plannedMiss} onStart={startQuick} onCancel={() => setTab("home")} />
@@ -799,8 +824,11 @@ export default function Page() {
                          editMode={!!editOrig} onFinish={finishSession} onDiscard={discard} />
         )}
         {tab === "trends" && (
-          <Trends history={history} onDelete={onDelete} onEdit={editSession} onBack={() => setTab("more")}
-                  onStart={startSession} onImported={async () => setHistory(await allSessions())} />
+          <Trends history={history} onDelete={onDelete} onEdit={editSession}
+                  onBack={() => { setTab("more"); setTrendsOpenData(false); }}
+                  onStart={startSession} onImported={async () => setHistory(await allSessions())}
+                  openData={trendsOpenData}
+                  goal={goal} onSaveGoal={saveGoal} onClearGoal={clearGoal} />
         )}
         {tab === "warmup" && (
           <Warmup onSkip={dismissWarmup} onReady={dismissWarmup} />
@@ -822,6 +850,7 @@ export default function Page() {
           <More history={history} plannedMiss={plannedMiss} overrides={overrides} onSwap={swapDrill}
                 games={games} onSaveGame={saveGame} onDeleteGame={removeGame}
                 onOpenTrends={() => setTab("trends")}
+                onOpenBackup={() => { setTrendsOpenData(true); setTab("trends"); }}
                 sessionDraft={isDraft ? live!.sessionLabel : null}
                 onResumeSession={resumeDraft}
                 hasRound={!!round}
@@ -864,7 +893,7 @@ export default function Page() {
 
 function More({
   history, plannedMiss, overrides, onSwap, games, onSaveGame, onDeleteGame, onPracticeFix,
-  onOpenTrends, sessionDraft, onResumeSession, hasRound, onResumeRound,
+  onOpenTrends, onOpenBackup, sessionDraft, onResumeSession, hasRound, onResumeRound,
 }: {
   history: SavedSession[];
   plannedMiss: string;
@@ -875,6 +904,7 @@ function More({
   onDeleteGame: (id: string) => void;
   onPracticeFix: (fault: import("@/lib/faults").Fault) => void;
   onOpenTrends: () => void;
+  onOpenBackup: () => void;
   sessionDraft: string | null;
   onResumeSession: () => void;
   hasRound: boolean;
@@ -977,7 +1007,10 @@ function More({
 
         <p className="app-foot">
           <Icon name="lock" size={13} />
-          Your sessions stay on this device. No account, nothing uploaded. Back them up from Trends.
+          <span>
+            Your sessions stay on this device. No account, nothing uploaded.{" "}
+            <button onClick={onOpenBackup}>Back them up</button>
+          </span>
         </p>
       </div>
     </>
@@ -986,7 +1019,7 @@ function More({
 
 function Home({
   week, cursor, setCursor, history, name, greeting, onEditName, oneThing, monthCount,
-  onStart, onQuick, draftLabel, draftHere, onResume,
+  onStart, onQuick, draftLabel, draftHere, onResume, nudgeDismissedAt, onDismissNudge,
 }: {
   week: Week;
   cursor: { week: number; session: number };
@@ -1002,6 +1035,8 @@ function Home({
   draftLabel: string | null;
   draftHere: boolean;
   onResume: () => void;
+  nudgeDismissedAt: string | null;
+  onDismissNudge: (lastSessionDate: string) => void;
 }) {
   const flat = PLAN.flatMap((w, wi) =>
     w.sessions.map((s, si) => ({ wi, si, id: w.id, label: s.label, test: /test/i.test(s.label) }))
@@ -1022,6 +1057,18 @@ function Home({
   const firstRun = done === 0;
   const [venue, setVenue] = useState("full");
   const v = venueByKey(venue);
+
+  // "Haven't practiced in a while" nudge — only once there's a real gap, never
+  // stacked with the unfinished-session banner, and silenced per-gap (not
+  // per-day) once dismissed so it doesn't nag again until that gap reopens.
+  const lastSession = history.length ? history[history.length - 1] : null;
+  const daysSinceLast = lastSession
+    ? Math.floor((Date.now() - new Date(lastSession.date + "T00:00:00").getTime()) / 86_400_000)
+    : null;
+  const showResumeBanner = !!draftLabel && !draftHere;
+  const showNudge =
+    !firstRun && !showResumeBanner && !!lastSession &&
+    daysSinceLast !== null && daysSinceLast >= 5 && nudgeDismissedAt !== lastSession.date;
 
   return (
     <>
@@ -1050,12 +1097,25 @@ function Home({
       </header>
 
       <div className="sheet">
-        {draftLabel && !draftHere && (
+        {showResumeBanner && (
           <button className="draft-banner" onClick={onResume}>
             <Icon name="pending_actions" size={18} />
             <span>Unfinished · {draftLabel}</span>
             <b>Resume</b>
           </button>
+        )}
+
+        {showNudge && lastSession && (
+          <div className="nudge-row">
+            <button className="draft-banner nudge-start" onClick={() => onStart()}>
+              <Icon name="event_busy" size={18} />
+              <span>{daysSinceLast}-day gap</span>
+              <b>Start</b>
+            </button>
+            <button className="nudge-dismiss" aria-label="Dismiss reminder" onClick={() => onDismissNudge(lastSession.date)}>
+              <Icon name="close" size={16} />
+            </button>
+          </div>
         )}
 
         {firstRun && (
@@ -1501,11 +1561,14 @@ function SessionScreen({
               <div className="shotstrip">
                 <div className="shotstrip-head">
                   <span className="eyebrow dim">Ball {Math.min(step.target, strip.length + 1)} of {step.target}</span>
-                  {strip.length > 0 && (
-                    <span className="shotstrip-rate" style={{ color: goodN / strip.length >= 0.5 ? "var(--green)" : "var(--sand)" }}>
-                      <Icon name="insights" size={14} />{Math.round((goodN / strip.length) * 100)}% on line
-                    </span>
-                  )}
+                  <span className="shotstrip-right">
+                    {strip.length > 0 && (
+                      <span className="shotstrip-rate" style={{ color: goodN / strip.length >= 0.5 ? "var(--green)" : "var(--sand)" }}>
+                        <Icon name="insights" size={14} />{Math.round((goodN / strip.length) * 100)}% on line
+                      </span>
+                    )}
+                    <VoiceLogButton outcomes={step.outcomes} onMatch={(key) => push(step.area, key)} />
+                  </span>
                 </div>
                 <div className="shotstrip-dots">
                   {Array.from({ length: step.target }).map((_, i) => {

@@ -4,8 +4,10 @@ import { SavedSession } from "@/lib/db";
 import { Week, Session, PLAN } from "@/lib/plan";
 import { solidPct } from "@/lib/stats";
 import { sessionBalls, sessionMinutes } from "@/lib/verdict";
+import { shareCard } from "@/lib/shareCard";
 import { Icon } from "./Icon";
 import { Glyph } from "./Glyph";
+import { useToast } from "./Toast";
 
 const wkNum = (id: string) => id.replace(/[^0-9]/g, "") || "0";
 const sNum = (l: string) => l.replace(/[^0-9]/g, "") || "?";
@@ -21,6 +23,7 @@ export function SessionReceipt({
   onDone: () => void;
   onNext: () => void;
 }) {
+  const toast = useToast();
   const balls = sessionBalls(session);
   const mins = sessionMinutes(session);
 
@@ -59,7 +62,7 @@ export function SessionReceipt({
   const delta = prev ? solidNow - solidPct(prev) : null;
   const best = !headRow && strikeHist.every((s) => solidPct(s) <= solidNow);
 
-  function share() {
+  async function share() {
     const head = quick
       ? "RangeCard · Quick session"
       : `RangeCard · Week ${wkNum(session.weekId)} · Session ${sNum(session.sessionLabel)}`;
@@ -68,8 +71,25 @@ export function SessionReceipt({
       `${headCap[0].toUpperCase() + headCap.slice(1)} ${solidNow}%${delta !== null ? ` (${delta >= 0 ? "+" : ""}${delta})` : ""}`,
       ...rows.map((r) => `${r.label}${r.note ? ` (${r.note})` : ""}: ${r.made} of ${r.of}`),
     ].join("\n");
-    if (navigator.share) navigator.share({ text: lines }).catch(() => {});
-    else navigator.clipboard?.writeText(lines).catch(() => {});
+    const outcome = await shareCard(
+      {
+        kicker: quick ? "Quick session" : `Week ${wkNum(session.weekId)} · Session ${sNum(session.sessionLabel)}`,
+        title: quick ? "Quick session logged" : `Session ${sNum(session.sessionLabel)} logged`,
+        meta: quick
+          ? `${balls} ball${balls === 1 ? "" : "s"}${mins ? ` · ${mins} min` : ""}`
+          : `${ownWeek ? ownWeek.title : ""} · ${balls} balls${mins ? ` · ${mins} min` : ""}`,
+        big: delta === null ? `${solidNow}%` : `${delta >= 0 ? "+" : ""}${delta}`,
+        bigCap: delta === null ? headCap : "points of solid rate",
+        bigSub: best ? "your best session yet" : delta !== null && delta >= 0 ? "moving the right way" : delta !== null ? "off your recent best" : "logged",
+        rows: rows.map((r) => ({ label: r.label, value: `${r.made} of ${r.of}`, sub: r.note })),
+        note: session.notes.trim() || undefined,
+        filename: `rangecard-session-${sNum(session.sessionLabel)}.png`,
+      },
+      lines,
+    );
+    if (outcome === "downloaded") toast.show("Card saved — find it in your downloads");
+    else if (outcome === "copied") toast.show("Copied to clipboard");
+    else if (outcome === "failed") toast.show("Couldn't share that — try again");
   }
 
   return (

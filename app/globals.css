@@ -1301,7 +1301,29 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   padding: 13px 14px; display: flex; flex-direction: column; gap: 11px;
 }
 .shotstrip-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.shotstrip-right { display: flex; align-items: center; gap: 8px; flex: none; }
 .shotstrip-rate { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 800; }
+
+/* mic button — logs one ball by voice instead of a tap. Hidden entirely on
+   browsers without the Web Speech API (see VoiceLog.tsx), so this never
+   needs its own "unsupported" styling. */
+.voicelog {
+  width: 28px; height: 28px; border-radius: 10px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--glass); border: 1px solid var(--edge); color: var(--icon-muted);
+  transition: background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out);
+}
+.voicelog.on {
+  background: var(--chip-bg); border-color: var(--chip-border); color: var(--green);
+  animation: voicelog-pulse 1.1s ease-in-out infinite;
+}
+@keyframes voicelog-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--green) 35%, transparent); }
+  50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--green) 0%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .voicelog.on { animation: none; }
+}
 .shotstrip-dots { display: flex; flex-wrap: wrap; gap: 6px; }
 .strip-dot {
   width: 25px; height: 25px; border-radius: 8px; flex: none;
@@ -1658,6 +1680,10 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   margin: 8px 4px 0; font-size: 11.5px; line-height: 1.5; color: var(--hint); text-wrap: pretty;
 }
 .app-foot .msr { margin-top: 1px; flex: none; }
+.app-foot button {
+  font: inherit; color: var(--text); font-weight: 700;
+  text-decoration: underline; text-underline-offset: 2px;
+}
 
 /* ---------- fields ---------- */
 .field {
@@ -1746,6 +1772,26 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .miss-clean { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--green-label); }
 .miss-take { font-size: 12px; color: var(--muted); }
 
+/* ---------- goal card (Trends) ---------- */
+/* deliberately NOT .setup-row: that forces its .chip-btn children to equal
+   flex:1 widths, sized for short labels ("35 yd", "54°") — area names like
+   "Chipping"/"Pitching" overflowed those boxes badly. This just stacks the
+   label over the chips, which then size to their own content and wrap. */
+.goal-area-row { display: flex; flex-direction: column; gap: 7px; }
+.goalcard.met { border-color: var(--chip-border); }
+.goal-edit {
+  flex: none; width: 30px; height: 30px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center; color: var(--icon-muted);
+}
+.goal-track { height: 10px; border-radius: 5px; background: var(--track); overflow: hidden; }
+.goal-fill { height: 100%; border-radius: 5px; background: var(--green); transition: width var(--dur-base) var(--ease-out); }
+.goal-meta { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: var(--muted); }
+.goal-days { font-size: 12px; color: var(--hint); }
+.goal-empty { font-size: 13px; color: var(--muted); }
+.goal-met { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--green-label); }
+.goal-actions { display: flex; align-items: center; gap: 10px; }
+.goal-clear { align-self: flex-start; font-size: 12px; font-weight: 600; color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+
 /* ---------- charts ---------- */
 .chart { background: var(--glass); border: 1px solid var(--edge); border-radius: 20px; padding: 18px 16px 14px; display: flex; flex-direction: column; gap: 12px; box-shadow: var(--card-shadow); }
 .chart-top { display: flex; align-items: flex-end; justify-content: space-between; padding: 0 2px; gap: 12px; }
@@ -1754,7 +1800,10 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .chart-delta.down { color: var(--muted); }
 .chart-val { font-size: 40px; font-weight: 700; line-height: 0.9; letter-spacing: -0.05em; color: var(--green); flex: none; }
 .chart-val .u { font-size: 20px; letter-spacing: -0.02em; }
-.chart svg { width: 100%; height: 86px; display: block; overflow: visible; color: var(--green); }
+/* direct child only — a descendant selector here would also catch any icon
+   svg nested inside .chart-using cards (e.g. GoalCard's area-picker icons),
+   stretching them to fill this sparkline's dimensions instead of their own. */
+.chart > svg { width: 100%; height: 86px; display: block; overflow: visible; color: var(--green); }
 .chart-base { stroke: var(--border-recessed); stroke-width: 1; }
 .chart-grid { stroke: var(--hairline); stroke-width: 1; stroke-dasharray: 2 5; }
 .chart-line { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; }
@@ -1890,6 +1939,17 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .draft-banner span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .draft-banner b { flex: none; color: var(--sand); font-weight: 700; }
 .draft-banner .msr { color: var(--sand); }
+
+/* "haven't practiced in a while" nudge — same sand banner language as the
+   draft banner above, plus a separate square dismiss button beside it (not
+   nested inside — a button-in-a-button isn't valid markup). */
+.nudge-row { display: flex; align-items: stretch; gap: 8px; }
+.nudge-row .nudge-start { flex: 1; width: auto; }
+.nudge-dismiss {
+  flex: none; width: 44px; border-radius: 16px;
+  background: var(--sand-face); border: 1px solid var(--sand-border); color: var(--sand-label);
+  display: flex; align-items: center; justify-content: center;
+}
 
 /* ---------- date field + secondary button (Log) ---------- */
 .datefield {

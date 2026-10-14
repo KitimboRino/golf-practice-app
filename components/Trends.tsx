@@ -1,11 +1,13 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { SavedSession, exportBackup, importBackup, isAdhoc } from "@/lib/db";
+import { SavedSession, AreaKey, exportBackup, importBackup, isAdhoc } from "@/lib/db";
 import { PLAN } from "@/lib/plan";
 import { solidPct, fairwayPct, puttPct, pitchPct } from "@/lib/stats";
 import { detectFaults } from "@/lib/faults";
 import { verdict, areaMoves, AREA_RATES } from "@/lib/verdict";
+import { Goal, goalProgress } from "@/lib/goal";
+import { AreaIcon } from "./AreaIcon";
 import { useCountUp } from "@/lib/useCountUp";
 import { useToast } from "./Toast";
 import { useConfirm } from "./Confirm";
@@ -42,7 +44,8 @@ function downloadText(name: string, text: string) {
 }
 
 export function Trends({
-  history, onDelete, onEdit, onStart, onImported, onBack,
+  history, onDelete, onEdit, onStart, onImported, onBack, openData,
+  goal, onSaveGoal, onClearGoal,
 }: {
   history: SavedSession[];
   onDelete: (id: string) => void;
@@ -50,9 +53,13 @@ export function Trends({
   onStart: () => void;
   onImported: () => void;
   onBack: () => void;
+  openData?: boolean; // jump straight to the Data & backup menu — the More screen's "Back them up" link
+  goal: Goal | null;
+  onSaveGoal: (g: Goal) => void;
+  onClearGoal: () => void;
 }) {
   const [showAll, setShowAll] = useState(false);
-  const [showData, setShowData] = useState(false);
+  const [showData, setShowData] = useState(!!openData);
   const [openId, setOpenId] = useState<string | null>(null);
   const [wkFilter, setWkFilter] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -224,6 +231,8 @@ export function Trends({
 
         <VerdictCard history={history} />
 
+        <GoalCard history={history} goal={goal} onSave={onSaveGoal} onClear={onClearGoal} />
+
         {detectFaults(history[history.length - 1]).map((h, i) => (
           <div className="coach" key={`${h.fault.id}-${i}`}>
             <Icon name="conversion_path" size={18} color="var(--blue-icon)" style={{ marginTop: 1 }} />
@@ -369,6 +378,128 @@ function VerdictCard({ history }: { history: SavedSession[] }) {
         </div>
       )}
     </>
+  );
+}
+
+function GoalCard({
+  history, goal, onSave, onClear,
+}: {
+  history: SavedSession[];
+  goal: Goal | null;
+  onSave: (g: Goal) => void;
+  onClear: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [area, setArea] = useState<AreaKey>(goal?.area ?? "driving");
+  const [target, setTarget] = useState(goal?.targetPct ?? 75);
+  const [byDate, setByDate] = useState(goal?.byDate ?? "");
+
+  function startEdit() {
+    setArea(goal?.area ?? "driving");
+    setTarget(goal?.targetPct ?? 75);
+    setByDate(goal?.byDate ?? "");
+    setEditing(true);
+  }
+
+  function save() {
+    onSave({ area, targetPct: target, byDate: byDate || undefined, createdAt: goal?.createdAt ?? Date.now() });
+    setEditing(false);
+  }
+
+  if (editing) {
+    return (
+      <div className="chart goalcard">
+        <div className="sec-head">
+          <span className="icon-tile sm"><Icon name="flag" size={15} /></span>
+          <h3>{goal ? "Edit goal" : "Set a goal"}</h3>
+        </div>
+        <div className="goal-area-row">
+          <div className="rgrp-lbl">Area</div>
+          <div className="chips">
+            {AREA_RATES.map((a) => (
+              <button key={a.key} className={"chip-btn" + (area === a.key ? " on" : "")}
+                      aria-pressed={area === a.key}
+                      onClick={() => setArea(a.key as AreaKey)}>
+                <AreaIcon area={a.key as AreaKey} size={15} />{a.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="putt-step">
+          <button onClick={() => setTarget((t) => Math.max(5, t - 5))} aria-label="Lower target">
+            <Icon name="remove" size={20} />
+          </button>
+          <span className="num">{target}%</span>
+          <button onClick={() => setTarget((t) => Math.min(100, t + 5))} aria-label="Raise target">
+            <Icon name="add" size={20} />
+          </button>
+        </div>
+        <div className="setup-row">
+          <div className="rgrp-lbl">By (optional)</div>
+          <input className="datefield" type="date" value={byDate}
+                 min={new Date().toISOString().slice(0, 10)}
+                 onChange={(e) => setByDate(e.target.value)} />
+        </div>
+        <div className="goal-actions">
+          <button className="cta" onClick={save}><Icon name="flag" size={17} />{goal ? "Save" : "Set goal"}</button>
+          <button className="btn-ghost sm" onClick={() => setEditing(false)}>Cancel</button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!goal) {
+    return (
+      <button className="more-row" onClick={startEdit}>
+        <span className="more-ic"><Icon name="flag" size={20} color="var(--green)" /></span>
+        <span className="more-txt">
+          <b>Set a goal</b>
+          <span>Pick an area and a target, track it right here</span>
+        </span>
+        <Icon name="chevron_right" size={20} color="var(--icon-muted)" />
+      </button>
+    );
+  }
+
+  const def = AREA_RATES.find((a) => a.key === goal.area)!;
+  const prog = goalProgress(history, goal);
+  const pct = prog.currentPct;
+  const fillPct = pct === null ? 0 : Math.min(100, Math.round((pct / goal.targetPct) * 100));
+
+  return (
+    <div className={"chart goalcard" + (prog.met ? " met" : "")}>
+      <div className="sec-head">
+        <span className="icon-tile sm"><AreaIcon area={goal.area} size={15} /></span>
+        <h3>{def.label} goal</h3>
+        <button className="goal-edit" onClick={startEdit} aria-label="Edit goal"><Icon name="edit" size={16} /></button>
+      </div>
+      {prog.met ? (
+        <div className="goal-met">
+          <Icon name="emoji_events" size={20} fill color="var(--green)" />
+          <span>Goal reached — {pct}% against a {goal.targetPct}% target.</span>
+        </div>
+      ) : pct === null ? (
+        <div className="goal-empty">Log a {def.label.toLowerCase()} session to start tracking this.</div>
+      ) : (
+        <>
+          <div className="goal-track">
+            <div className="goal-fill" style={{ width: `${fillPct}%` }} />
+          </div>
+          <div className="goal-meta">
+            <span>{pct}% current</span>
+            <span>{goal.targetPct}% target</span>
+          </div>
+        </>
+      )}
+      {goal.byDate && !prog.met && (
+        <div className="goal-days">
+          {prog.daysLeft !== null && prog.daysLeft >= 0
+            ? `${prog.daysLeft} day${prog.daysLeft === 1 ? "" : "s"} left`
+            : "Past your target date"}
+        </div>
+      )}
+      <button className="goal-clear" onClick={onClear}>Clear goal</button>
+    </div>
   );
 }
 

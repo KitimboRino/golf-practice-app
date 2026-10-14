@@ -8,7 +8,9 @@ import {
   approachBreakdown, ApproachReport,
 } from "@/lib/round";
 import { holeStrategy } from "@/lib/course";
+import { shareCard } from "@/lib/shareCard";
 import { useConfirm } from "./Confirm";
+import { useToast } from "./Toast";
 import { tapFx, bumpFx } from "@/lib/haptics";
 import { Icon } from "./Icon";
 import { Glyph } from "./Glyph";
@@ -659,6 +661,7 @@ export function RoundSummary({
   onEdit?: () => void;
   rounds?: SavedRound[]; // all saved rounds, for the "new best" check below
 }) {
+  const toast = useToast();
   const s = roundStats(round.holeData);
 
   // best-round check — normalised to-par-per-18, same maths as the Scoring
@@ -724,7 +727,7 @@ export function RoundSummary({
     });
   }
 
-  function share() {
+  async function share() {
     const lines = [
       `RangeCard · ${roundLabel(round)} · ${fmtDate(round.date)}`,
       s.scoredHoles ? `Score ${s.strokes} (${toParLabel(s.toPar)})${breakdown ? ` — ${breakdown}` : ""}` : null,
@@ -734,8 +737,23 @@ export function RoundSummary({
       `Scrambling ${s.scramblePct === null ? "n/a" : s.scramblePct + "%"}`,
       s.penalties > 0 ? `Penalties ${s.penalties}` : null,
     ].filter(Boolean).join("\n");
-    if (navigator.share) navigator.share({ text: lines }).catch(() => {});
-    else navigator.clipboard?.writeText(lines).catch(() => {});
+    const outcome = await shareCard(
+      {
+        kicker: fmtDate(round.date),
+        title: fresh ? "Round logged" : roundLabel(round),
+        meta: `${round.course?.trim() ? `${round.course.trim()} · ` : ""}${round.holes} holes`,
+        big: s.scoredHoles ? `${s.strokes}` : "—",
+        bigCap: s.scoredHoles ? toParLabel(s.toPar) + " to par" : "not logged",
+        bigSub: isBest ? "your best round yet" : breakdown || "",
+        rows: rows.map((r) => ({ label: r.label, value: r.value, sub: r.sub })),
+        note: round.note?.trim() || undefined,
+        filename: `rangecard-${roundLabel(round).toLowerCase().replace(/\s+/g, "-")}.png`,
+      },
+      lines,
+    );
+    if (outcome === "downloaded") toast.show("Card saved — find it in your downloads");
+    else if (outcome === "copied") toast.show("Copied to clipboard");
+    else if (outcome === "failed") toast.show("Couldn't share that — try again");
   }
 
   return (
