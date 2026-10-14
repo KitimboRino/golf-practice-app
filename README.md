@@ -99,7 +99,6 @@ It launches full-screen and runs offline.
 - Per-iron-drill breakdown (irons are tallied together today).
 - Optional cloud sync — the Dexie schema is built for it (`updatedAt`, soft
   deletes, uuid keys) but there's no backend today.
-- Volume-key logging on the shot strip.
 - Bump `next` to the latest 14.x patch when convenient (`npm i next@latest`).
 
 ## Notes

@@ -1824,6 +1824,14 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .goal-actions { display: flex; align-items: center; gap: 10px; }
 .goal-clear { align-self: flex-start; font-size: 12px; font-weight: 600; color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
 
+/* ---------- irons by club (Trends) ---------- */
+.iron-club-row { display: flex; align-items: center; gap: 10px; }
+.iron-club-lbl { width: 28px; flex: none; font-size: 13px; font-weight: 700; color: var(--text-2); }
+.iron-club-row .goal-track { flex: 1; }
+.iron-club-pct { width: 40px; flex: none; text-align: right; font-size: 14px; font-weight: 800; }
+.iron-club-pct small { font-size: 11px; font-weight: 700; }
+.iron-club-n { width: 28px; flex: none; text-align: right; font-size: 11px; color: var(--hint); }
+
 /* ---------- practice-to-round correlation (Trends) ---------- */
 .p2r-row { display: flex; flex-direction: column; gap: 8px; }
 .p2r-row + .p2r-row { border-top: 1px solid var(--hairline); padding-top: 14px; }

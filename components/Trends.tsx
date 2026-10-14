@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { SavedSession, SavedRound, AreaKey, exportBackup, importBackup, isAdhoc } from "@/lib/db";
 import { PLAN } from "@/lib/plan";
-import { solidPct, fairwayPct, puttPct, pitchPct } from "@/lib/stats";
+import { solidPct, fairwayPct, puttPct, pitchPct, ironsByClub } from "@/lib/stats";
 import { roundStats } from "@/lib/round";
 import { detectFaults } from "@/lib/faults";
 import { verdict, areaMoves, AREA_RATES } from "@/lib/verdict";
@@ -258,6 +258,8 @@ export function Trends({
         <ChartCard title="Fairways found %" icon="golf_course" data={fair} />
         {pitchLogged && <ChartCard title="Pitch accuracy %" icon="arrow_outward" data={pitch} />}
         <ChartCard title="Putts made %" icon="adjust" data={putt} />
+
+        <IronsByClub history={history} />
 
         <MissPatterns history={history} />
 
@@ -581,6 +583,42 @@ function PracticeToRound({ history, rounds }: { history: SavedSession[]; rounds:
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// Irons are logged as one solid/fat/thin bucket per session — but the irons
+// block already has a club picker (same chip row driving/pitching use), and
+// that choice was already being saved to session.setup.irons.club and never
+// read back anywhere. This is the read-back: solid rate per club, across
+// every session that tagged one. Sessions that never picked a club aren't
+// guessed at or lumped into "other" — they just don't count toward any row.
+function IronsByClub({ history }: { history: SavedSession[] }) {
+  const rows = ironsByClub(history);
+
+  if (!rows.length) {
+    return (
+      <div className="fault-note">
+        <span className="icon-tile sm dim"><Icon name="info" size={15} /></span>
+        <span>Pick a club next time you log irons (tap Club under the Irons block) to see solid rate broken down by club here.</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="chart">
+      <div className="sec-head">
+        <span className="icon-tile sm"><AreaIcon area="irons" size={15} /></span>
+        <h3>Irons by club</h3>
+      </div>
+      {rows.map((r) => (
+        <div className="iron-club-row" key={r.club}>
+          <span className="iron-club-lbl">{r.club}</span>
+          <div className="goal-track"><div className="goal-fill" style={{ width: `${r.solidPct}%` }} /></div>
+          <span className="iron-club-pct num">{r.solidPct}<small>%</small></span>
+          <span className="iron-club-n">{r.total}</span>
+        </div>
+      ))}
     </div>
   );
 }
