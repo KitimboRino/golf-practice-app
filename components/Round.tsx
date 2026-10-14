@@ -8,6 +8,7 @@ import {
   approachBreakdown, ApproachReport,
 } from "@/lib/round";
 import { holeStrategy } from "@/lib/course";
+import { CoursePreset, findCourse, coursesForHoleCount, holesForPreset } from "@/lib/courses";
 import { shareCard } from "@/lib/shareCard";
 import { useConfirm } from "./Confirm";
 import { useToast } from "./Toast";
@@ -128,13 +129,31 @@ function RoundSetup({
 }) {
   const [holes, setHoles] = useState<9 | 18>(18);
   const [course, setCourse] = useState("");
+  const [courseId, setCourseId] = useState<string | null>(null);
+  const preset = courseId ? findCourse(courseId) : undefined;
+  const availableCourses = coursesForHoleCount(holes);
+
+  const pickHoles = (n: 9 | 18) => {
+    tapFx();
+    setHoles(n);
+    // a preset that doesn't cover this many holes can't stay selected —
+    // Jinja's card, for one, is only corroborated for 9
+    if (preset && preset.holes !== n) { setCourseId(null); setCourse(""); }
+  };
+
+  const pickCourse = (c: CoursePreset) => {
+    tapFx();
+    if (courseId === c.id) { setCourseId(null); setCourse(""); return; }
+    setCourseId(c.id);
+    setCourse(c.name);
+  };
 
   const start = () => {
     onStart({
       date: today(),
       course: course.trim(),
       holes,
-      holeData: freshHoles(holes),
+      holeData: preset ? holesForPreset(preset) : freshHoles(holes),
       current: 0,
       startedAt: Date.now(),
     });
@@ -170,7 +189,7 @@ function RoundSetup({
                 key={n}
                 className={"hole-opt" + (holes === n ? " on" : "")}
                 aria-pressed={holes === n}
-                onClick={() => setHoles(n)}
+                onClick={() => pickHoles(n)}
               >
                 <span className="hole-opt-n num">{n}</span>
                 <span>holes</span>
@@ -181,16 +200,30 @@ function RoundSetup({
 
         <div className="grp" style={{ gap: 8 }}>
           <label className="grp-lbl" htmlFor="course">Course <span style={{ color: "var(--hint)" }}>(optional)</span></label>
+          <div className="chips">
+            {availableCourses.map((c) => (
+              <button key={c.id} className={"chip-btn" + (courseId === c.id ? " on" : "")}
+                      aria-pressed={courseId === c.id} onClick={() => pickCourse(c)}>
+                {c.name}
+              </button>
+            ))}
+          </div>
           <div className="field">
             <Icon name="golf_course" size={19} color="var(--icon-muted)" />
             <input
               id="course"
               value={course}
               maxLength={80}
-              onChange={(e) => setCourse(e.target.value)}
+              onChange={(e) => { setCourse(e.target.value); setCourseId(null); }}
               placeholder="e.g. Uganda Golf Club"
             />
           </div>
+          {preset && (
+            <div className="course-preset-note">
+              <Icon name="info" size={14} />
+              Par pre-filled from public scorecards, not the club's own card — worth checking hole by hole as you play.
+            </div>
+          )}
         </div>
 
         <button className="cta" onClick={start}>
@@ -420,11 +453,13 @@ function RoundPlay({
   };
   const detailCount = [h.teeClub, h.approachClub, h.approachYds].filter(Boolean).length;
 
-  const go = (d: number) => {
-    const c = Math.max(0, Math.min(round.holes - 1, i + d));
+  const goTo = (n: number) => {
+    const c = Math.max(0, Math.min(round.holes - 1, n));
     if (c !== i) onChange({ ...round, current: c });
   };
+  const go = (d: number) => goTo(i + d);
   const finish = () => onFinish(round);
+  const [showGrid, setShowGrid] = useState(false);
 
   const editing = !!round.id;
   async function quit() {
@@ -445,7 +480,11 @@ function RoundPlay({
         <div className="hdr-row">
           <div>
             <div className="hdr-eyebrow">{editing ? "Editing · " : ""}{round.course || "Round"}</div>
-            <div className="hdr-title sm">Hole {i + 1} of {round.holes}</div>
+            <button className="hdr-title sm hole-jump-toggle" onClick={() => { tapFx(); setShowGrid((v) => !v); }}
+                    aria-expanded={showGrid} aria-label={`Hole ${i + 1} of ${round.holes} — tap to jump to another hole`}>
+              Hole {i + 1} of {round.holes}
+              <Icon name="expand_more" size={18} className={"rot-chev" + (showGrid ? " open" : "")} />
+            </button>
             <div className="hdr-sub sm">
               {[
                 st.scoredHoles > 0 && `${toParLabel(st.toPar)} thru ${st.scoredHoles}`,
@@ -465,6 +504,23 @@ function RoundPlay({
             <i key={n} className={n < i ? "done" : n === i ? "cur" : ""} />
           ))}
         </div>
+        {showGrid && (
+          <div className="hole-jump-grid">
+            {Array.from({ length: round.holes }, (_, n) => {
+              const logged = round.holeData[n]?.score != null;
+              return (
+                <button
+                  key={n}
+                  className={"hole-jump-cell" + (n === i ? " cur" : logged ? " done" : "")}
+                  aria-current={n === i ? "step" : undefined}
+                  onClick={() => { tapFx(); setShowGrid(false); goTo(n); }}
+                >
+                  {n + 1}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </header>
 
       <div className="screen log">

@@ -5,7 +5,7 @@ round stats, scored practice games and a pre-shot routine trainer alongside it.
 Works offline, stores everything on your device, installs to your home screen —
 no app store, no account, no network calls.
 
-Current version: **1.1.4** (see [Version history](#version-history)).
+Current version: **1.2.0** (see [Version history](#version-history)).
 
 ## What it does
 
@@ -16,20 +16,26 @@ else behind a tidy More list.
   plan progress and last solid-strike rate. Start the session, or a shorter
   "venue" version, or an off-plan quick session.
 - **Log** — fast thumb-friendly per-ball logging with a live shot strip. Tap an
-  outcome to add, long-press (or right-click) a number to subtract. Five areas:
+  outcome to add, long-press (or right-click) a number to subtract, or tap the
+  mic next to a block and say it ("left", "solid", "missed"). Five areas:
   Chipping, Pitching, Irons (Solid/Fat/Thin), Driving (Fairway/Left/Right),
   Putting (In/Out). Each block carries its focus drill and alignment-stick note.
   A guided warm-up runs once a day before the first session.
-- **Round** — an on-course tracker, separate from range sessions. Log par,
-  fairway, GIR, putts and up-and-down hole by hole; finish to a stats card
-  (fairways %, GIR %, putts, scrambling %, 3-putts). Includes **"Where you're
-  losing shots"**, a rough leak finder that scores driving / approach / short
-  game / putting against amateur benchmarks and points you back to what to drill.
+- **Round** — an on-course tracker, separate from range sessions. Pick from a
+  handful of seeded Uganda courses (par pre-filled per hole, `lib/courses.ts`)
+  or enter your own; log par, fairway, GIR, putts and up-and-down hole by hole,
+  jumping to any hole directly instead of only stepping one at a time; finish
+  to a stats card (fairways %, GIR %, putts, scrambling %, 3-putts) you can
+  share as an image. Includes **"Where you're losing shots"**, a rough leak
+  finder that scores driving / approach / short game / putting against
+  amateur benchmarks and points you back to what to drill.
 - **More** — a list screen linking to:
   - **Trends** — line charts of solid-strike %, fairways-found %, pitch
     accuracy % and putts-made % across every session, a baseline→test compare,
-    miss-pattern bias bars, and a deletable history list. Export / import a
-    JSON backup here (sessions, rounds and games).
+    miss-pattern bias bars, a goal you can set and track per area, a card
+    showing whether range gains are actually showing up on the course, and a
+    deletable history list. Export / import a JSON backup here (sessions,
+    rounds and games).
   - **Practice games** — scored solo challenges with a saved personal best:
     Par 18, Up & Down challenge, Distance ladder, Fairway finder.
   - **Fixes** — your miss pattern and the first fix to try, detected from history.
@@ -64,7 +70,11 @@ or restyle. Worth reading first:
 
 - `app/page.tsx` — screens, tab state, session logging
 - `components/Round.tsx` — round tracker + leak diagnostic
-- `components/Trends.tsx` — charts and history
+- `components/Trends.tsx` — charts, goal tracking, practice↔round correlation
+- `components/VoiceLog.tsx` — mic-button shot logging (Web Speech API)
+- `lib/courses.ts` — seeded course par data
+- `lib/shareCard.ts` — canvas-rendered shareable session/round cards
+- `lib/goal.ts` — goal-progress math
 - `lib/plan.ts` — the 4-week plan data
 - `lib/db.ts` — the local (Dexie/IndexedDB) schema
 - `app/globals.css` — the whole design-token system
@@ -107,6 +117,75 @@ It launches full-screen and runs offline.
   in `public/` root wired up by `app/layout.tsx` and `public/manifest.json`.
 
 ## Version history
+
+### 1.2.0 — 2026-10-14
+
+**Visual redesign — the "Aqua" skin.** New token set, fonts (Archivo replacing
+Fraunces as the display face), and a set of structural patterns (hero+sheet
+header, plan card, segmented pill, floating nav pill) applied across Plan,
+Trends, Round and the session/round receipts. The nav pill's active item now
+plays a small droplet-style icon bounce + ripple on selection. Custom
+hand-drawn `AreaIcon`s (`components/AreaIcon.tsx`) replace the generic
+Material Symbols glyphs for the five practice areas — two of those (irons,
+putting) didn't read as anything in particular at real size; this set gives
+each a distinct, literal read (tee ball, iron addressing the ball, a low hop
+vs. a full arc for chip/pitch, a rolling putt into the hole).
+
+**Uganda course data.** Starting a round can now pick from four seeded
+courses (Uganda Golf Club, Entebbe Golf Club, Jinja Golf Club, Lake Victoria
+Serena) instead of every hole defaulting to par 4 — `lib/courses.ts`. Par
+only, no yardage: public scorecards for these courses disagree with each
+other on yardage by hundreds of yards in places, so only the figure that
+actually agreed across independent sources got seeded, and every hole stays
+editable regardless. Jinja's card is corroborated for the front nine only
+(9-hole rounds); the course picker filters to whichever courses match the
+selected hole count. Two other clubs (Mbarara, Toro/Fort Portal) were
+checked and dropped — their sources didn't agree on even the basics.
+
+**Round scoring usability.** The hole title is now a toggle that opens a
+jump-to-hole grid, so logging isn't limited to strict previous/next — useful
+for catching up on scoring at the turn or fixing an earlier hole without
+stepping back one at a time.
+
+**New: voice logging.** A mic button next to each practice block (Driving,
+Irons, Chipping, Pitching, Putting) lets you log a ball's outcome by saying
+it — "left", "that was fat", "missed" — instead of tapping, for the one
+practical reason this app exists for: a club in your hands between swings.
+Matches natural speech via a per-outcome alias table with word-boundary
+matching (an earlier naive substring match would have misread "talk about
+it" as "out"); never guesses on an ambiguous phrase. Hidden entirely on
+browsers without the Web Speech API.
+
+**New: shareable session/round cards.** "Share this card" now renders an
+actual branded PNG (`lib/shareCard.ts`, hand-drawn on canvas — no added
+dependency) instead of sharing plain text, with the card's height adapting
+to content so a full session or round with a long note can't overflow or
+clip the footer.
+
+**New: goal tracking.** Set a target % for any practice area, with an
+optional date, from Trends. Progress is the average of your last three
+sessions that logged it (not one noisy session), with a trophy state when
+you hit it.
+
+**New: practice ↔ round correlation.** Trends now shows whether range gains
+are actually showing up on the course — range start-line % against course
+fairways-hit %, and range solid-contact % against course GIR%, compared
+early-vs-recent on both sides. `Trends.tsx` and `lib/round.ts` had never
+read each other's data before this.
+
+**Unified "what to work on."** `todaysOneThing()` (the Plan header's
+headline card) now checks the on-course leak report first — a shots-weighted
+signal pooled across rounds — before falling back to the single-session
+range heuristic it used alone before. The range and round "what's wrong"
+systems ran side by side without ever comparing notes; this is the one place
+they do.
+
+**Smaller things:** a "Back them up" link on the More screen jumps straight
+into the backup menu instead of requiring three taps to find it; a dismissible
+nudge banner appears on Plan after a 5+ day gap since the last session;
+removed ~15MB of stray scratch/reference files left over from the visual
+redesign work (a scrambled `v3/` folder, a design-canvas export mislabelled
+`support.js`, duplicate root-level copies of token/override files).
 
 ### 1.1.4 — 2026-09-08
 
