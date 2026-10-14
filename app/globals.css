@@ -1772,6 +1772,33 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .miss-clean { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--green-label); }
 .miss-take { font-size: 12px; color: var(--muted); }
 
+/* ---------- hole jump (Round scoring) ---------- */
+/* the hole title doubles as a toggle — tapping it opens a grid to jump
+   straight to any hole, instead of only ever stepping one at a time with
+   Back/Next. The tiny progress dots above stay decorative (shared with other
+   screens, and far too small to tap reliably); this is a separate, properly
+   sized control. */
+.hole-jump-toggle { display: inline-flex; align-items: center; gap: 4px; text-align: left; }
+.hole-jump-grid {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px;
+  margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--hairline);
+}
+.hole-jump-cell {
+  height: 38px; border-radius: 11px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--glass); border: 1px solid var(--edge); color: var(--text-2);
+  font-size: 13px; font-weight: 700;
+}
+.hole-jump-cell.done { background: var(--chip-bg); border-color: var(--chip-border); color: var(--green); }
+.hole-jump-cell.cur { background: var(--ink); border-color: transparent; color: var(--on-ink); font-weight: 800; }
+
+/* ---------- course preset note (Round setup) ---------- */
+.course-preset-note {
+  display: flex; align-items: flex-start; gap: 6px;
+  font-size: 12px; line-height: 1.4; color: var(--hint); text-wrap: pretty;
+}
+.course-preset-note .msr { margin-top: 1px; flex: none; }
+
 /* ---------- goal card (Trends) ---------- */
 /* deliberately NOT .setup-row: that forces its .chip-btn children to equal
    flex:1 widths, sized for short labels ("35 yd", "54°") — area names like
