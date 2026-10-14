@@ -8,7 +8,7 @@ import {
   approachBreakdown, ApproachReport,
 } from "@/lib/round";
 import { holeStrategy } from "@/lib/course";
-import { CoursePreset, findCourse, coursesForHoleCount, holesForPreset } from "@/lib/courses";
+import { COURSES, CoursePreset, findCourse, holesForPreset } from "@/lib/courses";
 import { shareCard } from "@/lib/shareCard";
 import { useConfirm } from "./Confirm";
 import { useToast } from "./Toast";
@@ -131,7 +131,6 @@ function RoundSetup({
   const [course, setCourse] = useState("");
   const [courseId, setCourseId] = useState<string | null>(null);
   const preset = courseId ? findCourse(courseId) : undefined;
-  const availableCourses = coursesForHoleCount(holes);
 
   const pickHoles = (n: 9 | 18) => {
     tapFx();
@@ -146,6 +145,10 @@ function RoundSetup({
     if (courseId === c.id) { setCourseId(null); setCourse(""); return; }
     setCourseId(c.id);
     setCourse(c.name);
+    // the course drives hole count here, not the other way round — picking
+    // Jinja (9 holes only) should just take you to a 9-hole round, not hide
+    // the chip until you've guessed to switch hole count first
+    setHoles(c.holes);
   };
 
   const start = () => {
@@ -201,10 +204,10 @@ function RoundSetup({
         <div className="grp" style={{ gap: 8 }}>
           <label className="grp-lbl" htmlFor="course">Course <span style={{ color: "var(--hint)" }}>(optional)</span></label>
           <div className="chips">
-            {availableCourses.map((c) => (
+            {COURSES.map((c) => (
               <button key={c.id} className={"chip-btn" + (courseId === c.id ? " on" : "")}
                       aria-pressed={courseId === c.id} onClick={() => pickCourse(c)}>
-                {c.name}
+                {c.name}{c.holes !== holes && <span className="chip-note"> · {c.holes} holes</span>}
               </button>
             ))}
           </div>

@@ -60,10 +60,6 @@ export function findCourse(id: string): CoursePreset | undefined {
   return COURSES.find((c) => c.id === id);
 }
 
-export function coursesForHoleCount(count: 9 | 18): CoursePreset[] {
-  return COURSES.filter((c) => c.holes === count);
-}
-
 export function holesForPreset(preset: CoursePreset): RoundHole[] {
   return preset.pars.map((par) => emptyHole(par as 3 | 4 | 5));
 }
