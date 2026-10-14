@@ -31,7 +31,7 @@ export const LIBRARY: LibArea[] = [
       },
       {
         "name": "Turn and a swish",
-        "how": "One-armed half-swings, shake hands with the target, then copy free motion.",
+        "how": "Right arm only, left hand in your pocket; extend toward the target through impact like a handshake, then copy that free motion with both hands.",
         "why": "Hearing the swish past the ball, not before it, means speed is arriving at impact rather than being spent early.",
         "ref": ""
       },
@@ -90,13 +90,13 @@ export const LIBRARY: LibArea[] = [
       },
       {
         "name": "Learn from your shadow",
-        "how": "Sun at your back; watch your weight shift the shadow right (practice swing).",
+        "how": "Stand with the sun behind you and take a practice backswing — your shadow should shift onto your back foot, not hang over the ball.",
         "why": "The moving shadow shows whether weight is loading into the trail side or hanging back over the ball.",
         "ref": ""
       },
       {
         "name": "Feet together",
-        "how": "Mid-iron, feet ~6in apart; swing without wobbling to activate the arms.",
+        "how": "Mid-iron, feet almost touching (a few inches apart); swing without wobbling to activate the arms.",
         "why": "With no base to push against, only a smooth arm-and-body sequence keeps you balanced — it exposes any lunge.",
         "ref": ""
       },
@@ -114,7 +114,7 @@ export const LIBRARY: LibArea[] = [
       },
       {
         "name": "Soccer-ball release",
-        "how": "Throw/spin a ball 30° left of target to feel the release.",
+        "how": "Underhand-throw a ball sidearm, spinning it to land left of target — the arm rotation mirrors how the clubface should release through impact.",
         "why": "Spinning a ball left of target mimics the forearm rotation that squares the face — a feel for a full release.",
         "ref": ""
       },
@@ -149,13 +149,13 @@ export const LIBRARY: LibArea[] = [
       },
       {
         "name": "Upturned umbrella",
-        "how": "Alternate landing chips on two targets 5yd apart for carry control.",
+        "how": "Set two upturned umbrellas (or towels) 5yd apart; alternate landing chips on the near one, then the far one.",
         "why": "A small landing target trains precise carry distance rather than just getting it somewhere on the green.",
         "ref": ""
       },
       {
         "name": "Rock the shaft",
-        "how": "Look at the target, feel arms and body move as one unit.",
+        "how": "Look at the target, not the ball, and rock the club back and through with arms and shoulders moving as one piece.",
         "why": "Moving arms and body together removes the flippy wrist action behind most fat and thin chips.",
         "ref": ""
       },
@@ -167,7 +167,7 @@ export const LIBRARY: LibArea[] = [
       },
       {
         "name": "Weak-grip float",
-        "how": "Weaken the left hand for a higher, softer landing with less run.",
+        "how": "Rotate your lead hand weaker on the grip — until you can barely see one knuckle — then chip normally.",
         "why": "A weaker lead hand adds loft, so the ball lands softly and stops quickly with little roll-out.",
         "ref": ""
       }
@@ -208,7 +208,7 @@ export const LIBRARY: LibArea[] = [
       },
       {
         "name": "Pre-set impact",
-        "how": "Start from a mini impact position, then swing back to it.",
+        "how": "Set up in a mini impact position — hips slightly open, right heel lifted, hands ahead of the ball — then swing back and return to it.",
         "why": "Rehearsing from a good impact position makes it a shape you return to, not one you hunt for mid-swing.",
         "ref": ""
       },
@@ -243,13 +243,13 @@ export const LIBRARY: LibArea[] = [
       },
       {
         "name": "Check aim and stroke",
-        "how": "Brush (no backswing), then long, then split — reveals aim/stroke.",
+        "how": "From a yard, tap the ball with no backswing at all, then putt with a long backswing, then one in between — compare which ones actually go straight at the hole.",
         "why": "Comparing a no-backswing tap with a full stroke shows whether misses come from aim or from the stroke path.",
         "ref": ""
       },
       {
         "name": "Avoid excess wrist",
-        "how": "Trap a ball at the wrist; hit 25-foot putts keeping it in place.",
+        "how": "Trap a ball between your lead forearm and the grip; hit 25-foot putts without letting it drop.",
         "why": "A trapped ball keeps the stroke driven by the shoulders, so the face stays square through impact.",
         "ref": ""
       },
