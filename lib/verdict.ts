@@ -1,6 +1,7 @@
-import { SavedSession, countIn } from "./db";
+import { SavedSession, SavedRound, countIn } from "./db";
 import { solidPct, fairwayPct, puttPct, pitchPct } from "./stats";
 import { detectFaults } from "./faults";
+import { leakReport } from "./round";
 
 // ---- per-area success rate ----------------------------------------------------
 
@@ -109,7 +110,23 @@ export function areaMoves(history: SavedSession[]): { gaining?: AreaMove; slippi
 
 export type OneThing = { title: string; body: string; source: string };
 
-export function todaysOneThing(history: SavedSession[], plannedMiss?: string): OneThing | null {
+// On-course leak data (lib/round.ts's leakReport — pooled across rounds, and
+// shots-weighted rather than a raw percentage) is the strongest signal this
+// app has for "what actually matters," so it leads when it's there. These
+// two systems never talked to each other before: Trends only ever read
+// session data, Round only ever read round data, and the one thing a player
+// actually sees first (this card, on Home) only knew about the range side.
+export function todaysOneThing(history: SavedSession[], rounds: SavedRound[], plannedMiss?: string): OneThing | null {
+  const leak = leakReport(rounds);
+  if (leak?.worstKey) {
+    const top = leak.categories.find((c) => c.key === leak.worstKey)!;
+    return {
+      title: `${top.label} is costing you the most.`,
+      body: `${top.read} Make it the focus of your next practice session.`,
+      source: `From ${leak.rounds} on-course round${leak.rounds === 1 ? "" : "s"}`,
+    };
+  }
+
   if (history.length === 0) {
     if (plannedMiss === "right") {
       return {

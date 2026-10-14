@@ -809,7 +809,7 @@ export default function Page() {
         {tab === "home" && (
           <Home week={week} cursor={cursor} setCursor={setCursor} history={history} name={name}
                 greeting={greeting(name, history)} onEditName={() => setTab("welcome")}
-                oneThing={todaysOneThing(history, plannedMiss)} monthCount={sessionsThisMonth(history)}
+                oneThing={todaysOneThing(history, rounds, plannedMiss)} monthCount={sessionsThisMonth(history)}
                 onStart={startSession} onQuick={() => setTab("quickpick")}
                 draftLabel={isDraft ? live!.sessionLabel : null}
                 draftHere={draftHere} onResume={resumeDraft}
@@ -824,7 +824,7 @@ export default function Page() {
                          editMode={!!editOrig} onFinish={finishSession} onDiscard={discard} />
         )}
         {tab === "trends" && (
-          <Trends history={history} onDelete={onDelete} onEdit={editSession}
+          <Trends history={history} rounds={rounds} onDelete={onDelete} onEdit={editSession}
                   onBack={() => { setTab("more"); setTrendsOpenData(false); }}
                   onStart={startSession} onImported={async () => setHistory(await allSessions())}
                   openData={trendsOpenData}

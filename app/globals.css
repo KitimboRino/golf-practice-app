@@ -1792,6 +1792,19 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .goal-actions { display: flex; align-items: center; gap: 10px; }
 .goal-clear { align-self: flex-start; font-size: 12px; font-weight: 600; color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
 
+/* ---------- practice-to-round correlation (Trends) ---------- */
+.p2r-row { display: flex; flex-direction: column; gap: 8px; }
+.p2r-row + .p2r-row { border-top: 1px solid var(--hairline); padding-top: 14px; }
+.p2r-h { font-size: 14px; font-weight: 700; letter-spacing: -0.01em; }
+.p2r-pair { display: flex; gap: 16px; }
+.p2r-side { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.p2r-lbl { font-size: 11px; font-weight: 700; color: var(--muted); }
+.p2r-num { font-size: 15px; font-weight: 800; letter-spacing: -0.02em; }
+.p2r-num small { font-size: 11px; font-weight: 700; }
+.p2r-note { font-size: 12.5px; line-height: 1.4; color: var(--muted); text-wrap: pretty; }
+.p2r-note.good { color: var(--green-label); }
+.p2r-note.warn { color: var(--sand-label); }
+
 /* ---------- charts ---------- */
 .chart { background: var(--glass); border: 1px solid var(--edge); border-radius: 20px; padding: 18px 16px 14px; display: flex; flex-direction: column; gap: 12px; box-shadow: var(--card-shadow); }
 .chart-top { display: flex; align-items: flex-end; justify-content: space-between; padding: 0 2px; gap: 12px; }

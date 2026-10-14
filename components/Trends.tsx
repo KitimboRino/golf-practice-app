@@ -1,9 +1,10 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { SavedSession, AreaKey, exportBackup, importBackup, isAdhoc } from "@/lib/db";
+import { SavedSession, SavedRound, AreaKey, exportBackup, importBackup, isAdhoc } from "@/lib/db";
 import { PLAN } from "@/lib/plan";
 import { solidPct, fairwayPct, puttPct, pitchPct } from "@/lib/stats";
+import { roundStats } from "@/lib/round";
 import { detectFaults } from "@/lib/faults";
 import { verdict, areaMoves, AREA_RATES } from "@/lib/verdict";
 import { Goal, goalProgress } from "@/lib/goal";
@@ -44,10 +45,11 @@ function downloadText(name: string, text: string) {
 }
 
 export function Trends({
-  history, onDelete, onEdit, onStart, onImported, onBack, openData,
+  history, rounds, onDelete, onEdit, onStart, onImported, onBack, openData,
   goal, onSaveGoal, onClearGoal,
 }: {
   history: SavedSession[];
+  rounds: SavedRound[];
   onDelete: (id: string) => void;
   onEdit: (s: SavedSession) => void;
   onStart: () => void;
@@ -232,6 +234,8 @@ export function Trends({
         <VerdictCard history={history} />
 
         <GoalCard history={history} goal={goal} onSave={onSaveGoal} onClear={onClearGoal} />
+
+        <PracticeToRound history={history} rounds={rounds} />
 
         {detectFaults(history[history.length - 1]).map((h, i) => (
           <div className="coach" key={`${h.fault.id}-${i}`}>
@@ -499,6 +503,84 @@ function GoalCard({
         </div>
       )}
       <button className="goal-clear" onClick={onClear}>Clear goal</button>
+    </div>
+  );
+}
+
+// Range sessions and on-course rounds are tracked as two separate domains
+// everywhere else in this app (Trends never reads rounds; Round never reads
+// sessions) — this is the one place that puts a practice metric and its
+// on-course counterpart side by side, so "is the range work paying off"
+// has an actual answer instead of two charts in two different tabs.
+function avgEarlyVsRecent(vals: number[]): { early: number; recent: number } | null {
+  if (vals.length < 2) return null;
+  const n = Math.max(1, Math.min(3, Math.floor(vals.length / 2)));
+  const avg = (a: number[]) => Math.round(a.reduce((x, y) => x + y, 0) / a.length);
+  return { early: avg(vals.slice(0, n)), recent: avg(vals.slice(-n)) };
+}
+
+function PracticeToRound({ history, rounds }: { history: SavedSession[]; rounds: SavedRound[] }) {
+  const driveVals = history
+    .filter((s) => s.driving.fairway + s.driving.left + s.driving.right > 0)
+    .map(fairwayPct);
+  const strikeVals = history
+    .filter((s) =>
+      s.driving.fairway + s.driving.left + s.driving.right +
+      s.irons.solid + s.irons.fat + s.irons.thin > 0)
+    .map(solidPct);
+  const firVals = rounds
+    .map((r) => roundStats(r.holeData).firPct)
+    .filter((v): v is number => v !== null);
+  const girVals = rounds
+    .map((r) => roundStats(r.holeData).girPct)
+    .filter((v): v is number => v !== null);
+
+  const pairs = [
+    { label: "Fairways", practiceLabel: "Range · start line", courseLabel: "Course · fairways hit",
+      practice: avgEarlyVsRecent(driveVals), course: avgEarlyVsRecent(firVals) },
+    { label: "Ball-striking", practiceLabel: "Range · solid contact", courseLabel: "Course · greens in reg.",
+      practice: avgEarlyVsRecent(strikeVals), course: avgEarlyVsRecent(girVals) },
+  ].filter((p): p is typeof p & { practice: { early: number; recent: number }; course: { early: number; recent: number } } =>
+    !!p.practice && !!p.course);
+
+  // needs real movement on both ends before saying anything about transfer —
+  // a 1-2 point wobble either way is just noise, not a verdict
+  if (!pairs.length) return null;
+
+  return (
+    <div className="chart p2r">
+      <div className="sec-head">
+        <span className="icon-tile sm"><Icon name="trending_flat" size={15} /></span>
+        <h3>Is it showing up on the course?</h3>
+      </div>
+      {pairs.map((p) => {
+        const practiceDelta = p.practice.recent - p.practice.early;
+        const courseDelta = p.course.recent - p.course.early;
+        const transferring = practiceDelta >= 3 && courseDelta > 0;
+        const notYet = practiceDelta >= 3 && courseDelta <= 0;
+        return (
+          <div className="p2r-row" key={p.label}>
+            <div className="p2r-h">{p.label}</div>
+            <div className="p2r-pair">
+              <div className="p2r-side">
+                <span className="p2r-lbl">{p.practiceLabel}</span>
+                <span className="p2r-num num">{p.practice.early}<small>%</small> → {p.practice.recent}<small>%</small></span>
+              </div>
+              <div className="p2r-side">
+                <span className="p2r-lbl">{p.courseLabel}</span>
+                <span className="p2r-num num">{p.course.early}<small>%</small> → {p.course.recent}<small>%</small></span>
+              </div>
+            </div>
+            <div className={"p2r-note" + (transferring ? " good" : notYet ? " warn" : "")}>
+              {transferring
+                ? "Showing up on the course too."
+                : notYet
+                ? "Moving at the range, not yet on the course — worth testing under more pressure."
+                : "Not enough movement yet to call it either way."}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
