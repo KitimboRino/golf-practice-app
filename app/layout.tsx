@@ -9,7 +9,7 @@ import { RegisterSW } from "@/components/RegisterSW";
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
   applicationName: "RangeCard",
-  title: "RangeCard — Golf Range Tracker",
+  title: "RangeCard: Golf Range Tracker",
   description: "Log range sessions from the 4-week plan and track your progress. Works offline.",
   manifest: "/manifest.json",
   appleWebApp: {

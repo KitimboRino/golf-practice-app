@@ -18,6 +18,7 @@ import { Glyph } from "./Glyph";
 import { GlareToggle } from "./GlareToggle";
 import { Burst } from "./Burst";
 import { CourseDiagram, COURSE_DIAGRAM } from "./CourseDiagram";
+import { GreenDistance } from "./GreenDistance";
 
 type PracticeFocus = { title: string; body: string };
 
@@ -536,6 +537,8 @@ function RoundPlay({
           missedFairway={h.fairwayHit === false && fwAnswered.has(i)}
           holeIndex={i}
         />
+
+        <GreenDistance courseName={round.course} holeIndex={i} />
 
         <div className="rgrp">
           <div className="rgrp-lbl">Par</div>

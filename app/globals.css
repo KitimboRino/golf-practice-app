@@ -849,6 +849,35 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   color: var(--green); display: inline-flex; align-items: center; gap: 4px; flex: none;
 }
 
+/* live distance-to-green — see components/GreenDistance.tsx */
+.green-dist { gap: 9px; }
+.green-dist-toggle {
+  display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+  height: 46px; border-radius: 14px; border: 1px solid var(--chip-border); background: var(--chip-bg);
+  color: var(--green); font-size: 14px; font-weight: 700; letter-spacing: -0.01em;
+  transition: filter var(--dur-base) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+.green-dist-toggle:active { transform: scale(0.98); }
+.green-dist-toggle.ghost {
+  background: transparent; border-color: var(--edge); color: var(--text-2);
+}
+.green-dist-toggle[disabled] { opacity: 0.6; }
+.green-dist-step { font-size: 13.5px; color: var(--text-2); line-height: 1.4; }
+.green-dist-remark {
+  font-size: 11px; font-weight: 700; color: var(--muted); padding: 2px 4px;
+  transition: color var(--dur-base) var(--ease-out);
+}
+.green-dist-row { display: flex; gap: 8px; }
+.green-dist-pt {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 10px 6px; border-radius: 14px; background: var(--recessed); border: 1px solid var(--border-recessed);
+}
+.green-dist-k {
+  font-size: 10px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted);
+}
+.green-dist-pt .num { font-size: 22px; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
+.green-dist-note { font-size: 11.5px; line-height: 1.4; color: var(--hint); text-wrap: pretty; }
+
 /* top-down fairway sketch — see FairwaySketch in components/Round.tsx */
 .fw-head-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex: none; }
 .fw-sketch { flex: none; display: block; }

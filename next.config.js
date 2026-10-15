@@ -19,7 +19,14 @@ const csp = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self'",
-  isDev ? "connect-src 'self' ws:" : "connect-src 'self'",
+  // The Overpass hosts are the optional "search OpenStreetMap for a mapped
+  // green nearby" convenience in lib/osmGreen.ts — the only external network
+  // calls this app makes; everything else stays local-only. Multiple hosts
+  // are allowed because they're inconsistently CORS-enabled in practice
+  // (same operator, different backend nodes) — lib/osmGreen.ts tries them
+  // in order and falls back to "no match" if all fail.
+  (isDev ? "connect-src 'self' ws:" : "connect-src 'self'") +
+    " https://z.overpass-api.de https://lz4.overpass-api.de https://overpass-api.de",
   "manifest-src 'self'",
   "worker-src 'self'",
   "media-src 'none'",
@@ -34,7 +41,7 @@ const csp = [
 
 const permissionsPolicy = [
   "accelerometer=()", "autoplay=()", "camera=()", "display-capture=()",
-  "encrypted-media=()", "fullscreen=(self)", "geolocation=()", "gyroscope=()",
+  "encrypted-media=()", "fullscreen=(self)", "geolocation=(self)", "gyroscope=()",
   "magnetometer=()", "microphone=()", "midi=()", "payment=()",
   "picture-in-picture=()", "publickey-credentials-get=()", "screen-wake-lock=()",
   "usb=()", "xr-spatial-tracking=()",
