@@ -2736,6 +2736,62 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
    equals --state in dark mode, so left alone this badge would vanish. */
 .hero .receipt-best { background: rgba(15,19,33,0.12); border-color: rgba(15,19,33,0.18); color: var(--on-state); }
 
+/* ---------- photo header (handoff Phase 2) — components/PhotoHeader.tsx ---------- */
+.photo-hdr { position: relative; overflow: hidden; flex: none; }
+.photo-hdr-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Fixed scrim, not theme-reactive — the photo is always a dark-film island.
+   Only the last stop tokenises, so the hand-off into the page below always
+   matches the current theme's --bg instead of leaving a hard seam.
+   The dark build-up is anchored by PIXELS from the bottom (not %), because
+   headers here range 210–330px tall but the text block sitting on top of
+   them is a near-constant height: a percentage-based onset either left the
+   210px header's text in the light-mode fade-to-bg zone (too little cover)
+   or crushed most of a 330px header's photo to flat black to compensate
+   (too much — "big padding" where the photo should be). Anchoring to the
+   bottom means the dark zone is the same real size on every header. */
+.photo-hdr-scrim {
+  position: absolute; inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(11,14,24,0.35) 0%,
+    rgba(11,14,24,0.05) 28%,
+    rgba(11,14,24,0.35) calc(100% - 140px),
+    rgba(11,14,24,0.92) calc(100% - 55px),
+    var(--bg) 100%
+  );
+}
+.photo-hdr-top {
+  position: absolute; top: calc(18px + env(safe-area-inset-top)); left: 18px; right: 18px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.photo-hdr-bottom {
+  position: absolute; left: 22px; right: 22px; bottom: 16px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.photo-hdr-eyebrow {
+  font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--state);
+}
+.photo-hdr-title {
+  margin: 0; font-family: var(--font-display); font-stretch: var(--display-stretch);
+  font-weight: 700; font-size: 32px; line-height: 1.08; letter-spacing: -0.01em; color: #F2F5F9;
+}
+.photo-hdr-sub { font-size: 15px; color: #C3CBD8; }
+.photo-hdr-badge {
+  display: inline-flex; align-self: flex-start; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: 14px; background: var(--state); color: var(--on-state);
+  font-size: 12px; font-weight: 800; letter-spacing: 0.05em;
+}
+/* Same problem as .hero above, same fix: .icon-btn's --glass/--edge are tuned
+   for sitting on --card/--bg, not an arbitrary photo. Scoped to photo headers
+   only. */
+.photo-hdr-top .icon-btn {
+  background: rgba(11,14,24,0.45); border-color: rgba(255,255,255,0.18); color: #F2F5F9;
+}
+.photo-hdr-top .icon-btn.on { background: rgba(11,14,24,0.7); color: var(--state); }
+.photo-hdr-top .chip { background: rgba(11,14,24,0.45); border-color: rgba(255,255,255,0.18); color: #F2F5F9; }
+.photo-hdr-top .greeting, .photo-hdr-top .greeting:active { color: #F2F5F9; }
+.photo-hdr-top .greeting .msr { color: #F2F5F9; opacity: 0.75; }
+
 .sheet {
   background: var(--card);
   border-radius: 34px 34px 0 0;

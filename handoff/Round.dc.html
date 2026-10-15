@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RangeCard — Pre-shot routine</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&amp;family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#96D6E2}a:hover{color:#ADE0EA}
+</style>
+</helmet>
+<div style="width: 390px; height: 1200px; box-sizing: border-box; background: #0B0E18; color: #F2F5F9; font-family: 'Manrope', system-ui, sans-serif; position: relative; overflow: hidden">
+
+<header style="padding: 22px 22px 16px; border-bottom: 1px solid #222839; display: flex; align-items: center; gap: 14px">
+<a href="Main.dc.html" aria-label="Back" style="width: 46px; height: 46px; flex: none; border-radius: 16px; border: 1px solid #2E3547; background: #161B29; color: #F2F5F9; display: flex; align-items: center; justify-content: center">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg></a>
+<div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+<h1 style="margin: 0; font-family: 'Archivo', sans-serif; font-stretch: 118%; font-weight: 800; font-size: 26px">Pre-shot routine</h1>
+<span style="font-size: 14px; color: #C3CBD8">Same steps, every shot</span>
+</div>
+</header>
+
+<div style="padding: 18px 18px 210px; display: flex; flex-direction: column; gap: 16px">
+<p style="margin: 0 4px; font-size: 15px; line-height: 1.55; color: #C3CBD8">The routine matters more than any single step in it. Read it through, then rehearse until it runs on its own.</p>
+
+<ol style="list-style: none; margin: 0; padding: 0; background: #161B29; border: 1px solid #222839; border-radius: 24px; overflow: hidden">
+<sc-for list="{{steps}}" as="s" hint-placeholder-count="6">
+<li style="{{s.row}}">
+<span style="width: 64px; height: 64px; flex: none; border-radius: 18px; background: #1E2433; display: flex; align-items: center; justify-content: center">
+<svg viewBox="0 0 64 64" width="52" height="52" aria-hidden="true">
+<path d="{{s.dash}}" fill="none" stroke="#96D6E2" stroke-width="2.2" stroke-dasharray="1.5 4.5" stroke-linecap="round"></path>
+<path d="{{s.light}}" fill="none" stroke="#C3CBD8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="{{s.solid}}" fill="none" stroke="#96D6E2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="{{s.dot}}" fill="#96D6E2"></path>
+<path d="{{s.head}}" fill="#C3CBD8"></path>
+</svg>
+</span>
+<div style="display: flex; flex-direction: column; gap: 3px; min-width: 0">
+<span style="font-size: 11px; font-weight: 800; letter-spacing: 1.4px; color: #96D6E2">{{s.num}}</span>
+<strong style="font-size: 16px">{{s.title}}</strong>
+<span style="font-size: 14px; line-height: 1.45; color: #C3CBD8">{{s.body}}</span>
+</div>
+</li>
+</sc-for>
+</ol>
+</div>
+
+<div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 18px 18px 104px; background: linear-gradient(180deg, rgba(11,14,24,0) 0%, #0B0E18 28%)">
+<button style="width: 100%; min-height: 58px; border: none; border-radius: 22px; background: #96D6E2; color: #0F1321; font-family: inherit; font-weight: 800; font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"></path></svg>Rehearse it</button>
+</div>
+
+<nav aria-label="Main" style="position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); display: flex; gap: 4px; padding: 8px; border-radius: 40px; background: #161B29; border: 1px solid #222839; box-shadow: 0 18px 40px -12px rgba(2,4,10,0.7)">
+<a href="Main.dc.html" aria-label="Plan" style="width: 56px; height: 52px; display: flex; align-items: center; justify-content: center; border-radius: 26px; color: #9AA4B4"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4M5 4h11l-2 4 2 4H5"></path></svg></a>
+<a href="Log.dc.html" aria-label="Log" style="width: 56px; height: 52px; display: flex; align-items: center; justify-content: center; border-radius: 26px; color: #9AA4B4"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="9" r="6"></circle><path d="M12 15v6M9 21h6"></path></svg></a>
+<a href="Main.dc.html" aria-label="Round" style="width: 56px; height: 52px; display: flex; align-items: center; justify-content: center; border-radius: 26px; color: #9AA4B4"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 20V3l6 3-6 3M6 20h9"></path></svg></a>
+<a href="Main.dc.html" style="height: 52px; padding: 0 20px; display: flex; align-items: center; gap: 8px; border-radius: 26px; background: rgba(150,214,226,0.17); color: #96D6E2; text-decoration: none; font-weight: 700; font-size: 16px"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>More</a>
+</nav>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1200}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var Z = 'M0 0';
+    var S = [
+      { title: 'Stand behind the ball', body: 'Take your view from directly behind, looking down the line to the target.',
+        light: 'M14 29 L14 44 M14 44 L10 56 M14 44 L18 56 M14 33 L21 40', head: 'M9 21 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0',
+        dash: 'M34 48 L52 18', solid: 'M52 20 L52 8 L60 11 L52 14', dot: 'M28 50 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0' },
+      { title: 'Pick a specific target', body: 'Not “the green”. A leaf, a patch, a spot. Smaller is better.',
+        light: 'M32 8 L32 18 M32 46 L32 56 M8 32 L18 32 M46 32 L56 32 M16 32 a16 16 0 1 0 32 0 a16 16 0 1 0 -32 0', head: Z,
+        dash: Z, solid: Z, dot: 'M28 32 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0' },
+      { title: 'See the shot', body: 'Watch the ball start, curve, land and settle. One clear picture.',
+        light: 'M8 42 Q32 24 56 42 Q32 60 8 42 Z', head: Z,
+        dash: 'M10 22 Q32 0 54 16', solid: Z, dot: 'M27 42 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0' },
+      { title: 'One rehearsal swing', body: 'A single swing that feels the shot you just saw. Then step in.',
+        light: 'M32 14 L22 48', head: 'M28 12 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0',
+        dash: 'M10 42 Q32 66 54 42', solid: 'M22 48 L13 50', dot: Z },
+      { title: 'Commit, no second thoughts', body: 'The decision is made. Any doubt, step off and start the routine again.',
+        light: 'M12 32 a20 20 0 1 0 40 0 a20 20 0 1 0 -40 0', head: Z,
+        dash: Z, solid: 'M23 33 L29 39 L42 25', dot: Z },
+      { title: 'Trust it', body: 'Look at the target, look at the ball, swing. No steering.',
+        light: 'M50 46 L50 18', head: Z,
+        dash: 'M14 48 Q30 4 48 44', solid: 'M51 18 L60 22 L51 26', dot: 'M8 52 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0' }
+    ];
+    return {
+      steps: S.map(function (s, i) {
+        return { title: s.title, body: s.body, light: s.light, head: s.head, dash: s.dash, solid: s.solid, dot: s.dot,
+          num: 'STEP ' + (i + 1),
+          row: 'display: flex; gap: 14px; align-items: flex-start; padding: 16px;' + (i > 0 ? ' border-top: 1px solid #222839' : '') };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

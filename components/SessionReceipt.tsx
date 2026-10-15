@@ -6,7 +6,7 @@ import { solidPct } from "@/lib/stats";
 import { sessionBalls, sessionMinutes } from "@/lib/verdict";
 import { shareCard } from "@/lib/shareCard";
 import { Icon } from "./Icon";
-import { Glyph } from "./Glyph";
+import { PhotoHeader } from "./PhotoHeader";
 import { useToast } from "./Toast";
 
 const wkNum = (id: string) => id.replace(/[^0-9]/g, "") || "0";
@@ -94,19 +94,29 @@ export function SessionReceipt({
 
   return (
     <>
-      <header className="hero">
-        <div className="receipt-top">
-          <span className="icon-tile lg glow">
-            {quick ? <Icon name="bolt" size={26} fill /> : <Glyph name="flag" />}
-          </span>
-          <div className="receipt-h">{quick ? "Quick session logged" : `Session ${sNum(session.sessionLabel)} logged`}</div>
-          <div className="receipt-meta">
-            {quick
-              ? `${balls} ball${balls === 1 ? "" : "s"}${mins ? ` · ${mins} min` : ""}`
-              : `W${wkNum(session.weekId)}${ownWeek ? ` · ${ownWeek.title}` : ""} · ${balls} balls${mins ? ` · ${mins} min` : ""}`}
-          </div>
-        </div>
-      </header>
+      <PhotoHeader
+        src="/ball-tee.webp"
+        alt="A golf ball on a tee in the grass, background softly out of focus"
+        height={300}
+        position="50% 40%"
+        imgW={600}
+        imgH={900}
+        bottom={
+          <>
+            <span className="photo-hdr-badge">
+              <Icon name="check" size={14} />LOGGED
+            </span>
+            <h1 className="photo-hdr-title">
+              {quick ? "Quick session, done." : `Session ${sNum(session.sessionLabel)}, done.`}
+            </h1>
+            <span className="photo-hdr-sub">
+              {quick
+                ? `${balls} ball${balls === 1 ? "" : "s"}${mins ? ` · ${mins} min` : ""}`
+                : `W${wkNum(session.weekId)}${ownWeek ? ` · ${ownWeek.title}` : ""} · ${balls} balls${mins ? ` · ${mins} min` : ""}`}
+            </span>
+          </>
+        }
+      />
 
       <div className="sheet">
         <div className="receipt-moved">

@@ -5,6 +5,7 @@ import { GameAttempt } from "@/lib/db";
 import { GAMES, Game, gameById, GAME_AREA, gamePB, isPersonalBest } from "@/lib/games";
 import { Icon } from "./Icon";
 import { GlareToggle } from "./GlareToggle";
+import { PhotoHeader } from "./PhotoHeader";
 import { Burst } from "./Burst";
 import { AreaIcon } from "./AreaIcon";
 import { tapFx, doneFx } from "@/lib/haptics";
@@ -44,20 +45,28 @@ export function Games({
 
   return (
     <>
-      <header className="hdr">
-        <div className="hdr-row" style={{ alignItems: "center" }}>
-          <button className="icon-btn" onClick={onBack} aria-label="Back">
-            <Icon name="arrow_back" size={22} />
-          </button>
-          <div style={{ flex: 1 }}>
-            <div className="hdr-title">Practice games</div>
-            <div className="hdr-sub">Practise with a number on the line</div>
-          </div>
-          <div className="hdr-actions">
+      <PhotoHeader
+        src="/bunker-splash.webp"
+        alt="A golfer blasting out of a bunker in a spray of sand"
+        height={300}
+        position="50% 38%"
+        imgW={900}
+        imgH={675}
+        top={
+          <>
+            <button className="icon-btn" onClick={onBack} aria-label="Back">
+              <Icon name="arrow_back" size={22} />
+            </button>
             <GlareToggle />
-          </div>
-        </div>
-      </header>
+          </>
+        }
+        bottom={
+          <>
+            <h1 className="photo-hdr-title">Practice games</h1>
+            <span className="photo-hdr-sub">Practise with a number on the line</span>
+          </>
+        }
+      />
 
       <div className="screen">
         <div className="games-intro">

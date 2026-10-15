@@ -5,6 +5,7 @@ import { CATALOG, Area, Fault, detectFaults } from "@/lib/faults";
 import { SavedSession } from "@/lib/db";
 import { Icon } from "./Icon";
 import { AreaIcon } from "./AreaIcon";
+import { PhotoHeader } from "./PhotoHeader";
 
 const GROUPS: { area: Area; label: string }[] = [
   { area: "driving", label: "Driving" },
@@ -110,18 +111,25 @@ export function Fixes({
 
   return (
     <>
-      <header className="hdr">
-        <div className="hdr-row" style={{ alignItems: "center" }}>
-          {onBack && (
-            <button className="icon-btn" onClick={onBack} aria-label="Back">
-              <Icon name="arrow_back" size={22} />
-            </button>
-          )}
-          <div style={{ flex: 1 }}>
-            <div className="hdr-title">Fixes</div>
-          </div>
-        </div>
-      </header>
+      <PhotoHeader
+        src="/iron-balls.webp"
+        alt="An iron and four golf balls on practice turf"
+        height={210}
+        position="50% 45%"
+        imgW={900}
+        imgH={600}
+        top={onBack && (
+          <button className="icon-btn" onClick={onBack} aria-label="Back">
+            <Icon name="arrow_back" size={22} />
+          </button>
+        )}
+        bottom={
+          <>
+            <h1 className="photo-hdr-title">Fixes</h1>
+            <span className="photo-hdr-sub">Your miss, and the first thing to try</span>
+          </>
+        }
+      />
 
       <div className="screen">
         {hero ? (

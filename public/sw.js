@@ -11,13 +11,35 @@
  *
  * Bump VERSION to force a clean cache wipe on the next deploy.
  */
-const VERSION = "rc-v2";
+const VERSION = "rc-v3";
 const NAV_CACHE = VERSION + "-nav";
 const ASSET_CACHE = VERSION + "-assets";
 const KEEP = [NAV_CACHE, ASSET_CACHE];
 const NET_TIMEOUT = 4000;
 
-self.addEventListener("install", () => self.skipWaiting());
+// Photo-header images (handoff Phase 2) — precached on install so they show
+// offline even on a first/only-ever visit, rather than waiting on the generic
+// same-origin handler below to have cached them from a prior successful GET.
+// Any entry that 404s or fails to fetch is skipped individually (allSettled,
+// not addAll) so one bad URL can't break the whole install.
+const PHOTOS = [
+  "/range-bays.webp",
+  "/ball-tee.webp",
+  "/course-sunset.webp",
+  "/aerial-green.webp",
+  "/bunker-splash.webp",
+  "/iron-balls.webp",
+];
+
+self.addEventListener("install", (event) => {
+  self.skipWaiting();
+  event.waitUntil(
+    (async () => {
+      const cache = await caches.open(ASSET_CACHE);
+      await Promise.allSettled(PHOTOS.map((p) => cache.add(p)));
+    })(),
+  );
+});
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(

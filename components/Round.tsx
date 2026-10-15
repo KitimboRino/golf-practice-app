@@ -19,6 +19,7 @@ import { GlareToggle } from "./GlareToggle";
 import { Burst } from "./Burst";
 import { CourseDiagram, COURSE_DIAGRAM } from "./CourseDiagram";
 import { GreenDistance } from "./GreenDistance";
+import { PhotoHeader } from "./PhotoHeader";
 
 type PracticeFocus = { title: string; body: string };
 
@@ -175,14 +176,20 @@ function RoundSetup({
 
   return (
     <>
-      <header className="hdr">
-        <div className="hdr-row">
-          <div>
-            <div className="hdr-title">Round</div>
-            <div className="hdr-sub">On-course stats, hole by hole</div>
-          </div>
-        </div>
-      </header>
+      <PhotoHeader
+        src="/course-sunset.webp"
+        alt="A green framed by a raked bunker at sunset, flags in the distance and hills behind"
+        height={290}
+        position="30% 50%"
+        imgW={599}
+        imgH={900}
+        bottom={
+          <>
+            <h1 className="photo-hdr-title">Round</h1>
+            <span className="photo-hdr-sub">On-course stats, hole by hole</span>
+          </>
+        }
+      />
 
       <div className="screen">
         <div className="grp">

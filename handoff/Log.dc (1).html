@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RangeCard — Practice games</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&amp;family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#96D6E2}a:hover{color:#ADE0EA}
+</style>
+</helmet>
+<div style="width: 390px; height: 1080px; box-sizing: border-box; background: #0B0E18; color: #F2F5F9; font-family: 'Manrope', system-ui, sans-serif; position: relative; overflow: hidden">
+
+<div style="position: relative; height: 300px; overflow: hidden">
+<img src="/photos/bunker-splash.webp" alt="A golfer blasting out of a bunker in a spray of sand" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 38%">
+<div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(11,14,24,0.45) 0%, rgba(11,14,24,0.05) 28%, rgba(11,14,24,0.3) 55%, rgba(11,14,24,0.9) 86%, #0B0E18 100%)"></div>
+<a href="Plan.dc.html" aria-label="Back" style="position: absolute; top: 18px; left: 18px; width: 44px; height: 44px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.18); background: rgba(11,14,24,0.45); color: #F2F5F9; display: flex; align-items: center; justify-content: center">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg></a>
+<div style="position: absolute; left: 22px; right: 22px; bottom: 16px; display: flex; flex-direction: column; gap: 4px">
+<h1 style="margin: 0; font-family: 'Archivo', sans-serif; font-stretch: 118%; font-weight: 800; font-size: 32px">Practice games</h1>
+<span style="font-size: 15px; color: #C3CBD8">Practise with a number on the line</span>
+</div>
+</div>
+
+<div style="padding: 12px 18px 132px; display: flex; flex-direction: column; gap: 12px">
+<p style="margin: 0 4px 4px; font-size: 15px; line-height: 1.5; color: #C3CBD8">One score per game, beaten next time. You against your own best, never a leaderboard.</p>
+
+<sc-for list="{{games}}" as="g" hint-placeholder-count="4">
+<article style="background: #161B29; border: 1px solid #222839; border-radius: 22px; padding: 16px; display: flex; align-items: center; gap: 14px">
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 11px; font-weight: 800; letter-spacing: 1.4px; color: #96D6E2">{{g.area}}</span>
+<strong style="font-size: 17px">{{g.name}}</strong>
+<span style="font-size: 14px; color: #C3CBD8">{{g.measure}}</span>
+<span style="font-size: 13px; color: #9AA4B4">{{g.best}}</span>
+</div>
+<button aria-label="{{g.aria}}" style="min-height: 44px; padding: 0 18px; border-radius: 22px; border: 1px solid #2E3547; background: #1E2433; color: #F2F5F9; font-family: inherit; font-weight: 700; font-size: 15px; cursor: pointer">Play</button>
+</article>
+</sc-for>
+</div>
+
+<nav aria-label="Main" style="position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); display: flex; gap: 4px; padding: 8px; border-radius: 40px; background: #161B29; border: 1px solid #222839; box-shadow: 0 18px 40px -12px rgba(2,4,10,0.7)">
+<a href="Plan.dc.html" aria-label="Plan" style="width: 56px; height: 52px; display: flex; align-items: center; justify-content: center; border-radius: 26px; color: #9AA4B4"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4M5 4h11l-2 4 2 4H5"></path></svg></a>
+<a href="Log.dc.html" aria-label="Log" style="width: 56px; height: 52px; display: flex; align-items: center; justify-content: center; border-radius: 26px; color: #9AA4B4"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="9" r="6"></circle><path d="M12 15v6M9 21h6"></path></svg></a>
+<a href="Round.dc.html" aria-label="Round" style="width: 56px; height: 52px; display: flex; align-items: center; justify-content: center; border-radius: 26px; color: #9AA4B4"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 20V3l6 3-6 3M6 20h9"></path></svg></a>
+<a href="Games.dc.html" style="height: 52px; padding: 0 20px; display: flex; align-items: center; gap: 8px; border-radius: 26px; background: rgba(150,214,226,0.17); color: #96D6E2; text-decoration: none; font-weight: 700; font-size: 16px"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>More</a>
+</nav>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var G = [
+      { area: 'PUTTING', name: 'Par 18', measure: 'Putts holed out of 9', best: 'Your best: 6 of 9' },
+      { area: 'CHIPPING', name: 'Up & Down challenge', measure: 'Up-and-downs out of 10', best: 'Not played yet' },
+      { area: 'PITCHING', name: 'Distance ladder', measure: 'Pitches inside a club-length, out of 5', best: 'Not played yet' },
+      { area: 'DRIVING', name: 'Fairway finder', measure: 'Fairways hit out of 10', best: 'Not played yet' }
+    ];
+    return { games: G.map(function (g) { return { area: g.area, name: g.name, measure: g.measure, best: g.best, aria: 'Play ' + g.name }; }) };
+  }
+}
+</script>
+</body>
+</html>

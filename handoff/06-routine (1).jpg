@@ -1,0 +1,158 @@
+# RangeCard 1.3 — design handoff
+
+Implementation brief for the "fixes & a warmer feel" redesign. Written for
+Claude Code (or a human) working in this repo.
+
+```
+design/handoff/
+  README.md        ← this brief
+  screens/         ← rendered target for every screen (390px wide, @2x)
+  source/          ← design source per screen (HTML + inline SVG; copy exact
+                     colours, spacing and SVG path data from here)
+public/photos/     ← 7 royalty-free photos (Unsplash/Pexels), WebP, 18–140 KB
+```
+
+The `source/*.dc.html` files are design mockups, not app code. Read them for
+values and SVG paths. Don't import them. Hard-coded hexes in them map to the
+existing tokens in `app/globals.css` (dark block): `#0B0E18` = `--bg`,
+`#161B29` = `--card`, `#1E2433` = `--inset`, `#222839` = `--hairline`,
+`#2E3547` = `--border`, `#F2F5F9` = `--text`, `#C3CBD8` = `--text-2`,
+`#9AA4B4` = `--muted`, `#96D6E2` = `--state` / `--ink`, `#E8938B` = `--clay`.
+**Always use the tokens**, so light mode keeps working.
+
+## Ground rules
+
+- Change only what's listed. Keep all logic, data, IndexedDB schema and copy
+  not mentioned here.
+- Photos set the mood, drawings teach. Don't put photos on instruction
+  screens (warm-up, routine, drill cards).
+- Every photo header gets the same scrim, so text stays AA-legible in both
+  themes:
+  `linear-gradient(180deg, rgb(11 14 24 / .35) 0%, rgb(11 14 24 / .05) 30%, rgb(11 14 24 / .55) 70%, var(--bg) 100%)`
+  Make it a reusable `<PhotoHeader src alt eyebrow title sub>` component.
+- Photos must work offline: add `/photos/*.webp` to the service worker
+  (`public/sw.js`) as cache-first, and precache them on `install`.
+- Respect `prefers-reduced-motion`; no new animations needed.
+- After each phase: `npx tsc --noEmit && npm run build`, then check the screen
+  in the browser at 390×844 against `screens/`.
+
+---
+
+## Phase 1 — bugs (do these first, one commit each)
+
+### 1. Screens open part-way down
+Switching tab/screen keeps the old scroll position, so the warm-up's first
+exercise and the Log's first block open hidden under the sticky header.
+Nothing in the app calls `scrollTo` today.
+- `app/page.tsx`: add `useEffect(() => { window.scrollTo(0, 0); }, [tab]);`
+  next to `const [tab, setTab] = useState<Tab>("home")` (~line 362). Also
+  reset when a More sub-screen opens, if that's tracked in separate state.
+- Check: Plan → Start session → warm-up shows "Shoulders" fully, under the
+  header.
+
+### 2. Floating nav covering the last item
+`.app` has `padding-bottom: calc(96px + env(safe-area-inset-bottom))`
+(`app/globals.css` ~431). Scroll to the very bottom of Pre-shot routine,
+Practice games, More and a Round hole. If the last control is still under
+the nav pill, raise it to the pill's real height + 24px.
+- Pre-shot routine: make "Rehearse it" (`components/Routine.tsx` ~83) a sticky
+  bar that sits **above** the nav pill (see `screens/06-routine.jpg`).
+
+### 3. Log title wraps to a lone "1"
+`app/page.tsx` ~1440 renders `"Week 1 · Session 1"` in `.hdr-title.sm` beside
+two buttons, so it wraps.
+- Eyebrow: `Week 1 · Foundations` (replaces "Session log"). Title: `Session 1`.
+  Add `white-space: nowrap` to the title.
+- Target: `screens/04-log.jpg`.
+
+### 4. Session receipt calls a good area weak
+`components/SessionReceipt.tsx` ~45/150: `worst` is computed even when only
+one area was logged, so 3/4 chipping (75%) shows "Chipping needs the attention".
+- Only compute `worst` when `rows.length >= 2` **and** it is below 50%.
+- With one area: show "Log a second area next time and I'll show you where to
+  spend your balls."
+- Lead the card with the best area ("BEST TODAY · CHIPPING · 75%").
+- Target: `screens/05-session-done.jpg`.
+
+### 5. Fixes contradicts the setup answer
+Onboarding offers "Right, a slice: starts right or curves away late", but
+`components/Fixes.tsx` `yourMiss()` maps it to the `slice` fault in
+`lib/faults.ts`, whose `pattern` is "Starts left, curves hard right" (a
+pull-slice).
+- When `context === "From your setup answer"`, show the user's own words as
+  the headline: eyebrow "YOU TOLD US", title "Starts right, or curves away
+  late". Keep the fault's cause/fix body.
+- Draw the matching ball-flight diagram (two flights right of a dashed target
+  line); the SVG is in `source/Fixes.dc.html`.
+- Target: `screens/09-fixes.jpg`.
+
+---
+
+## Phase 2 — photography
+
+Build `PhotoHeader` once, then apply it:
+
+| Screen | File | Photo | Notes |
+|---|---|---|---|
+| First run (`components/FirstRun.tsx`) | `range-bag.webp` | full-bleed, 540px tall | Logo + wordmark top-left; eyebrow "YOUR FIRST TEN BALLS"; the existing `.deal-h` headline sits over the bottom of the photo. Steps become a ruled list numbered 01/02/03. Add "No account. Nothing leaves your phone." under the CTAs. |
+| Plan header (`app/page.tsx` ~1075 `.hero`) | `range-bays.webp` | 330px, `object-position: 60% 62%` | Greeting top-left, theme/glare buttons top-right on a translucent dark face; eyebrow `WEEK 1 · SESSION 2 OF 2`, title `Foundations`. |
+| Session receipt | `ball-tee.webp` | 300px | Aqua "✓ LOGGED" pill, title "Session 1, done.", meta line. |
+| Round tab (`components/Round.tsx`) | `course-sunset.webp` | 290px, `30% 50%` | Title "Round", sub "On-course stats, hole by hole". |
+| Course management entry (Round tab) | `aerial-green.webp` | 112px-wide thumbnail on the left of a card | Links to `components/Course.tsx`. |
+| Practice games (`components/Games.tsx`) | `bunker-splash.webp` | 300px, `50% 38%` | Back button on photo; each card shows "Your best: …" or "Not played yet". |
+| Fixes | `iron-balls.webp` | 210px | Sub "Your miss, and the first thing to try". |
+
+Every `<img>` gets `alt` text (it's in the source files), `decoding="async"`,
+and explicit width/height to avoid layout shift. Use plain `<img>`, since this
+app avoids `next/image`.
+
+---
+
+## Phase 3 — drawings (inline SVG, colour via tokens)
+
+Put them in `components/illustrations/` as small React components taking
+`size`. Strokes use `currentColor` (`--text` / `--text-2`), accents use
+`var(--state)`.
+
+1. **Warm-up poses**: 7 figures, one per `WARMUP` item in `lib/prep.ts`
+   (same order). Path data: the `P` array in `source/Warmup.dc.html`
+   (`body`, `club`, `motion`, head `hx/hy`, viewBox 0 0 120 120). Large (180px)
+   in the "Now" card, 40px thumbnails in "Still to come". Add an optional
+   `pose` key to `PrepItem`.
+2. **Pre-shot routine steps**: 6 icons (viewBox 0 0 64 64), the `S` array in
+   `source/Routine.dc.html`, shown in 64px tiles in place of the number badges.
+   "STEP n" moves to an eyebrow.
+3. **Chipping focus-drill diagram**: top-down ball / brush line / towel /
+   flag, from `source/Log.dc.html`. Rewrite that drill's text as three short
+   steps. Other areas' drills can follow the same pattern later.
+
+---
+
+## Phase 4 — copy
+
+- Warm-up finished: "Loose and ready" / "All seven done. Your body will thank
+  you on ball one."
+- Receipt title: "Session N, done." (was "Session N logged").
+- Round start CTA: "Tee off · 18 holes".
+- Games intro: "One score per game, beaten next time. You against your own
+  best, never a leaderboard."
+- Fixes note: "This is a best guess from your answer. After a few logged
+  drives, it updates from what you actually hit. A lesson still beats a table."
+
+## Phase 5 — housekeeping
+
+- Refresh `public/screenshot-plan.png` / `screenshot-round.png` (they still
+  show the pre-Aqua green skin).
+- README references `public/logo_kit/`, which doesn't exist. Fix the path or
+  the text.
+- `public/driver.svg`, `iron.svg`, `putter.svg`, `flag-hole.svg` are unused.
+  Delete them.
+- Bump version to 1.3.0 and add a Version history entry. Photo credits:
+  Unsplash/Pexels licence, no attribution required; list them in About anyway.
+
+## Done when
+
+- [ ] All 5 bugs verified in the browser
+- [ ] Each screen matches its `screens/*.jpg` in dark mode, and looks right in light mode
+- [ ] Airplane mode after first load: photos still show
+- [ ] `tsc`, `next build` and `npm audit` pass in CI

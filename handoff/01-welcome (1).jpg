@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RangeCard — Session done</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&amp;family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#96D6E2}a:hover{color:#ADE0EA}
+</style>
+</helmet>
+<div style="width: 390px; height: 900px; box-sizing: border-box; background: #0B0E18; color: #F2F5F9; font-family: 'Manrope', system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden">
+
+<div style="position: relative; height: 300px; overflow: hidden; flex: none">
+<img src="/photos/ball-tee.webp" alt="A golf ball on a tee in the grass, background softly out of focus" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%">
+<div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(11,14,24,0.2) 0%, rgba(11,14,24,0.1) 40%, rgba(11,14,24,0.85) 85%, #0B0E18 100%)"></div>
+<div style="position: absolute; left: 22px; right: 22px; bottom: 16px; display: flex; flex-direction: column; gap: 6px">
+<span style="display: inline-flex; align-self: flex-start; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 14px; background: #96D6E2; color: #0F1321; font-size: 12px; font-weight: 800; letter-spacing: 1.2px">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>LOGGED</span>
+<h1 style="margin: 0; font-family: 'Archivo', sans-serif; font-stretch: 118%; font-weight: 800; font-size: 32px">Session 1, done.</h1>
+<span style="font-size: 14px; color: #C3CBD8">Week 1 · Foundations · 4 balls · 18 min</span>
+</div>
+</div>
+
+<div style="padding: 14px 20px 28px; display: flex; flex-direction: column; gap: 14px">
+
+<section style="background: #161B29; border: 1px solid rgba(150,214,226,0.38); border-radius: 22px; padding: 18px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-size: 12px; font-weight: 700; letter-spacing: 1.6px; color: #96D6E2">BEST TODAY · CHIPPING</span>
+<div style="display: flex; align-items: baseline; gap: 12px">
+<span style="font-family: 'Archivo', sans-serif; font-stretch: 118%; font-weight: 800; font-size: 54px; color: #96D6E2; line-height: 1">75%</span>
+<span style="font-size: 15px; line-height: 1.35; color: #C3CBD8">landed on the towel<br>3 of 4</span>
+</div>
+<p style="margin: 2px 0 0; padding-top: 12px; border-top: 1px solid #2E3547; font-size: 15px; line-height: 1.5">A strong start. This is your baseline, and everything from here gets measured against it.</p>
+</section>
+
+<div style="display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: 18px; background: rgba(140,184,220,0.10)">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8CB8DC" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex: none; margin-top: 2px"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 8v.01"></path></svg>
+<p style="margin: 0; font-size: 14px; line-height: 1.5; color: #B9CBDD">Log a second area next time and I'll show you where to spend your balls.</p>
+</div>
+
+<button style="min-height: 56px; border: none; border-radius: 22px; background: #96D6E2; color: #0F1321; font-family: inherit; font-weight: 800; font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"></path></svg>Share this card</button>
+
+<a href="Plan.dc.html" style="min-height: 64px; border-radius: 20px; border: 1px solid #2E3547; background: #161B29; color: #F2F5F9; text-decoration: none; display: flex; align-items: center; gap: 12px; padding: 0 16px">
+<span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 16px">Next: Week 1 · Session 2</strong><span style="font-size: 13px; color: #C3CBD8">Groove a repeatable start line</span></span>
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9AA4B4" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+</a>
+<a href="Plan.dc.html" style="min-height: 48px; border-radius: 20px; color: #C3CBD8; text-decoration: none; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px">Done</a>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

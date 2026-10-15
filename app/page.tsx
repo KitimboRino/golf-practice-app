@@ -26,6 +26,7 @@ import { Mark } from "@/components/Mark";
 import { LiveRound } from "@/lib/round";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { GlareToggle } from "@/components/GlareToggle";
+import { PhotoHeader } from "@/components/PhotoHeader";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/Confirm";
 import {
@@ -1072,29 +1073,41 @@ function Home({
 
   return (
     <>
-      <header className="hero">
-        <div className="hero-row">
-          <div style={{ flex: 1, minWidth: 0 }}>
-            {!firstRun && (
+      <PhotoHeader
+        src="/range-bays.webp"
+        alt="A golfer swinging on a quiet driving range under a clear sky"
+        height={330}
+        position="60% 62%"
+        imgW={900}
+        imgH={617}
+        top={
+          <>
+            {!firstRun ? (
               <button className="greeting" onClick={onEditName} aria-label="Edit your name">
                 <span>{greeting}</span><Icon name="edit" size={13} />
               </button>
-            )}
-            <div className="hero-h">Week {cursor.week + 1} · {week.title}</div>
-            <div className="hero-sub">Session {cursor.session + 1} of {week.sessions.length}</div>
-          </div>
-          <div className="hdr-actions">
-            {monthCount >= 2 && (
-              <div className="chip" title={`${monthCount} sessions logged this calendar month`}>
-                <Icon name="event_available" size={15} />{monthCount}
-                <span className="chip-lbl"> this month</span>
-              </div>
-            )}
-            <GlareToggle />
-            <ThemeToggle />
-          </div>
-        </div>
-      </header>
+            ) : <span />}
+            <div className="hdr-actions">
+              {monthCount >= 2 && (
+                <div className="chip" title={`${monthCount} sessions logged this calendar month`}>
+                  <Icon name="event_available" size={15} />{monthCount}
+                  <span className="chip-lbl"> this month</span>
+                </div>
+              )}
+              <GlareToggle />
+              <ThemeToggle />
+            </div>
+          </>
+        }
+        bottom={
+          <>
+            <span className="photo-hdr-eyebrow">
+              Week {cursor.week + 1} · Session {cursor.session + 1} of {week.sessions.length}
+            </span>
+            <h1 className="photo-hdr-title">{week.title}</h1>
+          </>
+        }
+      />
 
       <div className="sheet">
         {showResumeBanner && (
