@@ -179,7 +179,7 @@ function RoundSetup({
       <PhotoHeader
         src="/course-sunset.webp"
         alt="A green framed by a raked bunker at sunset, flags in the distance and hills behind"
-        height={290}
+        height={280}
         position="30% 50%"
         imgW={599}
         imgH={900}

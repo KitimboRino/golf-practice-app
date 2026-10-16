@@ -11,7 +11,7 @@
  *
  * Bump VERSION to force a clean cache wipe on the next deploy.
  */
-const VERSION = "rc-v3";
+const VERSION = "rc-v4";
 const NAV_CACHE = VERSION + "-nav";
 const ASSET_CACHE = VERSION + "-assets";
 const KEEP = [NAV_CACHE, ASSET_CACHE];
@@ -25,9 +25,9 @@ const NET_TIMEOUT = 4000;
 const PHOTOS = [
   "/range-bays.webp",
   "/ball-tee.webp",
+  "/range-bag.webp",
   "/course-sunset.webp",
   "/aerial-green.webp",
-  "/bunker-splash.webp",
   "/iron-balls.webp",
 ];
 

@@ -97,7 +97,7 @@ export function SessionReceipt({
       <PhotoHeader
         src="/ball-tee.webp"
         alt="A golf ball on a tee in the grass, background softly out of focus"
-        height={300}
+        height={280}
         position="50% 40%"
         imgW={600}
         imgH={900}

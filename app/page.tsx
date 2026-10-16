@@ -1076,7 +1076,7 @@ function Home({
       <PhotoHeader
         src="/range-bays.webp"
         alt="A golfer swinging on a quiet driving range under a clear sky"
-        height={330}
+        height={280}
         position="60% 62%"
         imgW={900}
         imgH={617}

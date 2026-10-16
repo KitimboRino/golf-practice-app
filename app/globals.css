@@ -1286,6 +1286,11 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
   padding: 8px 6px;
   border: 1px solid transparent;
+  /* the hold-to-subtract gesture is a ~450ms press on text (the count/label) —
+     without this, mobile browsers treat that as a long-press text selection
+     and show their own highlight + copy/look-up callout on top of the fill
+     bar that's supposed to be the only hold feedback. */
+  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
   transition: background var(--dur-base) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 }
 .outcome-hint {

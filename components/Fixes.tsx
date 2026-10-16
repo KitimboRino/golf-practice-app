@@ -114,7 +114,7 @@ export function Fixes({
       <PhotoHeader
         src="/iron-balls.webp"
         alt="An iron and four golf balls on practice turf"
-        height={210}
+        height={280}
         position="50% 45%"
         imgW={900}
         imgH={600}
