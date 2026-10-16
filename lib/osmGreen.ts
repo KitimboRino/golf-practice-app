@@ -12,19 +12,25 @@ import { GeoPoint, haversineMeters } from "./geo";
 
 export type OsmGreenMatch = { front: GeoPoint; center: GeoPoint; back: GeoPoint; wayId: number };
 
-// Same operator (FOSSGIS), different load-balanced backend nodes — tried in
-// order because in practice they're inconsistently CORS-enabled: a direct
-// browser fetch to the round-robin overpass-api.de hostname and a couple of
-// its named nodes failed outright in testing, while others worked, then
-// didn't, a few minutes later. Hedging across nodes beats picking one and
-// hoping; any failure here is still just "try the next", never an error.
+// Confirmed in the field (a real test at a course with known OSM coverage
+// still came back empty, repeatedly) that trying these one at a time and
+// stopping at the first "got a response" isn't enough — each host's CORS
+// support comes and goes independently, sometimes all three are down at the
+// same moment. Three are the same operator's (FOSSGIS) load-balanced nodes;
+// maps.mail.ru is a genuinely independent mirror added specifically because
+// its failures shouldn't correlate with the other three's. All four are
+// raced in parallel (not tried in sequence) so a bad node costs nothing but
+// its own timeout, and results from however many respond are merged — more
+// independent attempts in the same wall-clock time, not just a longer wait.
 const OVERPASS_URLS = [
   "https://z.overpass-api.de/api/interpreter",
   "https://lz4.overpass-api.de/api/interpreter",
   "https://overpass-api.de/api/interpreter",
+  "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
 ];
 const SEARCH_RADIUS_M = 400;
-const FETCH_TIMEOUT_MS = 4000;
+const FETCH_TIMEOUT_MS = 4500;
+const RETRY_DELAY_MS = 700;
 
 type OverpassGeomNode = { lat?: number; lon?: number };
 type OverpassWay = { id: number; type: string; geometry?: OverpassGeomNode[] };
@@ -66,15 +72,27 @@ async function fetchGreens(url: string, query: string): Promise<OverpassWay[] | 
   }
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// One round: fire all hosts at once, merge whatever comes back. A host that
+// errors or times out just contributes nothing — never fails the round.
+async function searchRound(query: string): Promise<OverpassWay[]> {
+  const results = await Promise.all(OVERPASS_URLS.map((url) => fetchGreens(url, query)));
+  return results.flatMap((r) => r ?? []);
+}
+
 export async function findNearbyGreen(here: GeoPoint): Promise<OsmGreenMatch | null> {
   const query = `[out:json][timeout:5];way(around:${SEARCH_RADIUS_M},${here.lat},${here.lng})["golf"="green"];out geom;`;
 
-  let ways: OverpassWay[] | null = null;
-  for (const url of OVERPASS_URLS) {
-    ways = await fetchGreens(url, query);
-    if (ways) break; // got a response (even an empty one) — no need to try another node
+  let ways = await searchRound(query);
+  // every host failed outright (not just "found nothing") — worth one more
+  // shot a moment later rather than giving up, since the flakiness is
+  // per-request, not a durable outage.
+  if (!ways.length) {
+    await sleep(RETRY_DELAY_MS);
+    ways = await searchRound(query);
   }
-  if (!ways || !ways.length) return null;
+  if (!ways.length) return null;
 
   let best: { way: OverpassWay; pts: GeoPoint[]; centroid: GeoPoint; dist: number } | null = null;
   for (const way of ways) {

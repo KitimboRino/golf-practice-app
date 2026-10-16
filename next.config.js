@@ -22,11 +22,14 @@ const csp = [
   // The Overpass hosts are the optional "search OpenStreetMap for a mapped
   // green nearby" convenience in lib/osmGreen.ts — the only external network
   // calls this app makes; everything else stays local-only. Multiple hosts
-  // are allowed because they're inconsistently CORS-enabled in practice
-  // (same operator, different backend nodes) — lib/osmGreen.ts tries them
-  // in order and falls back to "no match" if all fail.
+  // are allowed because they're inconsistently CORS-enabled in practice —
+  // lib/osmGreen.ts races all of them in parallel and falls back to "no
+  // match" only if every one fails. maps.mail.ru is a separate, independent
+  // operator from the other three (same FOSSGIS infra), added so a bad
+  // moment for one operator doesn't take out every attempt at once — your
+  // live position is sent to whichever of these hosts responds.
   (isDev ? "connect-src 'self' ws:" : "connect-src 'self'") +
-    " https://z.overpass-api.de https://lz4.overpass-api.de https://overpass-api.de",
+    " https://z.overpass-api.de https://lz4.overpass-api.de https://overpass-api.de https://maps.mail.ru",
   "manifest-src 'self'",
   "worker-src 'self'",
   "media-src 'none'",
