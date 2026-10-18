@@ -1001,6 +1001,48 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .round-stat-l { font-size: 13px; font-weight: 700; color: var(--text); margin-top: 3px; }
 .round-stat-s { font-size: 12px; color: var(--muted); }
 
+/* ---------- scorecard grid (RoundSummary) ---------- */
+.scorecard { display: flex; flex-direction: column; gap: 10px; }
+.scorecard-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.scorecard-block { display: flex; flex-direction: column; gap: 2px; width: max-content; }
+.scorecard-block + .scorecard-block { margin-top: 10px; }
+.scorecard-row { display: flex; gap: 1px; }
+.scorecard-cell {
+  flex: none; width: 26px; height: 28px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text-2);
+}
+.scorecard-cell.dim { color: var(--muted); font-weight: 600; }
+.scorecard-lbl {
+  width: 38px; justify-content: flex-start;
+  font-size: 10px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted);
+}
+.scorecard-head .scorecard-cell { color: var(--text); font-weight: 800; }
+.scorecard-sum {
+  width: 30px; font-weight: 800; color: var(--text);
+  background: var(--glass); border: 1px solid var(--edge); border-radius: 7px;
+}
+.scorecard-dash { color: var(--hint); font-weight: 600; }
+/* birdie/bogey shapes — the one thing a plain stat table can't show at a
+   glance: circle = under par, square = over, a doubled border one tier
+   further out either side. Par itself stays plain text, no shape. */
+.scorecard-score { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; }
+.scorecard-score.birdie { border-radius: 50%; border: 1.5px solid var(--green); color: var(--green); }
+.scorecard-score.eagle {
+  border-radius: 50%; border: 1.5px solid var(--green); box-shadow: inset 0 0 0 1.5px var(--green); color: var(--green);
+}
+.scorecard-score.bogey { border-radius: 7px; border: 1.5px solid var(--clay); color: var(--clay); }
+.scorecard-score.double {
+  border-radius: 7px; border: 1.5px solid var(--clay); box-shadow: inset 0 0 0 1.5px var(--clay); color: var(--clay);
+}
+.scorecard-total {
+  display: flex; align-items: baseline; gap: 8px;
+  padding-top: 10px; border-top: 1px solid var(--hairline);
+  font-size: 13px; font-weight: 700; color: var(--muted);
+}
+.scorecard-total .num { font-size: 22px; font-weight: 800; color: var(--text); }
+.scorecard-total-par { color: var(--green); font-weight: 800; }
+
 /* ---------- round diagnostic ("where you're losing shots") ---------- */
 .leak {
   background: var(--glass); border: 1px solid var(--edge); border-radius: 20px;

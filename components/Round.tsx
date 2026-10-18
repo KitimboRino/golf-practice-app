@@ -720,6 +720,81 @@ function RoundPlay({
 }
 
 // ---------------------------------------------------------------------------
+// scorecard grid — the traditional hole-by-hole card (par row, score row with
+// birdie/bogey shapes, OUT/IN/TOTAL), front and back nine stacked. Same
+// rel-to-par tiers as scoreTerm() above, just reduced to a shape+colour
+// instead of a word: circle = under par, square = over, doubled border one
+// tier further out either way.
+const toParTone = (score: number | undefined, par: number): "eagle" | "birdie" | "bogey" | "double" | null => {
+  if (score == null) return null;
+  const rel = score - par;
+  if (rel <= -2) return "eagle";
+  if (rel === -1) return "birdie";
+  if (rel === 0) return null; // par — plain, no shape
+  if (rel === 1) return "bogey";
+  return "double";
+};
+
+function ScoreCardBlock({ holes, startIndex, sumLabel }: { holes: RoundHole[]; startIndex: number; sumLabel: string }) {
+  const parSum = holes.reduce((a, h) => a + h.par, 0);
+  const allScored = holes.every((h) => h.score != null);
+  const scoreSum = holes.reduce((a, h) => a + (h.score ?? 0), 0);
+  return (
+    <div className="scorecard-block">
+      <div className="scorecard-row scorecard-head">
+        <span className="scorecard-cell scorecard-lbl">Hole</span>
+        {holes.map((_, i) => <span className="scorecard-cell" key={i}>{startIndex + i + 1}</span>)}
+        <span className="scorecard-cell scorecard-sum">{sumLabel}</span>
+      </div>
+      <div className="scorecard-row">
+        <span className="scorecard-cell scorecard-lbl dim">Par</span>
+        {holes.map((h, i) => <span className="scorecard-cell dim" key={i}>{h.par}</span>)}
+        <span className="scorecard-cell scorecard-sum dim">{parSum}</span>
+      </div>
+      <div className="scorecard-row">
+        <span className="scorecard-cell scorecard-lbl">Score</span>
+        {holes.map((h, i) => {
+          const tone = toParTone(h.score, h.par);
+          return (
+            <span className="scorecard-cell" key={i}>
+              {h.score != null
+                ? <span className={"scorecard-score" + (tone ? " " + tone : "")}>{h.score}</span>
+                : <span className="scorecard-dash">–</span>}
+            </span>
+          );
+        })}
+        <span className="scorecard-cell scorecard-sum">{allScored ? scoreSum : "–"}</span>
+      </div>
+    </div>
+  );
+}
+
+function ScoreCard({ holeData, holes }: { holeData: RoundHole[]; holes: 9 | 18 }) {
+  const front = holeData.slice(0, 9);
+  const back = holeData.slice(9, 18);
+  const allScored = holeData.length > 0 && holeData.every((h) => h.score != null);
+  const total = holeData.reduce((a, h) => a + (h.score ?? 0), 0);
+  const parTotal = holeData.reduce((a, h) => a + h.par, 0);
+  return (
+    <div className="scorecard">
+      <div className="sec-head">
+        <span className="icon-tile sm"><Icon name="grid_view" size={15} /></span>
+        <h3>Scorecard</h3>
+      </div>
+      <div className="scorecard-scroll">
+        <ScoreCardBlock holes={front} startIndex={0} sumLabel="OUT" />
+        {holes === 18 && <ScoreCardBlock holes={back} startIndex={9} sumLabel="IN" />}
+      </div>
+      <div className="scorecard-total">
+        <span>Total</span>
+        <span className="num">{allScored ? total : "–"}</span>
+        {allScored && <span className="scorecard-total-par">{toParLabel(total - parTotal)}</span>}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // summary (a just-finished round, or a saved one from the list)
 
 export function RoundSummary({
@@ -859,6 +934,8 @@ export function RoundSummary({
             ))}
           </div>
         </div>
+
+        <ScoreCard holeData={round.holeData} holes={round.holes} />
 
         {round.note?.trim() && (
           <div className="receipt-note">
