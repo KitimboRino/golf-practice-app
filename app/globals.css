@@ -993,14 +993,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .rnav .cta { flex: 1; height: 56px; font-size: 16px; }
 .rnav-next, .rnav-finish { display: flex; align-items: center; justify-content: center; gap: 8px; }
 
-.round-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 12px; }
-.round-stat { display: flex; flex-direction: column; gap: 2px; }
-.round-stat:first-child { grid-column: 1 / -1; }
-.round-stat-v { font-size: 34px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; color: var(--green); }
-.round-stat:first-child .round-stat-v { font-size: 48px; }
-.round-stat-l { font-size: 13px; font-weight: 700; color: var(--text); margin-top: 3px; }
-.round-stat-s { font-size: 12px; color: var(--muted); }
-
 /* ---------- scorecard grid (RoundSummary) ---------- */
 .scorecard { display: flex; flex-direction: column; gap: 10px; }
 .scorecard-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -2694,7 +2686,7 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
 }
 
 /* Numbers: hero figures want the display face too, tabular as always. */
-.tile-val, .round-stat-v, .score-step-val .num, .putt-step > .num, .hole-opt-n {
+.tile-val, .score-step-val .num, .putt-step > .num, .hole-opt-n {
   font-family: var(--font-display);
   font-stretch: var(--display-stretch);
   font-weight: 700;

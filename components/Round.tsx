@@ -14,6 +14,7 @@ import { useConfirm } from "./Confirm";
 import { useToast } from "./Toast";
 import { tapFx, bumpFx } from "@/lib/haptics";
 import { Icon } from "./Icon";
+import { AreaIcon } from "./AreaIcon";
 import { Glyph } from "./Glyph";
 import { GlareToggle } from "./GlareToggle";
 import { Burst } from "./Burst";
@@ -923,16 +924,82 @@ export function RoundSummary({
       </header>
 
       <div className="sheet">
-        <div className="receipt-moved">
-          <div className="round-stat-grid">
-            {rows.map((r) => (
-              <div className="round-stat" key={r.label}>
-                <div className="round-stat-v num">{r.value}</div>
-                <div className="round-stat-l">{r.label}</div>
-                {r.sub && <div className="round-stat-s">{r.sub}</div>}
-              </div>
-            ))}
+        <div className="tile accent">
+          <div className="tile-head">
+            <span className="eyebrow">Score</span>
+            <span className="icon-tile sm"><Icon name="flag" size={15} /></span>
           </div>
+          <div className="tile-val num">
+            {s.scoredHoles ? s.strokes : "—"}
+            {s.scoredHoles > 0 && s.scoredHoles < round.holeData.length && <span className="frac">/{s.scoredHoles}</span>}
+          </div>
+          <div className="tile-foot">
+            <span className="tile-lbl">
+              {s.scoredHoles ? `${toParLabel(s.toPar)} to par${breakdown ? ` · ${breakdown}` : ""}` : "not logged"}
+            </span>
+          </div>
+        </div>
+
+        <div className="tiles">
+          <div className="tile">
+            <div className="tile-head">
+              <span className="eyebrow">Fairways hit</span>
+              <span className="icon-tile sm dim"><AreaIcon area="driving" size={15} /></span>
+            </div>
+            <div className="tile-val num">{s.firPct === null ? "—" : `${s.firPct}%`}</div>
+            <div className="tile-foot">
+              <span className="tile-lbl">{s.firOf ? `${s.firMade} of ${s.firOf}` : "no par 4s or 5s"}</span>
+            </div>
+          </div>
+
+          <div className="tile">
+            <div className="tile-head">
+              <span className="eyebrow">Greens in reg.</span>
+              <span className="icon-tile sm dim"><AreaIcon area="irons" size={15} /></span>
+            </div>
+            <div className="tile-val num">{s.girPct === null ? "—" : `${s.girPct}%`}</div>
+            <div className="tile-foot">
+              <span className="tile-lbl">{s.girOf ? `${s.girMade} of ${s.girOf}` : "not logged"}</span>
+            </div>
+          </div>
+
+          <div className="tile">
+            <div className="tile-head">
+              <span className="eyebrow">Total putts</span>
+              <span className="icon-tile sm dim"><AreaIcon area="putting" size={15} /></span>
+            </div>
+            <div className="tile-val num">{s.puttsOf ? s.putts : "—"}</div>
+            <div className="tile-foot">
+              <span className="tile-lbl">{s.puttsPerHole === null ? "not logged" : `${s.puttsPerHole} per hole`}</span>
+              {s.threePutts > 0 && (
+                <span className="delta down">{s.threePutts} 3-putt{s.threePutts === 1 ? "" : "s"}</span>
+              )}
+            </div>
+          </div>
+
+          <div className="tile">
+            <div className="tile-head">
+              <span className="eyebrow">Scrambling</span>
+              <span className="icon-tile sm dim"><AreaIcon area="chipping" size={15} /></span>
+            </div>
+            <div className="tile-val num">{s.scramblePct === null ? "—" : `${s.scramblePct}%`}</div>
+            <div className="tile-foot">
+              <span className="tile-lbl">{s.scrambleOf ? `${s.scrambleMade} of ${s.scrambleOf} missed` : "hit every green"}</span>
+            </div>
+          </div>
+
+          {s.penalties > 0 && (
+            <div className="tile" style={{ gridColumn: "1 / -1" }}>
+              <div className="tile-head">
+                <span className="eyebrow">Penalty strokes</span>
+                <span className="icon-tile sm dim"><Icon name="report" size={15} /></span>
+              </div>
+              <div className="tile-val num">{s.penalties}</div>
+              <div className="tile-foot">
+                <span className="tile-lbl">on {s.penaltyHoles} hole{s.penaltyHoles === 1 ? "" : "s"}</span>
+              </div>
+            </div>
+          )}
         </div>
 
         <ScoreCard holeData={round.holeData} holes={round.holes} />
