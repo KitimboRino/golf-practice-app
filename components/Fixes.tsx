@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { CATALOG, Area, Fault, detectFaults } from "@/lib/faults";
-import { SavedSession } from "@/lib/db";
+import { SavedSession, SavedSwing } from "@/lib/db";
+import { SWING_BASELINE, statusFor } from "@/lib/swingBaseline";
 import { Icon } from "./Icon";
 import { AreaIcon } from "./AreaIcon";
 import { PhotoHeader } from "./PhotoHeader";
@@ -81,32 +82,66 @@ function contextFor(fault: Fault, latest: SavedSession): string | null {
   return null;
 }
 
-function yourMiss(history: SavedSession[], plannedMiss: string): { fault: Fault; context: string | null } | null {
+// Corroborating evidence from Swing check, not a replacement for the
+// ball-flight context above — only for slice/hook, where shoulder/hip
+// rotation at the top is actually relevant, and only when the latest swing
+// check's top-of-backswing reading falls outside the (already-approximate)
+// baseline range. Framed as "worth a look", matching Swing check's own
+// "compass, not verdict" tone — this is two rough signals agreeing, not a
+// diagnosis.
+function swingEvidenceFor(fault: Fault, swings: SavedSwing[]): string | null {
+  if (fault.id !== "slice" && fault.id !== "hook") return null;
+  const latest = swings[swings.length - 1];
+  if (!latest) return null;
+  const top = latest.measurements.top;
+  const base = SWING_BASELINE.top;
+  const shoulderStatus = statusFor(top.shoulderTurnDeg, base.shoulderTurnDeg);
+  const hipStatus = statusFor(top.hipTurnDeg, base.hipTurnDeg);
+  if (shoulderStatus !== "in") {
+    return `Your last swing check also showed shoulder turn at the top ` +
+      `${shoulderStatus === "low" ? "below" : "above"} the typical range (${top.shoulderTurnDeg}°) — worth a look`;
+  }
+  if (hipStatus !== "in") {
+    return `Your last swing check also showed hip turn at the top ` +
+      `${hipStatus === "low" ? "below" : "above"} the typical range (${top.hipTurnDeg}°) — worth a look`;
+  }
+  return null;
+}
+
+function yourMiss(
+  history: SavedSession[], plannedMiss: string, swings: SavedSwing[],
+): { fault: Fault; context: string | null; swingEvidence: string | null } | null {
   const latest = history[history.length - 1];
   if (latest) {
     const hits = detectFaults(latest);
     if (hits.length) {
-      return { fault: hits[0].fault, context: contextFor(hits[0].fault, latest) };
+      return {
+        fault: hits[0].fault,
+        context: contextFor(hits[0].fault, latest),
+        swingEvidence: swingEvidenceFor(hits[0].fault, swings),
+      };
     }
   }
   const id = MISS_TO_FAULT[plannedMiss];
   const f = id && CATALOG.find((x) => x.id === id);
-  return f ? { fault: f, context: "From your setup answer" } : null;
+  return f ? { fault: f, context: "From your setup answer", swingEvidence: swingEvidenceFor(f, swings) } : null;
 }
 
 export function Fixes({
-  onBack, history = [], plannedMiss = "", onPractice, onBrowseDrills,
+  onBack, history = [], plannedMiss = "", swings = [], onPractice, onBrowseDrills,
 }: {
   onBack?: () => void;
   history?: SavedSession[];
   plannedMiss?: string;
+  swings?: SavedSwing[];
   onPractice?: (fault: Fault) => void;
   onBrowseDrills?: (fault: Fault) => void;
 }) {
   const [selected, setSelected] = useState<Fault | null>(null);
-  const mine = yourMiss(history, plannedMiss);
+  const mine = yourMiss(history, plannedMiss, swings);
   const hero = selected ?? mine?.fault ?? null;
   const heroContext = selected ? null : mine?.context ?? null;
+  const heroSwingEvidence = selected ? null : mine?.swingEvidence ?? null;
   const rest = CATALOG.filter((f) => f.id !== hero?.id);
 
   return (
@@ -148,6 +183,12 @@ export function Fixes({
               <div className="fault-line"><span className="fault-k">Likely</span><b>{hero.name}.</b> {hero.fault}</div>
               <div className="fault-line"><span className="fault-k fix">Fix</span>{hero.fix}</div>
             </div>
+            {heroSwingEvidence && (
+              <div className="fault-swing-evidence">
+                <Icon name="videocam" size={14} />
+                {heroSwingEvidence}
+              </div>
+            )}
             <div className="fault-hero-actions">
               {onPractice && (
                 <button className="fault-hero-go" onClick={() => onPractice(hero)}>

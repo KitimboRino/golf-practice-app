@@ -88,6 +88,31 @@ export type GameAttemptInput = Omit<GameAttempt, "updatedAt" | "deleted"> & {
   deleted?: boolean;
 };
 
+// ---- swing check (on-device pose capture, components/SwingCheck.tsx) ----
+// One measurement set per recorded swing — never the raw video, which is
+// discarded right after processing. Stage 1 only: raw angles, no fault
+// judgement (that needs a reference baseline this app doesn't have yet).
+export type SwingPhase = "address" | "top" | "impact" | "finish";
+export type SwingMeasurement = {
+  spineTiltDeg: number;
+  shoulderTurnDeg: number;
+  hipTurnDeg: number;
+  thumbnailDataUrl: string; // small frame snapshot, not the full clip
+};
+export type SavedSwing = {
+  id: string;
+  date: string; // yyyy-mm-dd
+  measurements: Record<SwingPhase, SwingMeasurement>;
+  createdAt: number;
+  updatedAt: number;
+  deleted?: boolean;
+};
+
+export type SwingInput = Omit<SavedSwing, "updatedAt" | "deleted"> & {
+  updatedAt?: number;
+  deleted?: boolean;
+};
+
 // A fresh hole carries only its par (4 unless changed) — nothing else is
 // pre-answered. Par 3s never ask about the fairway, so that stays null.
 export const emptyHole = (par: 3 | 4 | 5 = 4): RoundHole => ({
@@ -102,7 +127,7 @@ export const isAdhoc = (s: { weekId: string }) => s.weekId === ADHOC;
 // A drill swapped in from the Library for a given area — held in meta ("drillOverrides"),
 // applied to the current/next session's focus drill. Not synced (a local preference).
 export type AreaKey = "driving" | "irons" | "chipping" | "pitching" | "putting";
-export type DrillOverride = { name: string; how: string };
+export type DrillOverride = { name: string; how: string; video?: string };
 export type DrillOverrides = Partial<Record<AreaKey, DrillOverride>>;
 
 // Convenience input type for writers — updatedAt/deleted are stamped by saveSession.
@@ -115,6 +140,7 @@ class RangeCardDB extends Dexie {
   sessions!: Table<SavedSession, string>;
   rounds!: Table<SavedRound, string>;
   games!: Table<GameAttempt, string>;
+  swings!: Table<SavedSwing, string>;
   // meta uses out-of-line keys (Dexie spec ""), matching the original idb store
   meta!: Table<any, string>;
 
@@ -168,6 +194,16 @@ class RangeCardDB extends Dexie {
       meta: "",
       rounds: "id, date, updatedAt",
       games: "id, gameId, date, updatedAt",
+    });
+
+    // v6 — adds the `swings` store for on-device swing-check captures.
+    // Existing stores unchanged; no upgrade function needed.
+    this.version(6).stores({
+      sessions: "id, date, weekId, updatedAt",
+      meta: "",
+      rounds: "id, date, updatedAt",
+      games: "id, gameId, date, updatedAt",
+      swings: "id, date, updatedAt",
     });
   }
 }
@@ -245,12 +281,31 @@ export async function restoreGameAttempt(id: string) {
   await db.games.update(id, { deleted: false, updatedAt: Date.now() });
 }
 
-// Wipe everything — sessions, rounds, games and settings. Used by "Reset app".
+// ---- swing check (mirror of the session/round/game helpers) ----
+export async function saveSwing(rec: SwingInput) {
+  await db.swings.put({
+    ...rec,
+    updatedAt: Date.now(),
+    deleted: rec.deleted ?? false,
+  } as SavedSwing);
+}
+
+export async function allSwings(): Promise<SavedSwing[]> {
+  const all = await db.swings.toArray();
+  return all.filter((s) => !s.deleted).sort((a, b) => a.createdAt - b.createdAt);
+}
+
+export async function deleteSwing(id: string) {
+  await db.swings.update(id, { deleted: true, updatedAt: Date.now() });
+}
+
+// Wipe everything — sessions, rounds, games, swings and settings. Used by "Reset app".
 export async function wipeAll() {
-  await db.transaction("rw", db.sessions, db.rounds, db.games, db.meta, async () => {
+  await db.transaction("rw", db.sessions, db.rounds, db.games, db.swings, db.meta, async () => {
     await db.sessions.clear();
     await db.rounds.clear();
     await db.games.clear();
+    await db.swings.clear();
     await db.meta.clear();
   });
 }

@@ -177,9 +177,14 @@ export function Library({
                     </div>
                     <div className="lib-how"><span className="lib-tag do">Do</span>{d.how}</div>
                     {d.why && <div className="lib-why"><span className="lib-tag why">Why</span>{d.why}</div>}
+                    {d.video && (
+                      <a className="drill-video" href={d.video} target="_blank" rel="noopener noreferrer">
+                        <Icon name="smart_display" size={16} />Watch on YouTube
+                      </a>
+                    )}
                     {onSwap && ak && (
                       <button className={"lib-swap" + (active ? " on" : "")}
-                              onClick={() => onSwap(ak, active ? null : { name: d.name, how: d.how })}>
+                              onClick={() => onSwap(ak, active ? null : { name: d.name, how: d.how, video: d.video })}>
                         <Icon name={active ? "check" : "swap_vert"} size={15} />
                         {active ? "In today’s session" : "Use in today’s session"}
                       </button>

@@ -22,6 +22,7 @@ import { Round, RoundSummary } from "@/components/Round";
 import { Games } from "@/components/Games";
 import { Routine } from "@/components/Routine";
 import { Course } from "@/components/Course";
+import { SwingCheck } from "@/components/SwingCheck";
 import { Mark } from "@/components/Mark";
 import { LiveRound } from "@/lib/round";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -32,10 +33,11 @@ import { useConfirm } from "@/components/Confirm";
 import {
   SavedSession, SessionInput, Strips, emptyStrips, countIn, ADHOC,
   DrillOverride, DrillOverrides, SavedRound, RoundInput,
-  GameAttempt, GameAttemptInput,
+  GameAttempt, GameAttemptInput, SavedSwing,
   saveSession, allSessions, deleteSession, restoreSession, uuid,
   saveRound, allRounds, deleteRound, restoreRound,
   saveGameAttempt, allGameAttempts, deleteGameAttempt, restoreGameAttempt,
+  allSwings,
   getMeta, setMeta, delMeta,
 } from "@/lib/db";
 import { solidPct } from "@/lib/stats";
@@ -379,6 +381,7 @@ export default function Page() {
     { session: SavedSession; history: SavedSession[]; nextCursor: { week: number; session: number } } | null
   >(null);
   const [rounds, setRounds] = useState<SavedRound[]>([]);
+  const [swings, setSwings] = useState<SavedSwing[]>([]);
   const [round, setRound] = useState<LiveRound | null>(null);
   const [roundView, setRoundView] = useState<{ round: SavedRound; fresh: boolean } | null>(null);
   const [games, setGames] = useState<GameAttempt[]>([]);
@@ -404,6 +407,7 @@ export default function Page() {
         setHistory(await allSessions());
         setRounds(await allRounds());
         setGames(await allGameAttempts());
+        setSwings(await allSwings());
         setRound((await getMeta<LiveRound>("roundDraft")) ?? null);
         setName((await getMeta<string>("name")) ?? "");
         setPlannedMiss((await getMeta<string>("plannedMiss")) ?? "");
@@ -825,7 +829,7 @@ export default function Page() {
                          editMode={!!editOrig} onFinish={finishSession} onDiscard={discard} />
         )}
         {tab === "trends" && (
-          <Trends history={history} rounds={rounds} onDelete={onDelete} onEdit={editSession}
+          <Trends history={history} rounds={rounds} swings={swings} onDelete={onDelete} onEdit={editSession}
                   onBack={() => { setTab("more"); setTrendsOpenData(false); }}
                   onStart={startSession} onImported={async () => setHistory(await allSessions())}
                   openData={trendsOpenData}
@@ -849,7 +853,7 @@ export default function Page() {
         )}
         {tab === "more" && (
           <More history={history} plannedMiss={plannedMiss} overrides={overrides} onSwap={swapDrill}
-                games={games} onSaveGame={saveGame} onDeleteGame={removeGame}
+                games={games} swings={swings} onSaveGame={saveGame} onDeleteGame={removeGame}
                 onOpenTrends={() => setTab("trends")}
                 onOpenBackup={() => { setTrendsOpenData(true); setTab("trends"); }}
                 sessionDraft={isDraft ? live!.sessionLabel : null}
@@ -893,7 +897,7 @@ export default function Page() {
 }
 
 function More({
-  history, plannedMiss, overrides, onSwap, games, onSaveGame, onDeleteGame, onPracticeFix,
+  history, plannedMiss, overrides, onSwap, games, swings, onSaveGame, onDeleteGame, onPracticeFix,
   onOpenTrends, onOpenBackup, sessionDraft, onResumeSession, hasRound, onResumeRound,
 }: {
   history: SavedSession[];
@@ -901,6 +905,7 @@ function More({
   overrides: DrillOverrides;
   onSwap: (area: keyof DrillOverrides, drill: DrillOverride | null) => void;
   games: GameAttempt[];
+  swings: SavedSwing[];
   onSaveGame: (gameId: string, score: number) => void;
   onDeleteGame: (id: string) => void;
   onPracticeFix: (fault: import("@/lib/faults").Fault) => void;
@@ -911,7 +916,7 @@ function More({
   hasRound: boolean;
   onResumeRound: () => void;
 }) {
-  const [view, setView] = useState<"menu" | "prep" | "routine" | "course" | "library" | "fixes" | "games" | "about">("menu");
+  const [view, setView] = useState<"menu" | "prep" | "routine" | "course" | "library" | "fixes" | "games" | "swing" | "about">("menu");
   const [libFocus, setLibFocus] = useState<import("@/lib/faults").Fault | null>(null);
   if (view === "about") return <About onBack={() => setView("menu")} />;
   if (view === "prep") return <Prep onBack={() => setView("menu")} />;
@@ -927,10 +932,11 @@ function More({
     );
   if (view === "fixes")
     return (
-      <Fixes onBack={() => setView("menu")} history={history} plannedMiss={plannedMiss}
+      <Fixes onBack={() => setView("menu")} history={history} plannedMiss={plannedMiss} swings={swings}
              onPractice={onPracticeFix}
              onBrowseDrills={(f) => { setLibFocus(f); setView("library"); }} />
     );
+  if (view === "swing") return <SwingCheck onBack={() => setView("menu")} />;
   return (
     <>
       <header className="hdr">
@@ -995,6 +1001,11 @@ function More({
           <button className="more-row" onClick={() => setView("library")}>
             <span className="more-ic"><Icon name="menu_book" size={22} color="var(--green)" /></span>
             <span className="more-txt"><b>Drill library</b><span>Alternate drills for every practice area</span></span>
+            <Icon name="chevron_right" size={20} color="var(--icon-muted)" />
+          </button>
+          <button className="more-row" onClick={() => setView("swing")}>
+            <span className="more-ic"><Icon name="videocam" size={22} color="var(--green)" /></span>
+            <span className="more-txt"><b>Swing check</b><span>Record a swing, see your measured positions</span></span>
             <Icon name="chevron_right" size={20} color="var(--icon-muted)" />
           </button>
           <button className="more-row" onClick={() => setView("about")}>
@@ -1359,7 +1370,7 @@ function SessionScreen({
   week, session, pitchFocus, live, setLive, overrides, onRestoreDrill, editMode, onFinish, onDiscard,
 }: {
   week: Week; session: Session;
-  pitchFocus: { name: string; how: string; sticks: string | null };
+  pitchFocus: { name: string; how: string; sticks: string | null; video?: string };
   live: Live;
   setLive: (l: Live) => void;
   overrides: DrillOverrides;
@@ -1424,20 +1435,20 @@ function SessionScreen({
   const total = steps.length;
   const canFinish = editMode || logged > 0;
 
-  const drillFor = (step: StepDef): { line: string; cards: { how: string; name?: string }[]; sticks: string[]; swapped?: boolean } => {
+  const drillFor = (step: StepDef): { line: string; cards: { how: string; name?: string; video?: string }[]; sticks: string[]; swapped?: boolean } => {
     const ov = editMode ? undefined : overrides[step.area];
     if (ov) {
       return step.area === "pitching"
-        ? { line: PITCHING_DRILL, cards: [{ how: ov.how, name: ov.name }], sticks: [], swapped: true }
-        : { line: ov.name, cards: [{ how: ov.how }], sticks: [], swapped: true };
+        ? { line: PITCHING_DRILL, cards: [{ how: ov.how, name: ov.name, video: ov.video }], sticks: [], swapped: true }
+        : { line: ov.name, cards: [{ how: ov.how, video: ov.video }], sticks: [], swapped: true };
     }
-    if (step.area === "chipping") return { line: session.chip.name, cards: [{ how: session.chip.how }], sticks: session.chip.sticks ? [session.chip.sticks] : [] };
-    if (step.area === "irons") return { line: session.iron.name, cards: [{ how: session.iron.how }], sticks: session.iron.sticks ? [session.iron.sticks] : [] };
-    if (step.area === "driving") return { line: session.drive.name, cards: [{ how: session.drive.how }], sticks: session.drive.sticks ? [session.drive.sticks] : [] };
-    if (step.area === "pitching") return { line: PITCHING_DRILL, cards: [{ how: pitchFocus.how, name: pitchFocus.name }], sticks: pitchFocus.sticks ? [pitchFocus.sticks] : [] };
+    if (step.area === "chipping") return { line: session.chip.name, cards: [{ how: session.chip.how, video: session.chip.video }], sticks: session.chip.sticks ? [session.chip.sticks] : [] };
+    if (step.area === "irons") return { line: session.iron.name, cards: [{ how: session.iron.how, video: session.iron.video }], sticks: session.iron.sticks ? [session.iron.sticks] : [] };
+    if (step.area === "driving") return { line: session.drive.name, cards: [{ how: session.drive.how, video: session.drive.video }], sticks: session.drive.sticks ? [session.drive.sticks] : [] };
+    if (step.area === "pitching") return { line: PITCHING_DRILL, cards: [{ how: pitchFocus.how, name: pitchFocus.name, video: pitchFocus.video }], sticks: pitchFocus.sticks ? [pitchFocus.sticks] : [] };
     return {
       line: session.putts[0]?.name ?? "",
-      cards: session.putts.map((p) => ({ how: p.how })),
+      cards: session.putts.map((p) => ({ how: p.how, video: p.video })),
       sticks: session.putts.map((p) => p.sticks).filter((x): x is string => !!x),
     };
   };
@@ -1621,7 +1632,7 @@ function SessionScreen({
                 <span className="hint" style={{ margin: 0 }}>hold a count to subtract</span>
               </div>
 
-              {!isQuick && d.cards.map((c, i) => <DrillCard key={i} how={c.how} name={c.name} />)}
+              {!isQuick && d.cards.map((c, i) => <DrillCard key={i} how={c.how} name={c.name} video={c.video} />)}
               {!isQuick && d.sticks.map((s, i) => <Stick key={i} text={s} />)}
 
               <button className="block-continue" onClick={() => advance(step.id)}>
@@ -1686,11 +1697,16 @@ function Block({
   );
 }
 
-function DrillCard({ how, name }: { how: string; name?: string }) {
+function DrillCard({ how, name, video }: { how: string; name?: string; video?: string }) {
   return (
     <div className="drill">
       <div className="drill-t"><Icon name="bolt" size={18} color="var(--green)" />{name ?? "Focus drill"}</div>
       <div className="drill-b">{how}</div>
+      {video && (
+        <a className="drill-video" href={video} target="_blank" rel="noopener noreferrer">
+          <Icon name="smart_display" size={16} />Watch on YouTube
+        </a>
+      )}
     </div>
   );
 }

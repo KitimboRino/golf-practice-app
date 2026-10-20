@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { SavedSession, SavedRound, AreaKey, exportBackup, importBackup, isAdhoc } from "@/lib/db";
+import { SavedSession, SavedRound, SavedSwing, SwingPhase, AreaKey, exportBackup, importBackup, isAdhoc } from "@/lib/db";
 import { PLAN } from "@/lib/plan";
 import { solidPct, fairwayPct, puttPct, pitchPct, ironsByClub } from "@/lib/stats";
 import { roundStats } from "@/lib/round";
@@ -45,11 +45,12 @@ function downloadText(name: string, text: string) {
 }
 
 export function Trends({
-  history, rounds, onDelete, onEdit, onStart, onImported, onBack, openData,
+  history, rounds, swings, onDelete, onEdit, onStart, onImported, onBack, openData,
   goal, onSaveGoal, onClearGoal,
 }: {
   history: SavedSession[];
   rounds: SavedRound[];
+  swings: SavedSwing[];
   onDelete: (id: string) => void;
   onEdit: (s: SavedSession) => void;
   onStart: () => void;
@@ -180,6 +181,14 @@ export function Trends({
   const pitch = history.filter((s) => pitchN(s) > 0).map(pitchPct);
   const pitchLogged = history.some((s) => pitchN(s) > 0);
 
+  // Swing-check trend — top-of-backswing turn, oldest first (saveSwing already
+  // sorts allSwings() by createdAt). The one checkpoint most worth tracking
+  // over time; the other three phases/measurements stay on the swing-check
+  // results screen itself rather than cluttering Trends with 12 tiny charts.
+  const shoulderTurnTop = swings.map((s) => s.measurements.top.shoulderTurnDeg);
+  const hipTurnTop = swings.map((s) => s.measurements.top.hipTurnDeg);
+  const swingLogged = swings.length > 0;
+
   const weeks = PLAN.filter((w) => history.some((s) => s.weekId === w.id));
   const histRows = wkFilter ? history.filter((s) => s.weekId === wkFilter) : history;
   const shown = showAll ? histRows : histRows.slice(-4);
@@ -258,6 +267,12 @@ export function Trends({
         <ChartCard title="Fairways found %" icon="golf_course" data={fair} />
         {pitchLogged && <ChartCard title="Pitch accuracy %" icon="arrow_outward" data={pitch} />}
         <ChartCard title="Putts made %" icon="adjust" data={putt} />
+        {swingLogged && (
+          <>
+            <ChartCard title="Shoulder turn at top" icon="videocam" data={shoulderTurnTop} unit="°" max={100} axPrefix="" />
+            <ChartCard title="Hip turn at top" icon="videocam" data={hipTurnTop} unit="°" max={100} axPrefix="" />
+          </>
+        )}
 
         <IronsByClub history={history} />
 
@@ -739,11 +754,14 @@ function Compare({
 }
 
 function ChartCard({
-  title, icon, data,
+  title, icon, data, unit = "%", max = 100, axPrefix = "S",
 }: {
   title: string;
   icon: string;
   data: number[];
+  unit?: string;
+  max?: number; // the value a full-height chart represents, e.g. 100 for a percentage
+  axPrefix?: string; // "S" = session (existing charts); swing-check charts pass "" — these aren't sessions
 }) {
   const n = data.length;
   const last = data[n - 1];
@@ -751,7 +769,7 @@ function ChartCard({
   const shownVal = useCountUp(last);
 
   const X = (i: number) => (n <= 1 ? 150 : 10 + i * (280 / (n - 1)));
-  const Y = (v: number) => 78 - (v / 100) * 64;
+  const Y = (v: number) => 78 - (v / max) * 64;
   const line = data.map((v, i) => `${i ? "L" : "M"}${X(i).toFixed(1)} ${Y(v).toFixed(1)}`).join(" ");
   const area = `${line} L ${X(n - 1).toFixed(1)} 78 L ${X(0).toFixed(1)} 78 Z`;
   const gid = "ar-" + title.replace(/\W/g, "");
@@ -764,11 +782,11 @@ function ChartCard({
           {delta !== null && (
             <div className={"chart-delta" + (delta < 0 ? " down" : "")}>
               <Icon name={delta < 0 ? "arrow_downward" : "arrow_upward"} size={15} />
-              {Math.abs(delta)} pts vs last session
+              {Math.abs(delta)}{unit === "%" ? " pts" : unit} vs last session
             </div>
           )}
         </div>
-        <div className="chart-val num">{shownVal}<span className="u">%</span></div>
+        <div className="chart-val num">{shownVal}<span className="u">{unit}</span></div>
       </div>
       <svg viewBox="0 0 300 86">
         <defs>
@@ -783,7 +801,7 @@ function ChartCard({
         <path d={line} className="chart-line" />
         <circle cx={X(n - 1)} cy={Y(last)} r="4.5" className="chart-marker" />
       </svg>
-      <div className="chart-ax"><span>S1</span><span>S{n}</span></div>
+      <div className="chart-ax"><span>{axPrefix}1</span><span>{axPrefix}{n}</span></div>
     </div>
   );
 }

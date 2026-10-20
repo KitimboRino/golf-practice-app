@@ -11,7 +11,7 @@
  *
  * Bump VERSION to force a clean cache wipe on the next deploy.
  */
-const VERSION = "rc-v4";
+const VERSION = "rc-v5";
 const NAV_CACHE = VERSION + "-nav";
 const ASSET_CACHE = VERSION + "-assets";
 const KEEP = [NAV_CACHE, ASSET_CACHE];
@@ -31,12 +31,21 @@ const PHOTOS = [
   "/iron-balls.webp",
 ];
 
+// Self-hosted MoveNet SinglePose Lightning (components/SwingCheck.tsx /
+// lib/swingPose.ts) — precached so swing check still works with no
+// connection after the first load, same reasoning as the photos above.
+const SWING_MODEL = [
+  "/models/movenet-lightning/model.json",
+  "/models/movenet-lightning/group1-shard1of2.bin",
+  "/models/movenet-lightning/group1-shard2of2.bin",
+];
+
 self.addEventListener("install", (event) => {
   self.skipWaiting();
   event.waitUntil(
     (async () => {
       const cache = await caches.open(ASSET_CACHE);
-      await Promise.allSettled(PHOTOS.map((p) => cache.add(p)));
+      await Promise.allSettled([...PHOTOS, ...SWING_MODEL].map((p) => cache.add(p)));
     })(),
   );
 });

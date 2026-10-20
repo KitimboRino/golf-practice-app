@@ -1,6 +1,9 @@
 // Ported directly from the 4-week Golf Training Plan spreadsheet.
-export type Focus = { name: string; how: string; sticks: string | null };
-export type PuttDrill = { name: string; how: string; sticks: string | null };
+// video is optional and unset by default — a YouTube link, opened in the
+// system browser rather than embedded (the app stays usable with no
+// connection; video playback can't be).
+export type Focus = { name: string; how: string; sticks: string | null; video?: string };
+export type PuttDrill = { name: string; how: string; sticks: string | null; video?: string };
 export type Session = { label: string; drive: Focus; iron: Focus; chip: Focus; putts: PuttDrill[]; };
 export type Week = { id: string; short: string; title: string; focus: string; sessions: Session[]; };
 

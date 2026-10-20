@@ -3,9 +3,13 @@
 // Pairs with plan.ts: use pitchFocus[i] for session i, and LIBRARY as a
 // swap-in bench of alternates for any area.
 
-export type LibDrill = { name: string; how: string; why: string; ref: string };
+// video is optional and unset by default — a YouTube link, opened in the
+// system browser rather than embedded (the app stays usable with no
+// connection; video playback can't be). ref is a separate, existing field
+// (a short source citation, e.g. which book) — not a link.
+export type LibDrill = { name: string; how: string; why: string; ref: string; video?: string };
 export type LibArea = { area: string; drills: LibDrill[] };
-export type Focus = { name: string; how: string; sticks: string | null };
+export type Focus = { name: string; how: string; sticks: string | null; video?: string };
 
 export const LIBRARY: LibArea[] = [
   {

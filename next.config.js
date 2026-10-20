@@ -32,7 +32,10 @@ const csp = [
     " https://z.overpass-api.de https://lz4.overpass-api.de https://overpass-api.de https://maps.mail.ru",
   "manifest-src 'self'",
   "worker-src 'self'",
-  "media-src 'none'",
+  // 'self' for the swing-check camera recording (components/SwingCheck.tsx) played
+  // back from a MediaRecorder blob; blob: is the recorded clip itself, never a
+  // remote source.
+  "media-src 'self' blob:",
   "frame-src 'none'",
   "child-src 'none'",
   "object-src 'none'",
@@ -43,7 +46,7 @@ const csp = [
 ].join("; ");
 
 const permissionsPolicy = [
-  "accelerometer=()", "autoplay=()", "camera=()", "display-capture=()",
+  "accelerometer=()", "autoplay=()", "camera=(self)", "display-capture=()",
   "encrypted-media=()", "fullscreen=(self)", "geolocation=(self)", "gyroscope=()",
   "magnetometer=()", "microphone=()", "midi=()", "payment=()",
   "picture-in-picture=()", "publickey-credentials-get=()", "screen-wake-lock=()",
