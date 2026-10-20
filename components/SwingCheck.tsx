@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "./Icon";
 import { useToast } from "./Toast";
-import { tapFx, doneFx } from "@/lib/haptics";
+import { tapFx, bumpFx, doneFx } from "@/lib/haptics";
 import { uuid, saveSwing, SwingPhase, SwingMeasurement } from "@/lib/db";
 import { analyzeSwingVideo, frameThumbnail } from "@/lib/swingPose";
 import { detectPhases } from "@/lib/swingPhases";
@@ -11,6 +11,7 @@ import { measurePhases } from "@/lib/swingAngles";
 import { SWING_BASELINE, statusFor } from "@/lib/swingBaseline";
 
 const RECORD_MS = 4000;
+const COUNTDOWN_FROM = 3; // seconds — only for the manual button; auto-detect must fire instantly
 const PHASE_ORDER: SwingPhase[] = ["address", "top", "impact", "finish"];
 const PHASE_LABEL: Record<SwingPhase, string> = {
   address: "Address", top: "Top of backswing", impact: "Impact", finish: "Finish",
@@ -51,6 +52,9 @@ export function SwingCheck({ onBack }: { onBack: () => void }) {
   const [measurements, setMeasurements] = useState<Record<SwingPhase, SwingMeasurement> | null>(null);
   const [autoDetect, setAutoDetect] = useState(true);
   const [armState, setArmState] = useState<ArmState>(null); // mirrors armStateRef, for display only
+  const [countdown, setCountdown] = useState<number | null>(null); // manual-button only
+  const [recordKey, setRecordKey] = useState(0); // bumped each recording start, so the progress ring replays
+  const [secondsLeft, setSecondsLeft] = useState(0);
   const toast = useToast();
 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -86,12 +90,48 @@ export function SwingCheck({ onBack }: { onBack: () => void }) {
     }
   }, [stage]);
 
+  // Manual-button countdown — ticks every second with a haptic tap, then
+  // fires the real record() at zero. Auto-detect never goes through this; it
+  // calls record() directly, since the whole point is starting the instant
+  // motion is seen, not after a delay that would miss the swing.
+  useEffect(() => {
+    if (countdown === null) return;
+    if (countdown === 0) {
+      setCountdown(null);
+      record();
+      return;
+    }
+    const t = window.setTimeout(() => {
+      tapFx();
+      setCountdown((c) => (c === null ? null : c - 1));
+    }, 1000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [countdown]);
+
+  // Drives the numeric "4 3 2 1" readout during recording — separate from
+  // the ring's own smooth CSS animation (driven by transition, not this),
+  // this just needs to tick once a second.
+  useEffect(() => {
+    if (stage !== "recording") return;
+    setSecondsLeft(Math.ceil(RECORD_MS / 1000));
+    const start = Date.now();
+    const id = window.setInterval(() => {
+      const left = Math.max(0, Math.ceil((RECORD_MS - (Date.now() - start)) / 1000));
+      setSecondsLeft(left);
+      if (left === 0) clearInterval(id);
+    }, 200);
+    return () => clearInterval(id);
+  }, [stage]);
+
   // Motion auto-detect — see the constants block above for the reasoning.
   // Only watches while actually on the camera screen with auto-detect on;
-  // stops cleanly the moment recording starts (own stage effect dependency)
-  // or the screen is left.
+  // stops cleanly the moment recording starts (own stage effect dependency),
+  // a manual countdown begins (otherwise it could fire mid-countdown and
+  // race with the countdown's own eventual record() call), or the screen
+  // is left.
   useEffect(() => {
-    if (stage !== "camera" || !autoDetect) {
+    if (stage !== "camera" || !autoDetect || countdown !== null) {
       armStateRef.current = null;
       setArmState(null);
       return;
@@ -151,7 +191,7 @@ export function SwingCheck({ onBack }: { onBack: () => void }) {
       cancelAnimationFrame(rafId);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stage, autoDetect]);
+  }, [stage, autoDetect, countdown]);
 
   const stopCamera = () => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -215,7 +255,8 @@ export function SwingCheck({ onBack }: { onBack: () => void }) {
   const record = () => {
     const stream = streamRef.current;
     if (!stream || recorderRef.current) return; // already recording — auto-detect and the manual button can both call this
-    tapFx();
+    bumpFx(); // a stronger tap than the countdown ticks — this is the real thing starting
+    setRecordKey((k) => k + 1); // replays the progress-ring CSS animation even on back-to-back recordings
     chunksRef.current = [];
     const recorder = new MediaRecorder(stream, { mimeType: pickMimeType() });
     recorder.ondataavailable = (e) => { if (e.data.size) chunksRef.current.push(e.data); };
@@ -291,9 +332,15 @@ export function SwingCheck({ onBack }: { onBack: () => void }) {
               <video ref={videoRef} playsInline muted className="swingcheck-video" />
               <div className="swingcheck-guide" aria-hidden />
               {stage === "recording" && (
-                <span className="swingcheck-rec"><span className="swingcheck-dot" />Recording</span>
+                <span className="swingcheck-rec" key={recordKey}>
+                  <RecordingRing ms={RECORD_MS} />
+                  <span className="swingcheck-rec-n num">{secondsLeft}</span>
+                </span>
               )}
-              {stage === "camera" && armState && (
+              {stage === "camera" && countdown !== null && (
+                <span className="swingcheck-countdown num" key={countdown}>{countdown || "Go"}</span>
+              )}
+              {stage === "camera" && countdown === null && armState && (
                 <span className={"swingcheck-arm " + armState}>
                   <span className="swingcheck-dot" />
                   {armState === "settling" ? "Settling…" : "Ready — swing when you like"}
@@ -303,21 +350,23 @@ export function SwingCheck({ onBack }: { onBack: () => void }) {
             <div className="swingcheck-step">
               {stage === "recording"
                 ? "Recording…"
-                : armState === "ready"
-                  ? "Watching — it'll start recording the moment you move"
-                  : armState === "settling"
-                    ? "Full body in frame, face-on, about 8ft back — hold still a moment"
-                    : "Full body in frame, face-on, about 8ft back"}
+                : countdown !== null
+                  ? "Get into your stance…"
+                  : armState === "ready"
+                    ? "Watching — it'll start recording the moment you move"
+                    : armState === "settling"
+                      ? "Full body in frame, face-on, about 8ft back — hold still a moment"
+                      : "Full body in frame, face-on, about 8ft back"}
             </div>
             <button
               className="cta"
-              onClick={record}
-              disabled={stage === "recording"}
+              onClick={() => { tapFx(); setCountdown(COUNTDOWN_FROM); }}
+              disabled={stage === "recording" || countdown !== null}
             >
               <Icon name="fiber_manual_record" size={20} fill />
-              {stage === "recording" ? "Recording…" : "Record now"}
+              {stage === "recording" ? "Recording…" : countdown !== null ? "Starting…" : "Record now"}
             </button>
-            {stage === "camera" && (
+            {stage === "camera" && countdown === null && (
               <button
                 className="swingcheck-autotoggle"
                 onClick={() => { tapFx(); setAutoDetect((v) => !v); }}
@@ -379,6 +428,36 @@ export function SwingCheck({ onBack }: { onBack: () => void }) {
         )}
       </div>
     </>
+  );
+}
+
+// A real countdown ring, not just a pulsing dot — mounts fully "drawn" and
+// then animates down to empty over `ms`, via a CSS transition on
+// stroke-dashoffset. A plain two-rule CSS trick (base state + an override
+// selector with higher specificity) does NOT work for this: both rules
+// apply in the same paint, so there's never an actual "before" frame to
+// transition from and the browser just renders the end state instantly.
+// The double requestAnimationFrame here is what guarantees the "full ring"
+// state is genuinely painted on screen first, so the change to "empty" one
+// tick later is a real transition instead of an instant jump.
+function RecordingRing({ ms }: { ms: number }) {
+  const [full, setFull] = useState(true);
+  useEffect(() => {
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => setFull(false));
+    });
+    return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2); };
+  }, []);
+  return (
+    <svg className="swingcheck-ring" viewBox="0 0 44 44" aria-hidden>
+      <circle className="swingcheck-ring-track" cx="22" cy="22" r="19" />
+      <circle
+        className="swingcheck-ring-fill"
+        cx="22" cy="22" r="19"
+        style={{ strokeDashoffset: full ? 119.4 : 0, transitionDuration: `${ms}ms` }}
+      />
+    </svg>
   );
 }
 
