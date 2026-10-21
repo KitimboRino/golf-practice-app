@@ -331,17 +331,12 @@ export function SwingCheck({ onBack }: { onBack: () => void }) {
             <div className="swingcheck-preview">
               <video ref={videoRef} playsInline muted className="swingcheck-video" />
               <svg className="swingcheck-guide" viewBox="0 0 160 300" preserveAspectRatio="xMidYMid meet" aria-hidden>
-                <circle cx="82" cy="30" r="13" />
-                <path d="M78 43 L86 100" />
-                <path d="M58 54 L106 46" />
-                <path d="M58 54 L78 100 L80 150" />
-                <path d="M106 46 L88 100 L84 150" />
-                <path d="M62 150 L102 146" />
-                <path d="M70 148 L62 215 L54 270" />
-                <path d="M94 147 L104 215 L112 270" />
-                <path d="M82 100 L82 260" />
-                <path d="M40 272 L68 272" />
-                <path d="M98 272 L126 272" />
+                <g transform="rotate(4 80 100)">
+                  <circle cx="80" cy="28" r="15" />
+                  <rect x="56" y="50" width="48" height="82" rx="22" />
+                  <rect x="50" y="120" width="22" height="145" rx="11" />
+                  <rect x="88" y="120" width="22" height="145" rx="11" />
+                </g>
               </svg>
               {stage === "recording" && (
                 <span className="swingcheck-rec" key={recordKey}>
