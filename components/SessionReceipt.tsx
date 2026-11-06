@@ -1,7 +1,7 @@
 "use client";
 
 import { SavedSession } from "@/lib/db";
-import { Week, Session, PLAN } from "@/lib/plan";
+import { Week, Session, PLAN, PLAN_SLOT_KEYS, planSlotKey } from "@/lib/plan";
 import { solidPct } from "@/lib/stats";
 import { sessionBalls, sessionMinutes } from "@/lib/verdict";
 import { shareCard } from "@/lib/shareCard";
@@ -13,11 +13,12 @@ const wkNum = (id: string) => id.replace(/[^0-9]/g, "") || "0";
 const sNum = (l: string) => l.replace(/[^0-9]/g, "") || "?";
 
 export function SessionReceipt({
-  session, history, quick = false, nextWeek, nextSession, onDone, onNext,
+  session, history, quick = false, planComplete = false, nextWeek, nextSession, onDone, onNext,
 }: {
   session: SavedSession;
   history: SavedSession[];
   quick?: boolean;
+  planComplete?: boolean;
   nextWeek: Week;
   nextSession: Session;
   onDone: () => void;
@@ -26,6 +27,14 @@ export function SessionReceipt({
   const toast = useToast();
   const balls = sessionBalls(session);
   const mins = sessionMinutes(session);
+
+  // only meaningful when planComplete — total reps logged across the whole
+  // 4-week plan, for the one-time "you finished it" milestone screen
+  const planBalls = planComplete
+    ? history
+        .filter((s) => PLAN_SLOT_KEYS.includes(planSlotKey(s.weekId, s.sessionLabel)))
+        .reduce((n, s) => n + sessionBalls(s), 0)
+    : 0;
 
   const p = session.pitching ?? { close: 0, short: 0, long: 0 };
   const tag = (a: "chipping" | "pitching" | "irons" | "driving" | "putting") => {
@@ -63,18 +72,21 @@ export function SessionReceipt({
   const best = !headRow && strikeHist.every((s) => solidPct(s) <= solidNow);
 
   async function share() {
-    const head = quick
+    const head = planComplete
+      ? "RangeCard · Plan complete"
+      : quick
       ? "RangeCard · Quick session"
       : `RangeCard · Week ${wkNum(session.weekId)} · Session ${sNum(session.sessionLabel)}`;
     const lines = [
       head,
+      ...(planComplete ? [`Finished the 4-week plan — ${planBalls} balls hit`] : []),
       `${headCap[0].toUpperCase() + headCap.slice(1)} ${solidNow}%${delta !== null ? ` (${delta >= 0 ? "+" : ""}${delta})` : ""}`,
       ...rows.map((r) => `${r.label}${r.note ? ` (${r.note})` : ""}: ${r.made} of ${r.of}`),
     ].join("\n");
     const outcome = await shareCard(
       {
-        kicker: quick ? "Quick session" : `Week ${wkNum(session.weekId)} · Session ${sNum(session.sessionLabel)}`,
-        title: quick ? "Quick session logged" : `Session ${sNum(session.sessionLabel)} logged`,
+        kicker: planComplete ? "Plan complete" : quick ? "Quick session" : `Week ${wkNum(session.weekId)} · Session ${sNum(session.sessionLabel)}`,
+        title: planComplete ? "Finished the 4-week plan" : quick ? "Quick session logged" : `Session ${sNum(session.sessionLabel)} logged`,
         meta: quick
           ? `${balls} ball${balls === 1 ? "" : "s"}${mins ? ` · ${mins} min` : ""}`
           : `${ownWeek ? ownWeek.title : ""} · ${balls} balls${mins ? ` · ${mins} min` : ""}`,
@@ -103,14 +115,19 @@ export function SessionReceipt({
         imgH={900}
         bottom={
           <>
-            <span className="photo-hdr-badge">
-              <Icon name="check" size={14} />LOGGED
+            <span className={"photo-hdr-badge" + (planComplete ? " gold" : "")}>
+              <Icon name={planComplete ? "emoji_events" : "check"} size={14} />
+              {planComplete ? "PLAN COMPLETE" : "LOGGED"}
             </span>
             <h1 className="photo-hdr-title">
-              {quick ? "Quick session, done." : `Session ${sNum(session.sessionLabel)}, done.`}
+              {planComplete
+                ? "You finished the plan."
+                : quick ? "Quick session, done." : `Session ${sNum(session.sessionLabel)}, done.`}
             </h1>
             <span className="photo-hdr-sub">
-              {quick
+              {planComplete
+                ? `4 weeks · 8 sessions · ${planBalls} balls hit`
+                : quick
                 ? `${balls} ball${balls === 1 ? "" : "s"}${mins ? ` · ${mins} min` : ""}`
                 : `W${wkNum(session.weekId)}${ownWeek ? ` · ${ownWeek.title}` : ""} · ${balls} balls${mins ? ` · ${mins} min` : ""}`}
             </span>
@@ -154,12 +171,16 @@ export function SessionReceipt({
           </button>
           <button className="receipt-next" onClick={onNext}>
             <span>
-              <b>{quick
+              <b>{planComplete
+                ? `Keep practicing · ${nextWeek.short} · ${nextSession.label.replace(/ —.*/, "")}`
+                : quick
                 ? `Back to your plan · ${nextWeek.short} · ${nextSession.label.replace(/ —.*/, "")}`
                 : `Next: ${nextWeek.short} · ${nextSession.label.replace(/ —.*/, "")}`}</b>
-              <small>{worst ? `${worst.label.split(" ·")[0]} needs the attention` : "Keep the plan"}</small>
+              <small>{planComplete
+                ? "Replaying the plan — jump to any session anytime"
+                : worst ? `${worst.label.split(" ·")[0]} needs the attention` : "Keep the plan"}</small>
             </span>
-            <span className="icon-tile sm dim"><Icon name={quick ? "flag" : "event"} size={16} /></span>
+            <span className="icon-tile sm dim"><Icon name={planComplete ? "replay" : quick ? "flag" : "event"} size={16} /></span>
           </button>
           <button className="btn-ghost" onClick={onDone}>Done</button>
         </div>

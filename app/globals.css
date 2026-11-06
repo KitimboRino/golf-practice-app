@@ -2931,6 +2931,9 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
   padding: 6px 12px; border-radius: 14px; background: var(--state); color: var(--on-state);
   font-size: 12px; font-weight: 800; letter-spacing: 0.05em;
 }
+/* the one-time "finished the 4-week plan" milestone badge — same shape,
+   trophy tone instead of the ordinary logged-green */
+.photo-hdr-badge.gold { background: var(--sand); color: #2b1f05; }
 /* Same problem as .hero above, same fix: .icon-btn's --glass/--edge are tuned
    for sitting on --card/--bg, not an arbitrary photo. Scoped to photo headers
    only. */

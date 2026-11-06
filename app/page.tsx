@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { PLAN, Week, Session } from "@/lib/plan";
+import { PLAN, PLAN_SLOT_KEYS, planSlotKey, Week, Session } from "@/lib/plan";
 import { SESSION_FLOW } from "@/lib/prep";
 import { PITCH_FOCUS, PITCHING_DRILL, LIBRARY } from "@/lib/library";
 import { CATALOG } from "@/lib/faults";
@@ -378,7 +378,10 @@ export default function Page() {
   const [nudgeDismissedAt, setNudgeDismissedAt] = useState<string | null>(null);
   const [overrides, setOverrides] = useState<DrillOverrides>({});
   const [receipt, setReceipt] = useState<
-    { session: SavedSession; history: SavedSession[]; nextCursor: { week: number; session: number } } | null
+    {
+      session: SavedSession; history: SavedSession[]; nextCursor: { week: number; session: number };
+      planComplete: boolean;
+    } | null
   >(null);
   const [rounds, setRounds] = useState<SavedRound[]>([]);
   const [swings, setSwings] = useState<SavedSwing[]>([]);
@@ -676,6 +679,7 @@ export default function Page() {
     }
     const wasEdit = !!editOrig;
     const isAdhoc = live.weekId === ADHOC;
+    const wasComplete = PLAN_SLOT_KEYS.every((k) => history.some((s) => planSlotKey(s.weekId, s.sessionLabel) === k));
     const rec: SessionInput = {
       id: editOrig?.id ?? uuid(),
       createdAt: editOrig?.createdAt ?? Date.now(),
@@ -697,6 +701,8 @@ export default function Page() {
     }
 
     const all = await allSessions();
+    const isNowComplete = PLAN_SLOT_KEYS.every((k) => all.some((s) => planSlotKey(s.weekId, s.sessionLabel) === k));
+    const planComplete = !wasEdit && !isAdhoc && !wasComplete && isNowComplete;
     setHistory(all);
     setLive(null);
     setEditOrig(null);
@@ -706,7 +712,7 @@ export default function Page() {
       setTab("trends");
       toast.show("Changes saved");
     } else {
-      setReceipt({ session: all.find((x) => x.id === rec.id) ?? (rec as SavedSession), history: all, nextCursor });
+      setReceipt({ session: all.find((x) => x.id === rec.id) ?? (rec as SavedSession), history: all, nextCursor, planComplete });
       setTab("receipt");
     }
   }
@@ -796,6 +802,7 @@ export default function Page() {
         session={receipt.session}
         history={receipt.history}
         quick={receipt.session.weekId === ADHOC}
+        planComplete={receipt.planComplete}
         nextWeek={PLAN[receipt.nextCursor.week]}
         nextSession={PLAN[receipt.nextCursor.week].sessions[receipt.nextCursor.session]}
         onDone={() => { setReceipt(null); setTab("home"); }}

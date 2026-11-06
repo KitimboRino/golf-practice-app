@@ -273,3 +273,9 @@ export const PLAN: Week[] = [
     ]
   }
 ];
+
+export const planSlotKey = (weekId: string, label: string) => `${weekId}|${label}`;
+// every (week, session) slot in the plan, flattened — used to detect the
+// moment every slot has been logged at least once (the plan is "complete"),
+// regardless of the order they were done in.
+export const PLAN_SLOT_KEYS: string[] = PLAN.flatMap((w) => w.sessions.map((s) => planSlotKey(w.id, s.label)));
