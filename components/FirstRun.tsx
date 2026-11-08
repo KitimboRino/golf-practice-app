@@ -4,10 +4,17 @@ import { useState } from "react";
 import {
   OnbStage, Shot, READ_TARGET, READ_MIN, readFrom, planFraming,
 } from "@/lib/onboarding";
+import { Level } from "@/lib/plan";
 import { useConfirm } from "./Confirm";
 import { tapFx, bumpFx } from "@/lib/haptics";
 import { Icon } from "./Icon";
 import { Mark } from "./Mark";
+
+const LEVELS: { key: Level; title: string; sub: string; icon: string; tag?: string }[] = [
+  { key: "beginner", title: "Beginner", sub: "New to golf, or still building consistent contact.", icon: "eco" },
+  { key: "intermediate", title: "Intermediate", sub: "You play regularly and want to sharpen one miss.", icon: "trending_up", tag: "most golfers" },
+  { key: "professional", title: "Professional", sub: "Low handicap, chasing consistency and scoring under pressure.", icon: "military_tech" },
+];
 
 const MISSES: { key: string; title: string; sub: string; icon: string }[] = [
   { key: "right", title: "Right, a slice", sub: "Starts right or curves away late", icon: "east" },
@@ -35,15 +42,26 @@ export function FirstRun({
   onSetStage: (s: OnbStage) => void;
   readShots: Shot[];
   onReadShots: (s: Shot[]) => void;
-  onComplete: (miss: string) => void;
+  onComplete: (miss: string, level: Level) => void;
 }) {
   const [picker, setPicker] = useState<null | { prefill?: string }>(null);
+  const [resolvedMiss, setResolvedMiss] = useState<string>("varies");
+
+  const toLevel = (m: string) => {
+    setResolvedMiss(m);
+    setPicker(null);
+    onSetStage("level");
+  };
+
+  if (stage === "level") {
+    return <LevelPicker onPick={(level) => onComplete(resolvedMiss, level)} />;
+  }
 
   if (picker) {
     return (
       <MissList
         prefill={picker.prefill}
-        onPick={(m) => onComplete(m)}
+        onPick={toLevel}
         onBack={() => setPicker(null)}
       />
     );
@@ -72,13 +90,43 @@ export function FirstRun({
     return (
       <TheReveal
         shots={readShots}
-        onUsePlan={(m) => onComplete(m)}
+        onUsePlan={toLevel}
         onAdjust={(m) => setPicker({ prefill: m })}
       />
     );
   }
 
   return <Deal onStart={() => onSetStage("practice")} onKnowMiss={() => setPicker({})} />;
+}
+
+// ---------------------------------------------------------------------------
+// 3e — pick a level (last step, right before the plan activates)
+
+function LevelPicker({ onPick }: { onPick: (level: Level) => void }) {
+  return (
+    <div className="fr-wrap">
+      <div className="fr">
+        <header className="fr-head bare">
+          <div>
+            <div className="fr-head-title">One more thing — what's your level?</div>
+            <div className="fr-head-sub">Decides which drills you'll see. Change it anytime in Settings.</div>
+          </div>
+        </header>
+
+        <div className="miss-list">
+          {LEVELS.map((l) => (
+            <button key={l.key} className="miss-row" onClick={() => { tapFx(); onPick(l.key); }}>
+              <span>
+                <b>{l.title}{l.tag && <span className="focus-tag">{l.tag}</span>}</b>
+                <small>{l.sub}</small>
+              </span>
+              <Icon name={l.icon} size={24} color="var(--icon-muted)" />
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ---------------------------------------------------------------------------

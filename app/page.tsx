@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { PLAN, PLAN_SLOT_KEYS, planSlotKey, Week, Session } from "@/lib/plan";
+import {
+  PLANS, ALL_WEEKS, planSlotKey, planSlotKeysFor, Level, DEFAULT_LEVEL, LEVEL_LABEL, Week, Session,
+} from "@/lib/plan";
 import { SESSION_FLOW } from "@/lib/prep";
-import { PITCH_FOCUS, PITCHING_DRILL, LIBRARY } from "@/lib/library";
+import { PITCH_FOCUS_BY_LEVEL, PITCHING_DRILL, LIBRARY } from "@/lib/library";
 import { CATALOG } from "@/lib/faults";
 import { Outcome } from "@/components/Outcome";
 import { VoiceLogButton } from "@/components/VoiceLog";
@@ -41,7 +43,7 @@ import {
   getMeta, setMeta, delMeta,
 } from "@/lib/db";
 import { solidPct } from "@/lib/stats";
-import { todaysOneThing, sessionsThisMonth } from "@/lib/verdict";
+import { todaysOneThing, sessionsThisMonth, sessionBalls } from "@/lib/verdict";
 import { SessionReceipt } from "@/components/SessionReceipt";
 import { About } from "@/components/About";
 import { APP_VERSION } from "@/lib/version";
@@ -179,11 +181,14 @@ function anyLogged(l: Live) {
   return STRIP_TOTAL(l.strips) > 0 || !!l.bestClub || !!l.notes.trim();
 }
 
-// find the plan position of a saved session by weekId + label
-function locate(weekId: string, label: string): { week: number; session: number } | null {
-  for (let w = 0; w < PLAN.length; w++) {
-    if (PLAN[w].id !== weekId) continue;
-    const si = PLAN[w].sessions.findIndex((s) => s.label === label);
+// find the plan position of a saved session by weekId + label, within one
+// level's plan — a session logged under a different (now-inactive) level
+// correctly returns null, so the cursor simply doesn't move (callers already
+// handle that gracefully, same as editing an ad-hoc/quick session today).
+function locate(plan: Week[], weekId: string, label: string): { week: number; session: number } | null {
+  for (let w = 0; w < plan.length; w++) {
+    if (plan[w].id !== weekId) continue;
+    const si = plan[w].sessions.findIndex((s) => s.label === label);
     if (si >= 0) return { week: w, session: si };
   }
   return null;
@@ -375,12 +380,13 @@ export default function Page() {
   const [onb, setOnb] = useState<Onboarding | null>(null);
   const [readShots, setReadShots] = useState<Shot[]>([]);
   const [plannedMiss, setPlannedMiss] = useState<string>("");
+  const [level, setLevel] = useState<Level>(DEFAULT_LEVEL);
   const [nudgeDismissedAt, setNudgeDismissedAt] = useState<string | null>(null);
   const [overrides, setOverrides] = useState<DrillOverrides>({});
   const [receipt, setReceipt] = useState<
     {
       session: SavedSession; history: SavedSession[]; nextCursor: { week: number; session: number };
-      planComplete: boolean;
+      planComplete: boolean; level: Level; planBalls: number;
     } | null
   >(null);
   const [rounds, setRounds] = useState<SavedRound[]>([]);
@@ -414,6 +420,8 @@ export default function Page() {
         setRound((await getMeta<LiveRound>("roundDraft")) ?? null);
         setName((await getMeta<string>("name")) ?? "");
         setPlannedMiss((await getMeta<string>("plannedMiss")) ?? "");
+        const lvl = (await getMeta<Level>("planLevel")) ?? DEFAULT_LEVEL;
+        setLevel(lvl);
         setNudgeDismissedAt((await getMeta<string>("nudgeDismissedAt")) ?? null);
         setGoalState((await getMeta<Goal>("goal")) ?? null);
         setOverrides((await getMeta<DrillOverrides>("drillOverrides")) ?? {});
@@ -426,7 +434,7 @@ export default function Page() {
         const draft = await getMeta<Live>("draft");
         if (draft) {
           setLive(draft);
-          const loc = locate(draft.weekId, draft.sessionLabel);
+          const loc = locate(PLANS[lvl], draft.weekId, draft.sessionLabel);
           if (loc) setCursor(loc);
         } else {
           const c = await getMeta<{ week: number; session: number }>("cursor");
@@ -466,14 +474,16 @@ export default function Page() {
     await setMeta("readSession", { shots, completedAt: 0 } satisfies ReadSession);
   }
 
-  async function completeOnboarding(miss: string) {
+  async function completeOnboarding(miss: string, chosenLevel: Level) {
     const now = new Date().toISOString();
     setPlannedMiss(miss);
+    setLevel(chosenLevel);
     setOnboardedAt(now);
     setOnb(null);
     setReadShots([]);
     setCursor({ week: 0, session: 0 });
     await setMeta("plannedMiss", miss);
+    await setMeta("planLevel", chosenLevel);
     await setMeta("onboardedAt", now);
     await delMeta("onboarding");
     await delMeta("readSession");
@@ -583,10 +593,12 @@ export default function Page() {
     });
   }
 
-  const week = PLAN[cursor.week];
+  const activePlan = PLANS[level];
+  const week = activePlan[cursor.week];
   const session = week.sessions[cursor.session];
-  const flatIdx = PLAN.slice(0, cursor.week).reduce((n, w) => n + w.sessions.length, 0) + cursor.session;
-  const pitchFocus = PITCH_FOCUS[flatIdx] ?? PITCH_FOCUS[PITCH_FOCUS.length - 1];
+  const flatIdx = activePlan.slice(0, cursor.week).reduce((n, w) => n + w.sessions.length, 0) + cursor.session;
+  const levelPitchFocus = PITCH_FOCUS_BY_LEVEL[level];
+  const pitchFocus = levelPitchFocus[flatIdx] ?? levelPitchFocus[levelPitchFocus.length - 1];
   const isDraft = !!live && !editOrig;
   const draftHere = isDraft && live!.weekId === week.id && live!.sessionLabel === session.label;
 
@@ -652,9 +664,28 @@ export default function Page() {
     await delMeta("goal");
   }
 
+  async function changeLevel(newLevel: Level) {
+    if (newLevel === level) return;
+    if (isDraft) {
+      toast.show("Finish or discard your current session first");
+      return;
+    }
+    const ok = await confirm({
+      title: `Switch to ${LEVEL_LABEL[newLevel]}?`,
+      body: `Your session history is kept, but your plan cursor resets to ${LEVEL_LABEL[newLevel]} · Week 1 · Session 1.`,
+      confirmLabel: `Switch to ${LEVEL_LABEL[newLevel]}`,
+    });
+    if (!ok) return;
+    setLevel(newLevel);
+    setCursor({ week: 0, session: 0 });
+    await setMeta("planLevel", newLevel);
+    await setMeta("cursor", { week: 0, session: 0 });
+    toast.show(`Switched to ${LEVEL_LABEL[newLevel]}`);
+  }
+
   function resumeDraft() {
     if (!live) return;
-    const loc = locate(live.weekId, live.sessionLabel);
+    const loc = locate(PLANS[level], live.weekId, live.sessionLabel);
     if (loc) setCursor(loc);
     setTab("session");
   }
@@ -666,7 +697,7 @@ export default function Page() {
     }
     setEditOrig(s);
     setLive(toLive(s));
-    const loc = locate(s.weekId, s.sessionLabel);
+    const loc = locate(PLANS[level], s.weekId, s.sessionLabel);
     if (loc) setCursor(loc);
     setTab("session");
   }
@@ -679,7 +710,8 @@ export default function Page() {
     }
     const wasEdit = !!editOrig;
     const isAdhoc = live.weekId === ADHOC;
-    const wasComplete = PLAN_SLOT_KEYS.every((k) => history.some((s) => planSlotKey(s.weekId, s.sessionLabel) === k));
+    const slotKeys = planSlotKeysFor(level);
+    const wasComplete = slotKeys.every((k) => history.some((s) => planSlotKey(s.weekId, s.sessionLabel) === k));
     const rec: SessionInput = {
       id: editOrig?.id ?? uuid(),
       createdAt: editOrig?.createdAt ?? Date.now(),
@@ -695,14 +727,17 @@ export default function Page() {
     let nextCursor = cursor;
     if (!wasEdit && !isAdhoc) {
       let w = cursor.week, s = cursor.session + 1;
-      if (s >= PLAN[w].sessions.length) { s = 0; w = Math.min(w + 1, PLAN.length - 1); }
+      if (s >= activePlan[w].sessions.length) { s = 0; w = Math.min(w + 1, activePlan.length - 1); }
       nextCursor = { week: w, session: s };
       setCursor(nextCursor); await setMeta("cursor", nextCursor);
     }
 
     const all = await allSessions();
-    const isNowComplete = PLAN_SLOT_KEYS.every((k) => all.some((s) => planSlotKey(s.weekId, s.sessionLabel) === k));
+    const isNowComplete = slotKeys.every((k) => all.some((s) => planSlotKey(s.weekId, s.sessionLabel) === k));
     const planComplete = !wasEdit && !isAdhoc && !wasComplete && isNowComplete;
+    const planBalls = planComplete
+      ? all.filter((s) => slotKeys.includes(planSlotKey(s.weekId, s.sessionLabel))).reduce((n, s) => n + sessionBalls(s), 0)
+      : 0;
     setHistory(all);
     setLive(null);
     setEditOrig(null);
@@ -712,7 +747,7 @@ export default function Page() {
       setTab("trends");
       toast.show("Changes saved");
     } else {
-      setReceipt({ session: all.find((x) => x.id === rec.id) ?? (rec as SavedSession), history: all, nextCursor, planComplete });
+      setReceipt({ session: all.find((x) => x.id === rec.id) ?? (rec as SavedSession), history: all, nextCursor, planComplete, level, planBalls });
       setTab("receipt");
     }
   }
@@ -803,8 +838,10 @@ export default function Page() {
         history={receipt.history}
         quick={receipt.session.weekId === ADHOC}
         planComplete={receipt.planComplete}
-        nextWeek={PLAN[receipt.nextCursor.week]}
-        nextSession={PLAN[receipt.nextCursor.week].sessions[receipt.nextCursor.session]}
+        planBalls={receipt.planBalls}
+        levelLabel={LEVEL_LABEL[receipt.level]}
+        nextWeek={PLANS[receipt.level][receipt.nextCursor.week]}
+        nextSession={PLANS[receipt.level][receipt.nextCursor.week].sessions[receipt.nextCursor.session]}
         onDone={() => { setReceipt(null); setTab("home"); }}
         onNext={() => {
           setReceipt(null);
@@ -820,6 +857,7 @@ export default function Page() {
       <main id="main" className="tabview" tabIndex={-1} key={tab}>
         {tab === "home" && (
           <Home week={week} cursor={cursor} setCursor={setCursor} history={history} name={name}
+                activePlan={activePlan}
                 greeting={greeting(name, history)} onEditName={() => setTab("welcome")}
                 oneThing={todaysOneThing(history, rounds, plannedMiss)} monthCount={sessionsThisMonth(history)}
                 onStart={startSession} onQuick={() => setTab("quickpick")}
@@ -836,7 +874,7 @@ export default function Page() {
                          editMode={!!editOrig} onFinish={finishSession} onDiscard={discard} />
         )}
         {tab === "trends" && (
-          <Trends history={history} rounds={rounds} swings={swings} onDelete={onDelete} onEdit={editSession}
+          <Trends history={history} rounds={rounds} swings={swings} activePlan={activePlan} onDelete={onDelete} onEdit={editSession}
                   onBack={() => { setTab("more"); setTrendsOpenData(false); }}
                   onStart={startSession} onImported={async () => setHistory(await allSessions())}
                   openData={trendsOpenData}
@@ -861,6 +899,7 @@ export default function Page() {
         {tab === "more" && (
           <More history={history} plannedMiss={plannedMiss} overrides={overrides} onSwap={swapDrill}
                 games={games} swings={swings} onSaveGame={saveGame} onDeleteGame={removeGame}
+                level={level} onChangeLevel={changeLevel}
                 onOpenTrends={() => setTab("trends")}
                 onOpenBackup={() => { setTrendsOpenData(true); setTab("trends"); }}
                 sessionDraft={isDraft ? live!.sessionLabel : null}
@@ -905,7 +944,7 @@ export default function Page() {
 
 function More({
   history, plannedMiss, overrides, onSwap, games, swings, onSaveGame, onDeleteGame, onPracticeFix,
-  onOpenTrends, onOpenBackup, sessionDraft, onResumeSession, hasRound, onResumeRound,
+  level, onChangeLevel, onOpenTrends, onOpenBackup, sessionDraft, onResumeSession, hasRound, onResumeRound,
 }: {
   history: SavedSession[];
   plannedMiss: string;
@@ -916,6 +955,8 @@ function More({
   onSaveGame: (gameId: string, score: number) => void;
   onDeleteGame: (id: string) => void;
   onPracticeFix: (fault: import("@/lib/faults").Fault) => void;
+  level: Level;
+  onChangeLevel: (level: Level) => void;
   onOpenTrends: () => void;
   onOpenBackup: () => void;
   sessionDraft: string | null;
@@ -923,8 +964,10 @@ function More({
   hasRound: boolean;
   onResumeRound: () => void;
 }) {
-  const [view, setView] = useState<"menu" | "prep" | "routine" | "course" | "library" | "fixes" | "games" | "swing" | "about">("menu");
+  const [view, setView] = useState<"menu" | "prep" | "routine" | "course" | "library" | "fixes" | "games" | "swing" | "level" | "about">("menu");
   const [libFocus, setLibFocus] = useState<import("@/lib/faults").Fault | null>(null);
+  if (view === "level")
+    return <LevelSettings current={level} onPick={(l) => { onChangeLevel(l); setView("menu"); }} onBack={() => setView("menu")} />;
   if (view === "about") return <About onBack={() => setView("menu")} />;
   if (view === "prep") return <Prep onBack={() => setView("menu")} />;
   if (view === "routine") return <Routine onBack={() => setView("menu")} />;
@@ -1015,6 +1058,11 @@ function More({
             <span className="more-txt"><b>Swing check</b><span>Record a swing, see your measured positions</span></span>
             <Icon name="chevron_right" size={20} color="var(--icon-muted)" />
           </button>
+          <button className="more-row" onClick={() => setView("level")}>
+            <span className="more-ic"><Icon name="military_tech" size={22} color="var(--green)" /></span>
+            <span className="more-txt"><b>Training level</b><span>{LEVEL_LABEL[level]} · change which drills you see</span></span>
+            <Icon name="chevron_right" size={20} color="var(--icon-muted)" />
+          </button>
           <button className="more-row" onClick={() => setView("about")}>
             <span className="more-ic"><Icon name="info" size={22} color="var(--green)" /></span>
             <span className="more-txt">
@@ -1036,9 +1084,56 @@ function More({
   );
 }
 
+const LEVEL_ROWS: { key: Level; title: string; sub: string; icon: string }[] = [
+  { key: "beginner", title: "Beginner", sub: "New to golf, or still building consistent contact.", icon: "eco" },
+  { key: "intermediate", title: "Intermediate", sub: "You play regularly and want to sharpen one miss.", icon: "trending_up" },
+  { key: "professional", title: "Professional", sub: "Low handicap, chasing consistency and scoring under pressure.", icon: "military_tech" },
+];
+
+function LevelSettings({
+  current, onPick, onBack,
+}: {
+  current: Level;
+  onPick: (level: Level) => void;
+  onBack: () => void;
+}) {
+  return (
+    <>
+      <header className="hdr">
+        <div className="hdr-row" style={{ alignItems: "center" }}>
+          <button className="icon-btn" onClick={onBack} aria-label="Back">
+            <Icon name="arrow_back" size={22} />
+          </button>
+          <div style={{ flex: 1 }}>
+            <div className="hdr-title">Training level</div>
+            <div className="hdr-sub">Change anytime — your session history is kept</div>
+          </div>
+        </div>
+      </header>
+      <div className="sheet">
+        <div className="miss-list">
+          {LEVEL_ROWS.map((l) => (
+            <button
+              key={l.key}
+              className={"miss-row" + (l.key === current ? " on" : "")}
+              onClick={() => onPick(l.key)}
+            >
+              <span>
+                <b>{l.title}{l.key === current && <span className="focus-tag">current</span>}</b>
+                <small>{l.sub}</small>
+              </span>
+              <Icon name={l.key === current ? "check_circle" : l.icon} size={24} color={l.key === current ? "var(--green)" : "var(--icon-muted)"} />
+            </button>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
 function Home({
   week, cursor, setCursor, history, name, greeting, onEditName, oneThing, monthCount,
-  onStart, onQuick, draftLabel, draftHere, onResume, nudgeDismissedAt, onDismissNudge,
+  activePlan, onStart, onQuick, draftLabel, draftHere, onResume, nudgeDismissedAt, onDismissNudge,
 }: {
   week: Week;
   cursor: { week: number; session: number };
@@ -1049,6 +1144,7 @@ function Home({
   onEditName: () => void;
   oneThing: import("@/lib/verdict").OneThing | null;
   monthCount: number;
+  activePlan: Week[];
   onStart: (venueAreas?: (keyof Strips)[]) => void;
   onQuick: () => void;
   draftLabel: string | null;
@@ -1057,7 +1153,7 @@ function Home({
   nudgeDismissedAt: string | null;
   onDismissNudge: (lastSessionDate: string) => void;
 }) {
-  const flat = PLAN.flatMap((w, wi) =>
+  const flat = activePlan.flatMap((w, wi) =>
     w.sessions.map((s, si) => ({ wi, si, id: w.id, label: s.label, test: /test/i.test(s.label) }))
   );
   const curIdx = flat.findIndex((f) => f.wi === cursor.week && f.si === cursor.session);

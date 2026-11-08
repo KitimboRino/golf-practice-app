@@ -1,7 +1,9 @@
 // lib/library.ts
 // Full drill bench (both books) + the per-session pitching focus drills.
-// Pairs with plan.ts: use pitchFocus[i] for session i, and LIBRARY as a
-// swap-in bench of alternates for any area.
+// Pairs with plan.ts: use PITCH_FOCUS_BY_LEVEL[level][i] for session i, and
+// LIBRARY as a level-agnostic swap-in bench of alternates for any area.
+
+import type { Level } from "@/lib/plan";
 
 // video is optional and unset by default — a YouTube link, opened in the
 // system browser rather than embedded (the app stays usable with no
@@ -316,7 +318,50 @@ export const LIBRARY: LibArea[] = [
 ];
 
 // Pitching focus drill for each of the 8 sessions, in plan order (W1S1 … W4S2).
-export const PITCH_FOCUS: Focus[] = [
+export const PITCH_FOCUS_BEGINNER: Focus[] = [
+  {
+    "name": "Land it on your own foot",
+    "how": "From short range, take a small backswing and try to land the ball just past your own feet, checking that you're making ball-first contact rather than scooping. This is the very first building block of pitching — getting the ball airborne without digging or thinning it.",
+    "sticks": null
+  },
+  {
+    "name": "Clock face, two sizes only",
+    "how": "Pick just two backswing lengths — hands to waist, and hands to shoulder — and hit a few pitches with each. Two repeatable sizes teaches you that backswing length, not swing speed, is what changes distance.",
+    "sticks": null
+  },
+  {
+    "name": "Same finish every time",
+    "how": "Focus only on finishing in a balanced, stable position facing the target, no matter how the shot comes out. A consistent finish usually means a consistent swing got you there — work backward from the finish you want.",
+    "sticks": null
+  },
+  {
+    "name": "Bump-and-run with more club",
+    "how": "From just off the green, use a more-lofted iron instead of a wedge and make a putting-style stroke, letting the ball run most of the way to the hole. This is the simplest, lowest-risk pitch shot there is, and a safe default when you're not confident.",
+    "sticks": null
+  },
+  {
+    "name": "Watch the ball come off the clubface",
+    "how": "Hit a few pitches focusing only on watching the ball leave the clubface, not where it lands. Staying with the shot instead of looking up early is one of the most common fixes for mis-hit pitches at any level.",
+    "sticks": null
+  },
+  {
+    "name": "Three balls, three landing spots",
+    "how": "Pick three different landing spots at different distances and hit one ball at each, changing only your backswing length between them. An early, low-pressure version of distance control, before worrying about spin or trajectory.",
+    "sticks": null
+  },
+  {
+    "name": "Pitch from a slight upslope and downslope",
+    "how": "Find a small upslope and downslope near the green and hit a few pitches from each, noticing how the slope changes where the ball tends to fly. Getting used to uneven lies early means you won't be surprised by them on the course.",
+    "sticks": null
+  },
+  {
+    "name": "Test day — repeat the clock-face pitches",
+    "how": "Repeat session one's two backswing lengths and see how much tighter your distance control has become. Compare carry distance for each size against your very first attempt.",
+    "sticks": null
+  }
+];
+
+export const PITCH_FOCUS_INTERMEDIATE: Focus[] = [
   {
     "name": "Find the bottom of your swing arc",
     "how": "On short grass make a firm practice swing and note where the club first brushes the ground — that low point is where the ball should sit in your stance. Hit pitches with the ball on that line; the divot should start just after it.",
@@ -358,6 +403,55 @@ export const PITCH_FOCUS: Focus[] = [
     "sticks": null
   }
 ];
+
+export const PITCH_FOCUS_PROFESSIONAL: Focus[] = [
+  {
+    "name": "Three trajectories to one target",
+    "how": "Pitch the same distance three ways — low and running, standard, and high and soft — to the same landing area. Owning all three flights for one yardage means you're never stuck with the wrong shot for the lie or the pin position.",
+    "sticks": null
+  },
+  {
+    "name": "Spin it versus release it",
+    "how": "Hit two pitches to the same spot: one designed to check up quickly, one designed to release toward the hole. Controlling roll-out after landing is as important as carry distance once you're inside wedge range.",
+    "sticks": null
+  },
+  {
+    "name": "Exact yardage, three-quarter swing only",
+    "how": "Pick a precise number inside your wedge range and hit it using only backswing length, never easing off mid-swing to take pace off. A controlled three-quarter swing is more repeatable under pressure than a full swing you deliberately soften.",
+    "sticks": null
+  },
+  {
+    "name": "Must-land-short-side-safe",
+    "how": "Pitch to a pin cut tight to one edge of the green and deliberately favour missing to the fat, safer side of the green rather than challenging the flag. Knowing when not to attack is as much a skill as the shot itself.",
+    "sticks": null
+  },
+  {
+    "name": "Uneven lie, same target",
+    "how": "From an upslope and a downslope, pitch to the same single target and compare how far each lie tends to fly compared to flat ground. Slopes change loft at impact — adjusting club or swing for that is a repeatable skill, not luck.",
+    "sticks": null
+  },
+  {
+    "name": "One-ball, must-finish-inside-10-feet",
+    "how": "Pitch from a realistic yardage and don't move on until a ball finishes inside 10 feet of the hole. Manufacturing a real pass/fail standard, rather than a bucket of balls with no bar to clear, is what makes practice transfer to the course.",
+    "sticks": null
+  },
+  {
+    "name": "Wind-adjusted trajectory call",
+    "how": "Pick a wind direction (real or imagined) and choose the trajectory that holds up best in it before you swing, committing to that shape rather than a default one. Reading conditions and adjusting the shot, not just the target, is a scoring skill.",
+    "sticks": null
+  },
+  {
+    "name": "Test day — re-run the three-trajectory pitch",
+    "how": "Repeat session one's three-trajectory pitch to the same target and compare how distinct and repeatable each flight is now compared to your very first attempt.",
+    "sticks": null
+  }
+];
+
+export const PITCH_FOCUS_BY_LEVEL: Record<Level, Focus[]> = {
+  beginner: PITCH_FOCUS_BEGINNER,
+  intermediate: PITCH_FOCUS_INTERMEDIATE,
+  professional: PITCH_FOCUS_PROFESSIONAL,
+};
 
 // New scored area to add to the logger, matching the others:
 //   Pitching — 10 balls to a ~35–65 yd target, tally CLOSE / SHORT / LONG.

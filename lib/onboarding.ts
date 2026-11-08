@@ -2,7 +2,7 @@
 // Additions only — the read writes the same `plannedMiss` profile field the quiz wrote,
 // so the plan builder needs no change.
 
-export type OnbStage = "deal" | "practice" | "read" | "reveal" | "done";
+export type OnbStage = "deal" | "practice" | "read" | "reveal" | "level" | "done";
 
 export type Onboarding = { stage: OnbStage; practiceTaps: number };
 export const FRESH_ONB: Onboarding = { stage: "deal", practiceTaps: 0 };

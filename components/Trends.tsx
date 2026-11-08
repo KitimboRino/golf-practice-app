@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { SavedSession, SavedRound, SavedSwing, SwingPhase, AreaKey, exportBackup, importBackup, isAdhoc } from "@/lib/db";
-import { PLAN } from "@/lib/plan";
+import { ALL_WEEKS, Week } from "@/lib/plan";
 import { solidPct, fairwayPct, puttPct, pitchPct, ironsByClub } from "@/lib/stats";
 import { roundStats } from "@/lib/round";
 import { detectFaults } from "@/lib/faults";
@@ -45,12 +45,13 @@ function downloadText(name: string, text: string) {
 }
 
 export function Trends({
-  history, rounds, swings, onDelete, onEdit, onStart, onImported, onBack, openData,
+  history, rounds, swings, activePlan, onDelete, onEdit, onStart, onImported, onBack, openData,
   goal, onSaveGoal, onClearGoal,
 }: {
   history: SavedSession[];
   rounds: SavedRound[];
   swings: SavedSwing[];
+  activePlan: Week[];
   onDelete: (id: string) => void;
   onEdit: (s: SavedSession) => void;
   onStart: () => void;
@@ -117,7 +118,7 @@ export function Trends({
   );
 
   if (history.length === 0) {
-    const s = PLAN[0].sessions[0];
+    const s = activePlan[0].sessions[0];
     return (
       <>
         <header className="hdr">
@@ -152,7 +153,7 @@ export function Trends({
             </button>
           </div>
           <div className="grp" style={{ padding: "0 4px" }}>
-            <div className="grp-lbl">{PLAN[0].short} · {PLAN[0].title} starts with</div>
+            <div className="grp-lbl">{activePlan[0].short} · {activePlan[0].title} starts with</div>
             <div className="empty-drills">
               <div><Icon name="near_me" size={18} color="var(--blue)" />{s.drive.name}</div>
               <div><Icon name="stacked_line_chart" size={18} color="var(--blue)" />{s.iron.name}</div>
@@ -189,7 +190,7 @@ export function Trends({
   const hipTurnTop = swings.map((s) => s.measurements.top.hipTurnDeg);
   const swingLogged = swings.length > 0;
 
-  const weeks = PLAN.filter((w) => history.some((s) => s.weekId === w.id));
+  const weeks = ALL_WEEKS.filter((w) => history.some((s) => s.weekId === w.id));
   const histRows = wkFilter ? history.filter((s) => s.weekId === wkFilter) : history;
   const shown = showAll ? histRows : histRows.slice(-4);
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { SavedSession } from "@/lib/db";
-import { Week, Session, PLAN, PLAN_SLOT_KEYS, planSlotKey } from "@/lib/plan";
+import { Week, Session, ALL_WEEKS } from "@/lib/plan";
 import { solidPct } from "@/lib/stats";
 import { sessionBalls, sessionMinutes } from "@/lib/verdict";
 import { shareCard } from "@/lib/shareCard";
@@ -13,12 +13,14 @@ const wkNum = (id: string) => id.replace(/[^0-9]/g, "") || "0";
 const sNum = (l: string) => l.replace(/[^0-9]/g, "") || "?";
 
 export function SessionReceipt({
-  session, history, quick = false, planComplete = false, nextWeek, nextSession, onDone, onNext,
+  session, history, quick = false, planComplete = false, planBalls = 0, levelLabel, nextWeek, nextSession, onDone, onNext,
 }: {
   session: SavedSession;
   history: SavedSession[];
   quick?: boolean;
   planComplete?: boolean;
+  planBalls?: number;
+  levelLabel?: string;
   nextWeek: Week;
   nextSession: Session;
   onDone: () => void;
@@ -27,14 +29,6 @@ export function SessionReceipt({
   const toast = useToast();
   const balls = sessionBalls(session);
   const mins = sessionMinutes(session);
-
-  // only meaningful when planComplete — total reps logged across the whole
-  // 4-week plan, for the one-time "you finished it" milestone screen
-  const planBalls = planComplete
-    ? history
-        .filter((s) => PLAN_SLOT_KEYS.includes(planSlotKey(s.weekId, s.sessionLabel)))
-        .reduce((n, s) => n + sessionBalls(s), 0)
-    : 0;
 
   const p = session.pitching ?? { close: 0, short: 0, long: 0 };
   const tag = (a: "chipping" | "pitching" | "irons" | "driving" | "putting") => {
@@ -52,7 +46,7 @@ export function SessionReceipt({
   ].filter((r) => r.of > 0);
 
   const worst = [...rows].sort((a, b) => a.made / a.of - b.made / b.of)[0];
-  const ownWeek = PLAN.find((w) => w.id === session.weekId);
+  const ownWeek = ALL_WEEKS.find((w) => w.id === session.weekId);
 
   // headline metric: solid rate when tee/iron shots were logged; otherwise (a
   // quick or venue-limited session with none) the most-hit area's rate, no delta
@@ -79,14 +73,14 @@ export function SessionReceipt({
       : `RangeCard · Week ${wkNum(session.weekId)} · Session ${sNum(session.sessionLabel)}`;
     const lines = [
       head,
-      ...(planComplete ? [`Finished the 4-week plan — ${planBalls} balls hit`] : []),
+      ...(planComplete ? [`Finished the ${levelLabel ?? ""} plan — ${planBalls} balls hit`] : []),
       `${headCap[0].toUpperCase() + headCap.slice(1)} ${solidNow}%${delta !== null ? ` (${delta >= 0 ? "+" : ""}${delta})` : ""}`,
       ...rows.map((r) => `${r.label}${r.note ? ` (${r.note})` : ""}: ${r.made} of ${r.of}`),
     ].join("\n");
     const outcome = await shareCard(
       {
         kicker: planComplete ? "Plan complete" : quick ? "Quick session" : `Week ${wkNum(session.weekId)} · Session ${sNum(session.sessionLabel)}`,
-        title: planComplete ? "Finished the 4-week plan" : quick ? "Quick session logged" : `Session ${sNum(session.sessionLabel)} logged`,
+        title: planComplete ? `Finished the ${levelLabel ?? ""} plan` : quick ? "Quick session logged" : `Session ${sNum(session.sessionLabel)} logged`,
         meta: quick
           ? `${balls} ball${balls === 1 ? "" : "s"}${mins ? ` · ${mins} min` : ""}`
           : `${ownWeek ? ownWeek.title : ""} · ${balls} balls${mins ? ` · ${mins} min` : ""}`,
@@ -121,7 +115,7 @@ export function SessionReceipt({
             </span>
             <h1 className="photo-hdr-title">
               {planComplete
-                ? "You finished the plan."
+                ? `You finished the ${levelLabel ?? ""} plan.`
                 : quick ? "Quick session, done." : `Session ${sNum(session.sessionLabel)}, done.`}
             </h1>
             <span className="photo-hdr-sub">
