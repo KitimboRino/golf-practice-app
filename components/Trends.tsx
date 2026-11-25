@@ -723,10 +723,14 @@ function Compare({
   target: SavedSession;
   isTest: boolean;
 }) {
-  const rows: { name: string; fn: (s: SavedSession) => number }[] = [
-    { name: "Solid strike", fn: solidPct },
-    { name: "Fairways found", fn: fairwayPct },
-    { name: "Putts made", fn: puttPct },
+  // `has` says whether a session logged that area at all — an unlogged area
+  // is "–", not 0%, and gets no delta (otherwise a chipping-only session
+  // reads as "solid strike 41% → 0%, −41")
+  const rows: { name: string; fn: (s: SavedSession) => number; has: (s: SavedSession) => boolean }[] = [
+    { name: "Solid strike", fn: solidPct,
+      has: (s) => s.driving.fairway + s.driving.left + s.driving.right + s.irons.solid + s.irons.fat + s.irons.thin > 0 },
+    { name: "Fairways found", fn: fairwayPct, has: (s) => s.driving.fairway + s.driving.left + s.driving.right > 0 },
+    { name: "Putts made", fn: puttPct, has: (s) => s.putting.in + s.putting.out > 0 },
   ];
   const tag = (s: SavedSession) => `W${wkNum(s.weekId)}·${sLabel(s.sessionLabel)}`;
 
@@ -741,21 +745,23 @@ function Compare({
           {tag(baseline)} · {fmtDate(baseline.date)} &nbsp;→&nbsp; {tag(target)} · {fmtDate(target.date)}
         </div>
       </div>
-      {rows.map(({ name, fn }) => {
+      {rows.map(({ name, fn, has }) => {
+        const hasFrom = has(baseline), hasTo = has(target);
         const from = fn(baseline);
         const to = fn(target);
         const d = to - from;
-        const tone = d > 0 ? "up" : d < 0 ? "down" : "flat";
+        const both = hasFrom && hasTo;
+        const tone = !both ? "flat" : d > 0 ? "up" : d < 0 ? "down" : "flat";
         return (
           <div className="compare-row" key={name}>
             <div className="compare-label">{name}</div>
             <div className="compare-nums num">
-              <span className="from">{from}%</span>
+              <span className="from">{hasFrom ? `${from}%` : "–"}</span>
               <Icon name="arrow_forward" size={14} color="var(--icon-muted)" />
-              <span className="to">{to}%</span>
+              <span className="to">{hasTo ? `${to}%` : "–"}</span>
             </div>
             <div className={"compare-delta " + tone}>
-              {d > 0 ? "+" : d < 0 ? "−" : "±"}{Math.abs(d)}
+              {!both ? "not logged" : `${d > 0 ? "+" : d < 0 ? "−" : "±"}${Math.abs(d)}`}
             </div>
           </div>
         );
