@@ -1,4 +1,5 @@
 import Dexie, { Table } from "dexie";
+import { localDate } from "./date";
 
 // Per-ball outcome keys, in tap order, for the shot strip. Counts are derived from these.
 export type Strips = {
@@ -330,21 +331,39 @@ export function uuid() {
 
 // ---- backup / restore ----
 
+// Settings that make a restore feel like the same app — the plan level and
+// position, goal, name, etc. Transient state (in-progress drafts, onboarding
+// steps, once-a-day flags) is deliberately left out.
+const BACKUP_META_KEYS = [
+  "name", "plannedMiss", "planLevel", "cursor", "goal", "drillOverrides", "onboardedAt",
+] as const;
+type BackupMetaKey = (typeof BACKUP_META_KEYS)[number];
+
 export async function exportBackup(): Promise<string> {
   // includes tombstones for a complete restore
-  const [sessions, rounds, games] = await Promise.all([
-    db.sessions.toArray(), db.rounds.toArray(), db.games.toArray(),
+  const [sessions, rounds, games, swings, metaVals] = await Promise.all([
+    db.sessions.toArray(), db.rounds.toArray(), db.games.toArray(), db.swings.toArray(),
+    Promise.all(BACKUP_META_KEYS.map((k) => db.meta.get(k))),
   ]);
+  const settings: Partial<Record<BackupMetaKey, unknown>> = {};
+  BACKUP_META_KEYS.forEach((k, i) => { if (metaVals[i] !== undefined) settings[k] = metaVals[i]; });
   return JSON.stringify(
-    { app: "rangecard", version: 3, exportedAt: new Date().toISOString(), sessions, rounds, games },
+    { app: "rangecard", version: 4, exportedAt: new Date().toISOString(), sessions, rounds, games, swings, settings },
     null,
     2,
   );
 }
 
+export type ImportResult = {
+  added: number;      // records written (new, or newer than the local copy)
+  older: number;      // records left alone because this device's copy is newer
+  skipped: number;    // unusable rows
+  settings: boolean;  // whether any settings were restored
+};
+
 // Accepts a full backup object or a bare array of sessions. Malformed fields are
 // coerced; unusable rows are skipped. Returns how many were written vs skipped.
-export async function importBackup(text: string): Promise<{ added: number; skipped: number }> {
+export async function importBackup(text: string): Promise<ImportResult> {
   if (text.length > 12_000_000) throw new Error("That file is too large to import.");
   let data: unknown;
   try {
@@ -362,7 +381,7 @@ export async function importBackup(text: string): Promise<{ added: number; skipp
   if (!Array.isArray(rows)) throw new Error("No sessions found in that file.");
   if (rows.length > 5000) throw new Error("That file is too large to import.");
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDate();
   const now = Date.now();
   const cnt = (v: unknown) =>
     typeof v === "number" && isFinite(v) ? Math.max(0, Math.min(999, Math.round(v))) : 0;
@@ -374,6 +393,13 @@ export async function importBackup(text: string): Promise<{ added: number; skipp
     typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(Date.parse(s));
   const ts = (v: unknown) =>
     typeof v === "number" && isFinite(v) && v > 0 && v < 4e12 ? v : now;
+  // updatedAt decides newest-wins on import, so a row with no usable
+  // timestamp must not claim "now" — that would beat every local edit.
+  // Fall back to its createdAt, else 0 (loses to any copy already here).
+  const upd = (v: unknown, created: unknown) =>
+    typeof v === "number" && isFinite(v) && v > 0 && v < 4e12 ? v
+      : typeof created === "number" && isFinite(created) && created > 0 && created < 4e12 ? created
+      : 0;
 
   const recs: SavedSession[] = [];
   let skipped = 0;
@@ -410,7 +436,7 @@ export async function importBackup(text: string): Promise<{ added: number; skipp
       })() : undefined,
       startedAt: typeof r.startedAt === "number" && isFinite(r.startedAt) ? r.startedAt : undefined,
       createdAt: ts(r.createdAt),
-      updatedAt: ts(r.updatedAt),
+      updatedAt: upd(r.updatedAt, r.createdAt),
       deleted: !!r.deleted,
     });
   }
@@ -454,7 +480,7 @@ export async function importBackup(text: string): Promise<{ added: number; skipp
       holes,
       holeData,
       createdAt: ts(r.createdAt),
-      updatedAt: ts(r.updatedAt),
+      updatedAt: upd(r.updatedAt, r.createdAt),
       deleted: !!r.deleted,
     });
   }
@@ -473,31 +499,142 @@ export async function importBackup(text: string): Promise<{ added: number; skipp
       date: isDate(r.date) ? r.date : today,
       score: Math.max(0, Math.min(999, Math.round(Number(r.score) || 0))),
       createdAt: ts(r.createdAt),
-      updatedAt: ts(r.updatedAt),
+      updatedAt: upd(r.updatedAt, r.createdAt),
       deleted: !!r.deleted,
     });
   }
 
-  if (!recs.length && !roundRecs.length && !gameRecs.length) {
+  // swing-check measurements (v4 backups) — numbers and a small image only
+  const swingRows: unknown[] = Array.isArray((data as { swings?: unknown[] })?.swings)
+    ? (data as { swings: unknown[] }).swings
+    : [];
+  const deg = (v: unknown) =>
+    typeof v === "number" && isFinite(v) ? Math.max(-360, Math.min(360, v)) : null;
+  const swingRecs: SavedSwing[] = [];
+  for (const raw of swingRows.slice(0, 2000)) {
+    const r = raw as Record<string, any>;
+    if (!r || typeof r !== "object" || typeof r.id !== "string" || !r.id) { skipped++; continue; }
+    const m = r.measurements;
+    if (!m || typeof m !== "object") { skipped++; continue; }
+    const out = {} as Record<SwingPhase, SwingMeasurement>;
+    let ok = true;
+    for (const phase of ["address", "top", "impact", "finish"] as const) {
+      const pm = m[phase];
+      const spine = deg(pm?.spineTiltDeg), shoulder = deg(pm?.shoulderTurnDeg), hip = deg(pm?.hipTurnDeg);
+      if (spine == null || shoulder == null || hip == null) { ok = false; break; }
+      const thumb = typeof pm.thumbnailDataUrl === "string" &&
+        /^data:image\/(jpeg|png|webp);base64,/.test(pm.thumbnailDataUrl) &&
+        pm.thumbnailDataUrl.length < 200_000
+        ? pm.thumbnailDataUrl : "";
+      out[phase] = { spineTiltDeg: spine, shoulderTurnDeg: shoulder, hipTurnDeg: hip, thumbnailDataUrl: thumb };
+    }
+    if (!ok) { skipped++; continue; }
+    swingRecs.push({
+      id: r.id,
+      date: isDate(r.date) ? r.date : today,
+      measurements: out,
+      createdAt: ts(r.createdAt),
+      updatedAt: upd(r.updatedAt, r.createdAt),
+      deleted: !!r.deleted,
+    });
+  }
+
+  // settings (v4 backups) — each read and checked explicitly, never spread
+  const rawSettings = (data as { settings?: unknown })?.settings;
+  const settings: [BackupMetaKey, unknown][] = [];
+  if (rawSettings && typeof rawSettings === "object" && !Array.isArray(rawSettings)) {
+    const st = rawSettings as Record<string, any>;
+    if (typeof st.name === "string") settings.push(["name", st.name.slice(0, 24)]);
+    if (typeof st.plannedMiss === "string") settings.push(["plannedMiss", st.plannedMiss.slice(0, 40)]);
+    if (st.planLevel === "beginner" || st.planLevel === "intermediate" || st.planLevel === "professional") {
+      settings.push(["planLevel", st.planLevel]);
+    }
+    const c = st.cursor;
+    if (c && Number.isInteger(c.week) && Number.isInteger(c.session) && c.week >= 0 && c.session >= 0) {
+      // range-checked against the plan when it's loaded (see clampCursor in app/page.tsx)
+      settings.push(["cursor", { week: Math.min(c.week, 50), session: Math.min(c.session, 50) }]);
+    }
+    const g = st.goal;
+    if (g && typeof g === "object" && AREA_KEYS.includes(g.area) &&
+        typeof g.targetPct === "number" && isFinite(g.targetPct)) {
+      settings.push(["goal", {
+        area: g.area,
+        targetPct: Math.max(0, Math.min(100, Math.round(g.targetPct))),
+        byDate: isDate(g.byDate) ? g.byDate : undefined,
+        createdAt: ts(g.createdAt),
+      }]);
+    }
+    const d = st.drillOverrides;
+    if (d && typeof d === "object" && !Array.isArray(d)) {
+      const ov: DrillOverrides = {};
+      for (const a of AREA_KEYS) {
+        const e = d[a];
+        if (!e || typeof e !== "object" || typeof e.name !== "string" || typeof e.how !== "string") continue;
+        ov[a] = {
+          name: e.name.slice(0, 120),
+          how: e.how.slice(0, 2000),
+          // only https links — this ends up in an <a href>
+          video: typeof e.video === "string" && /^https:\/\//.test(e.video) ? e.video.slice(0, 300) : undefined,
+        };
+      }
+      settings.push(["drillOverrides", ov]);
+    }
+    if (typeof st.onboardedAt === "string" && !isNaN(Date.parse(st.onboardedAt))) {
+      settings.push(["onboardedAt", st.onboardedAt.slice(0, 40)]);
+    }
+  }
+
+  if (!recs.length && !roundRecs.length && !gameRecs.length && !swingRecs.length && !settings.length) {
     throw new Error("No valid data found in that file.");
   }
 
   // de-dupe within the file (last one wins)
-  const byId = new Map(recs.map((r) => [r.id, r]));
-  const roundsById = new Map(roundRecs.map((r) => [r.id, r]));
-  const gamesById = new Map(gameRecs.map((r) => [r.id, r]));
+  const dedupe = <T extends { id: string }>(rows: T[]) => new Map(rows.map((r) => [r.id, r]));
+  const byId = dedupe(recs);
+  const roundsById = dedupe(roundRecs);
+  const gamesById = dedupe(gameRecs);
+  const swingsById = dedupe(swingRecs);
+
+  // Newest wins: a record only replaces this device's copy when the file's
+  // copy was changed more recently — so restoring an old backup can't undo
+  // newer edits, or resurrect / re-delete something changed since.
+  let added = 0, older = 0;
+  async function mergeNewer<T extends { id: string; updatedAt: number }>(
+    table: Table<T, string>, incoming: Map<string, T>,
+  ) {
+    if (!incoming.size) return;
+    const ids = [...incoming.keys()];
+    const existing = await table.bulkGet(ids);
+    const write: T[] = [];
+    ids.forEach((id, i) => {
+      const cur = existing[i];
+      const next = incoming.get(id)!;
+      if (!cur || next.updatedAt > cur.updatedAt) write.push(next);
+      else older++;
+    });
+    if (write.length) await table.bulkPut(write);
+    added += write.length;
+  }
+
   // one transaction — a malformed file can't leave a half-applied import
-  await db.transaction("rw", db.sessions, db.rounds, db.games, async () => {
-    if (byId.size) await db.sessions.bulkPut([...byId.values()]);
-    if (roundsById.size) await db.rounds.bulkPut([...roundsById.values()]);
-    if (gamesById.size) await db.games.bulkPut([...gamesById.values()]);
+  await db.transaction("rw", [db.sessions, db.rounds, db.games, db.swings, db.meta], async () => {
+    await mergeNewer(db.sessions, byId);
+    await mergeNewer(db.rounds, roundsById);
+    await mergeNewer(db.games, gamesById);
+    await mergeNewer(db.swings, swingsById);
+    for (const [k, v] of settings) await db.meta.put(v, k);
   });
   return {
-    added: byId.size + roundsById.size + gamesById.size,
+    added,
+    older,
+    settings: settings.length > 0,
     skipped:
       skipped +
       (recs.length - byId.size) +
       (roundRecs.length - roundsById.size) +
-      (gameRecs.length - gamesById.size),
+      (gameRecs.length - gamesById.size) +
+      (swingRecs.length - swingsById.size),
   };
 }
+
+const AREA_KEYS: AreaKey[] = ["driving", "irons", "chipping", "pitching", "putting"];

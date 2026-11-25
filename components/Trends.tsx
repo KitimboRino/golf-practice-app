@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { SavedSession, SavedRound, SavedSwing, SwingPhase, AreaKey, exportBackup, importBackup, isAdhoc } from "@/lib/db";
-import { ALL_WEEKS, Week } from "@/lib/plan";
+import { ALL_WEEKS, Week, LEVEL_LABEL, levelOfWeek, isTestDay } from "@/lib/plan";
 import { solidPct, fairwayPct, puttPct, pitchPct, ironsByClub } from "@/lib/stats";
 import { roundStats } from "@/lib/round";
 import { detectFaults } from "@/lib/faults";
@@ -15,6 +15,7 @@ import { useConfirm } from "./Confirm";
 import { Icon } from "./Icon";
 import { Glyph } from "./Glyph";
 import { Mark } from "./Mark";
+import { localDate } from "@/lib/date";
 
 const fmtDate = (iso: string) => {
   const d = new Date(iso + "T00:00:00");
@@ -55,7 +56,7 @@ export function Trends({
   onDelete: (id: string) => void;
   onEdit: (s: SavedSession) => void;
   onStart: () => void;
-  onImported: () => void;
+  onImported: () => Promise<void> | void;
   onBack: () => void;
   openData?: boolean; // jump straight to the Data & backup menu — the More screen's "Back them up" link
   goal: Goal | null;
@@ -71,7 +72,7 @@ export function Trends({
   const { confirm } = useConfirm();
 
   async function doExport() {
-    downloadText(`rangecard-${new Date().toISOString().slice(0, 10)}.json`, await exportBackup());
+    downloadText(`rangecard-${localDate()}.json`, await exportBackup());
     setShowData(false);
   }
 
@@ -86,16 +87,17 @@ export function Trends({
     }
     const ok = await confirm({
       title: "Import this backup?",
-      body: "Sessions, rounds and games from the file are merged in. Anything with the same id as a record you already have is overwritten.",
+      body: "Sessions, rounds, games and swings from the file are merged in. Where you already have the same record, whichever copy was changed most recently is kept. Your settings (training level, plan position, goal) are replaced by the backup's.",
       confirmLabel: "Import",
     });
     if (!ok) return;
     try {
-      const { added, skipped } = await importBackup(await file.text());
-      onImported();
+      const { added, older, skipped } = await importBackup(await file.text());
+      await onImported();
       setShowData(false);
       toast.show(
         `Imported ${added} record${added === 1 ? "" : "s"}` +
+        (older ? `, kept ${older} newer on this device` : "") +
         (skipped ? `, skipped ${skipped} invalid row${skipped === 1 ? "" : "s"}` : ""),
       );
     } catch (e) {
@@ -198,7 +200,14 @@ export function Trends({
   // quick sessions are excluded — the compare is a plan-progress view
   const planHist = history.filter((s) => !isAdhoc(s));
   const baseline = planHist[0];
-  const testIdx = planHist.findIndex((s) => s.weekId === "week4" && /test/i.test(s.sessionLabel));
+  const testIdx = planHist.findIndex((s) => isTestDay(s.weekId, s.sessionLabel));
+  // only tag week chips with a level when history actually spans more than
+  // one — otherwise three different "W1" chips would be indistinguishable
+  const multiLevel = new Set(weeks.map((w) => levelOfWeek(w.id))).size > 1;
+  const weekChipLabel = (id: string) => {
+    const lvl = levelOfWeek(id);
+    return multiLevel && lvl ? `${LEVEL_LABEL[lvl][0]}·W${wkNum(id)}` : `W${wkNum(id)}`;
+  };
   const target = testIdx >= 0 ? planHist[testIdx] : planHist[planHist.length - 1];
   const showCompare = planHist.length >= 2 && !!baseline && !!target && baseline.id !== target.id;
 
@@ -292,8 +301,9 @@ export function Trends({
               {weeks.map((w) => (
                 <button key={w.id}
                         className={"chip-btn" + (wkFilter === w.id ? " on" : "")}
-                        onClick={() => { setWkFilter(w.id); setShowAll(true); }}>
-                  W{wkNum(w.id)}
+                        onClick={() => { setWkFilter(w.id); setShowAll(true); }}
+                        aria-label={`${LEVEL_LABEL[levelOfWeek(w.id) ?? "intermediate"]} week ${wkNum(w.id)}`}>
+                  {weekChipLabel(w.id)}
                 </button>
               ))}
             </div>
@@ -459,7 +469,7 @@ function GoalCard({
         <div className="setup-row">
           <div className="rgrp-lbl">By (optional)</div>
           <input className="datefield" type="date" value={byDate}
-                 min={new Date().toISOString().slice(0, 10)}
+                 min={localDate()}
                  onChange={(e) => setByDate(e.target.value)} />
         </div>
         <div className="goal-actions">

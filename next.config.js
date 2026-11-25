@@ -48,7 +48,10 @@ const csp = [
 const permissionsPolicy = [
   "accelerometer=()", "autoplay=()", "camera=(self)", "display-capture=()",
   "encrypted-media=()", "fullscreen=(self)", "geolocation=(self)", "gyroscope=()",
-  "magnetometer=()", "microphone=()", "midi=()", "payment=()",
+  "magnetometer=()",
+  // self, not () — Chromium gates the Web Speech API (components/VoiceLog.tsx)
+  // on the microphone policy, so () silently breaks voice logging in production.
+  "microphone=(self)", "midi=()", "payment=()",
   "picture-in-picture=()", "publickey-credentials-get=()", "screen-wake-lock=()",
   "usb=()", "xr-spatial-tracking=()",
 ].join(", ");

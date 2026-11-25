@@ -21,10 +21,11 @@ import { Burst } from "./Burst";
 import { CourseDiagram, COURSE_DIAGRAM } from "./CourseDiagram";
 import { GreenDistance } from "./GreenDistance";
 import { PhotoHeader } from "./PhotoHeader";
+import { localDate } from "@/lib/date";
 
 type PracticeFocus = { title: string; body: string };
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => localDate();
 const fmtDate = (iso: string) => {
   const d = new Date(iso + "T00:00:00");
   return isNaN(+d) ? iso : d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -425,7 +426,10 @@ function RoundPlay({
   const setPar = (par: 3 | 4 | 5) => {
     tapFx();
     // par 3 has no fairway; switching off par 3 leaves it unanswered
-    setHole({ par, fairwayHit: par === 3 ? null : (h.fairwayHit ?? undefined) });
+    // and a par 3 can't have missed a fairway either — clear any left/right
+    setHole(par === 3
+      ? { par, fairwayHit: null, fairwayMiss: undefined }
+      : { par, fairwayHit: h.fairwayHit ?? undefined });
   };
   const setScore = (d: number) => {
     // first tap lands on par, then +/- adjusts from there

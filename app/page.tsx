@@ -48,12 +48,13 @@ import { SessionReceipt } from "@/components/SessionReceipt";
 import { About } from "@/components/About";
 import { APP_VERSION } from "@/lib/version";
 import { doneFx, tapFx } from "@/lib/haptics";
+import { localDate } from "@/lib/date";
 
 type Tab = "home" | "session" | "trends" | "more" | "warmup" | "welcome" | "receipt" | "quickpick" | "firstrun" | "round";
 
 type QuickFocus = { title: string; body: string };
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => localDate();
 
 // Splash-screen escape hatch: a stale service worker or a broken cache after a
 // deploy can wedge the app before React finishes loading. Drop the SW + caches
@@ -112,7 +113,7 @@ const STRIP_TOTAL = (s: Strips) =>
 
 function emptyLive(weekId: string, sessionLabel: string): Live {
   return {
-    weekId, sessionLabel, date: new Date().toISOString().slice(0, 10), notes: "",
+    weekId, sessionLabel, date: localDate(), notes: "",
     bestClub: "", startedAt: Date.now(), strips: emptyStrips(),
   };
 }
@@ -192,6 +193,17 @@ function locate(plan: Week[], weekId: string, label: string): { week: number; se
     if (si >= 0) return { week: w, session: si };
   }
   return null;
+}
+
+// A stored cursor (meta, or a restored backup) is only trusted after it's
+// pulled back inside the active plan — an out-of-range week would otherwise
+// crash Home on `activePlan[cursor.week].sessions`.
+function clampCursor(plan: Week[], c: { week: number; session: number }): { week: number; session: number } {
+  const wk = Number.isInteger(c?.week) ? c.week : 0;
+  const week = Math.min(Math.max(0, wk), plan.length - 1);
+  const ss = Number.isInteger(c?.session) ? c.session : 0;
+  const session = Math.min(Math.max(0, ss), plan[week].sessions.length - 1);
+  return { week, session };
 }
 
 const AREAS = [
@@ -397,6 +409,10 @@ export default function Page() {
   const toast = useToast();
   const { confirm } = useConfirm();
   const pendingVenue = useRef<(keyof Strips)[] | undefined>(undefined);
+  // Editing a past session points the cursor at that session's slot so the
+  // log screen shows its drills; this remembers where the plan actually was,
+  // so finishing or discarding the edit puts it back.
+  const cursorBeforeEdit = useRef<{ week: number; session: number } | null>(null);
 
   useEffect(() => {
     let done = false;
@@ -438,7 +454,7 @@ export default function Page() {
           if (loc) setCursor(loc);
         } else {
           const c = await getMeta<{ week: number; session: number }>("cursor");
-          if (c) setCursor(c);
+          if (c) setCursor(clampCursor(PLANS[lvl], c));
         }
         if (!ob) setTab("firstrun");
       } catch (e) {
@@ -488,6 +504,27 @@ export default function Page() {
     await delMeta("onboarding");
     await delMeta("readSession");
     setTab("home");
+  }
+
+  // An import can touch every store and the restored settings — reload all of
+  // it, not just sessions, or imported rounds/games/swings and the restored
+  // level/goal wouldn't show until the next app launch.
+  async function reloadAfterImport() {
+    setHistory(await allSessions());
+    setRounds(await allRounds());
+    setGames(await allGameAttempts());
+    setSwings(await allSwings());
+    setName((await getMeta<string>("name")) ?? "");
+    setPlannedMiss((await getMeta<string>("plannedMiss")) ?? "");
+    setGoalState((await getMeta<Goal>("goal")) ?? null);
+    setOverrides((await getMeta<DrillOverrides>("drillOverrides")) ?? {});
+    const lvl = (await getMeta<Level>("planLevel")) ?? DEFAULT_LEVEL;
+    setLevel(lvl);
+    // a session in progress keeps its own slot; otherwise follow the backup
+    if (!live) {
+      const c = await getMeta<{ week: number; session: number }>("cursor");
+      setCursor(clampCursor(PLANS[lvl], c ?? { week: 0, session: 0 }));
+    }
   }
 
   async function swapDrill(area: keyof DrillOverrides, drill: DrillOverride | null) {
@@ -594,9 +631,12 @@ export default function Page() {
   }
 
   const activePlan = PLANS[level];
-  const week = activePlan[cursor.week];
-  const session = week.sessions[cursor.session];
-  const flatIdx = activePlan.slice(0, cursor.week).reduce((n, w) => n + w.sessions.length, 0) + cursor.session;
+  // defensive: every write path clamps already, but a bad cursor must never
+  // be able to take the whole Home screen down
+  const safe = clampCursor(activePlan, cursor);
+  const week = activePlan[safe.week];
+  const session = week.sessions[safe.session];
+  const flatIdx = activePlan.slice(0, safe.week).reduce((n, w) => n + w.sessions.length, 0) + safe.session;
   const levelPitchFocus = PITCH_FOCUS_BY_LEVEL[level];
   const pitchFocus = levelPitchFocus[flatIdx] ?? levelPitchFocus[levelPitchFocus.length - 1];
   const isDraft = !!live && !editOrig;
@@ -697,6 +737,7 @@ export default function Page() {
     }
     setEditOrig(s);
     setLive(toLive(s));
+    cursorBeforeEdit.current = cursor;
     const loc = locate(PLANS[level], s.weekId, s.sessionLabel);
     if (loc) setCursor(loc);
     setTab("session");
@@ -726,7 +767,7 @@ export default function Page() {
 
     let nextCursor = cursor;
     if (!wasEdit && !isAdhoc) {
-      let w = cursor.week, s = cursor.session + 1;
+      let w = safe.week, s = safe.session + 1;
       if (s >= activePlan[w].sessions.length) { s = 0; w = Math.min(w + 1, activePlan.length - 1); }
       nextCursor = { week: w, session: s };
       setCursor(nextCursor); await setMeta("cursor", nextCursor);
@@ -741,6 +782,7 @@ export default function Page() {
     setHistory(all);
     setLive(null);
     setEditOrig(null);
+    restoreCursorAfterEdit();
     doneFx();
 
     if (wasEdit) {
@@ -766,7 +808,14 @@ export default function Page() {
     await delMeta("draft");
     setLive(null);
     setEditOrig(null);
+    restoreCursorAfterEdit();
     setTab(wasEdit ? "trends" : "home");
+  }
+
+  function restoreCursorAfterEdit() {
+    if (!cursorBeforeEdit.current) return;
+    setCursor(cursorBeforeEdit.current);
+    cursorBeforeEdit.current = null;
   }
 
   async function onDelete(id: string) {
@@ -856,7 +905,7 @@ export default function Page() {
     <>
       <main id="main" className="tabview" tabIndex={-1} key={tab}>
         {tab === "home" && (
-          <Home week={week} cursor={cursor} setCursor={setCursor} history={history} name={name}
+          <Home week={week} cursor={safe} setCursor={setCursor} history={history} name={name}
                 activePlan={activePlan}
                 greeting={greeting(name, history)} onEditName={() => setTab("welcome")}
                 oneThing={todaysOneThing(history, rounds, plannedMiss)} monthCount={sessionsThisMonth(history)}
@@ -876,7 +925,7 @@ export default function Page() {
         {tab === "trends" && (
           <Trends history={history} rounds={rounds} swings={swings} activePlan={activePlan} onDelete={onDelete} onEdit={editSession}
                   onBack={() => { setTab("more"); setTrendsOpenData(false); }}
-                  onStart={startSession} onImported={async () => setHistory(await allSessions())}
+                  onStart={startSession} onImported={reloadAfterImport}
                   openData={trendsOpenData}
                   goal={goal} onSaveGoal={saveGoal} onClearGoal={clearGoal} />
         )}
