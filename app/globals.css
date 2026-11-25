@@ -3109,3 +3109,190 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
   .navpill .nav-item .msr, .navpill .nav-item .msr::after { animation: none; }
   .navpill .nav-item .msr::after { opacity: 0; }
 }
+
+/* =========================================================================
+   REDESIGN — colour bands (branch redesign/colour-bands)
+   One idea per screen, a big type scale, no outlined cards, and one colour
+   per practice area used the same way everywhere: chipping is bunker sand,
+   pitching red clay, irons fairway green, driving dusk navy, putting the
+   brand aqua. Each area class sets --band / --on-band so any component can
+   sit on any area without knowing which one it is.
+   ========================================================================= */
+:root {
+  --area-chipping: #D8B26E;
+  --area-pitching: #B5523B;
+  --area-irons: #2D5E3E;
+  --area-driving: #1E2F4D;
+  --area-putting: #96D6E2;
+  --band-radius: 30px;
+  --band-overlap: 22px;
+  --band-shadow: 0 -10px 22px -14px rgba(15, 19, 33, 0.45);
+}
+/* on-band text: ink on the two light areas, white on the three dark ones.
+   All five pairs clear 4.5:1 (lowest: white on clay, ~5:1). */
+.area-chipping { --band: var(--area-chipping); --on-band: #0F1321; --on-band-rgb: 15, 19, 33; }
+.area-pitching { --band: var(--area-pitching); --on-band: #FFFFFF; --on-band-rgb: 255, 255, 255; }
+.area-irons    { --band: var(--area-irons);    --on-band: #FFFFFF; --on-band-rgb: 255, 255, 255; }
+.area-driving  { --band: var(--area-driving);  --on-band: #FFFFFF; --on-band-rgb: 255, 255, 255; }
+.area-putting  { --band: var(--area-putting);  --on-band: #0F1321; --on-band-rgb: 15, 19, 33; }
+
+/* ---------- type ---------- */
+.kicker {
+  font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--muted);
+}
+.display-xl {
+  margin: 0; font-family: var(--font-display); font-stretch: 125%;
+  font-size: 46px; font-weight: 900; line-height: 0.9; letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+/* ---------- log: header ---------- */
+.log-hdr {
+  padding: calc(18px + env(safe-area-inset-top)) 20px 6px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.log-hdr-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.log-hdr-text { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.log-hdr-side { display: flex; align-items: flex-end; gap: 12px; flex: none; }
+.log-balls { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.log-balls b {
+  font-family: var(--font-display); font-stretch: 112%; font-weight: 800;
+  font-size: 34px; line-height: 0.9;
+}
+.log-balls span { font-size: 12px; font-weight: 700; color: var(--muted); }
+.area-progress { display: grid; gap: 4px; }
+.area-progress-seg {
+  height: 6px; border-radius: 3px; overflow: hidden;
+  background: color-mix(in srgb, var(--text) 9%, transparent);
+}
+.area-progress-seg i {
+  display: block; height: 100%; border-radius: 3px; background: var(--band);
+  transition: width var(--dur-base) var(--ease-out);
+}
+/* aqua is too pale to read as a fill on the light ground */
+.area-progress-seg.area-putting i { background: #4FAFC2; }
+
+/* ---------- log: the band stack ---------- */
+.screen.log { padding-left: 8px; padding-right: 8px; gap: 14px; }
+.screen.log > :not(.bands) { margin-inline: 12px; }
+.bands { display: flex; flex-direction: column; }
+.band {
+  position: relative; border-radius: var(--band-radius);
+  background: var(--band); color: var(--on-band);
+  padding-bottom: var(--band-overlap);
+  scroll-margin-top: 16px;
+}
+.band:last-child { padding-bottom: 0; }
+.band + .band { margin-top: calc(-1 * var(--band-overlap)); box-shadow: var(--band-shadow); }
+.band-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  width: 100%; min-height: 64px; padding: 14px 20px; color: inherit; text-align: left;
+}
+.band.open .band-head { padding-top: 20px; padding-bottom: 6px; }
+.band-title {
+  font-family: var(--font-display); font-stretch: 118%; font-weight: 800;
+  font-size: 25px; line-height: 1; letter-spacing: -0.02em;
+}
+.band-summary {
+  display: flex; align-items: center; gap: 8px; flex: none;
+  font-size: 13.5px; font-weight: 800; color: rgba(var(--on-band-rgb), 0.9);
+}
+.band-head:focus-visible { outline: 3px solid var(--on-band); outline-offset: -6px; border-radius: var(--band-radius); }
+.band-body { padding: 4px 20px 26px; display: flex; flex-direction: column; gap: 16px; }
+.band-body .msr { color: inherit !important; }
+
+.band-drill { margin: 0; font-size: 14.5px; font-weight: 600; line-height: 1.4; color: rgba(var(--on-band-rgb), 0.9); text-wrap: pretty; }
+.band .drswap { margin-top: -8px; color: var(--on-band); }
+.band .drswap button { color: rgba(var(--on-band-rgb), 0.85); }
+
+.band-hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.band-pct {
+  font-family: var(--font-display); font-stretch: 112%; font-weight: 900;
+  font-size: 112px; line-height: 0.8; letter-spacing: -0.045em;
+  display: flex; align-items: flex-start;
+}
+.band-pct small { font-size: 38px; margin-top: 6px; letter-spacing: -0.02em; }
+.band-pct-side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; padding-bottom: 6px; text-align: right; }
+.band-pct-side b { font-size: 15px; font-weight: 800; }
+.band-pct-side span { font-size: 13px; font-weight: 700; color: rgba(var(--on-band-rgb), 0.85); }
+
+.band-dots { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 6px; }
+.band-dot {
+  aspect-ratio: 1; border-radius: 50%; box-sizing: border-box;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800; line-height: 1;
+  background: rgba(var(--on-band-rgb), 0.16);
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.band-dot.good { background: var(--on-band); animation: toggle-pop var(--dur-base) var(--ease-spring); }
+.band-dot.miss { background: transparent; border: 2px solid var(--on-band); animation: toggle-pop var(--dur-base) var(--ease-spring); }
+
+/* outcome buttons on a band: the good outcome is solid, misses are tinted */
+.band .outcomes { gap: 8px; }
+.band .outcome {
+  min-height: 96px; border: 0; border-radius: 24px;
+  background: rgba(var(--on-band-rgb), 0.14); color: var(--on-band);
+}
+.band .outcome:active { background: rgba(var(--on-band-rgb), 0.24); }
+.band .outcome.good { flex-grow: 1.35; background: var(--on-band); color: var(--band); }
+.band .outcome.good:active { background: rgba(var(--on-band-rgb), 0.85); }
+.band .outcome .outcome-count,
+.band .outcome.good .outcome-count,
+.band .outcome.sand .outcome-count,
+.band .outcome.clay .outcome-count {
+  color: inherit; font-family: var(--font-display); font-stretch: 112%; font-weight: 800; font-size: 34px;
+}
+.band .outcome .outcome-label,
+.band .outcome.good .outcome-label,
+.band .outcome.sand .outcome-label,
+.band .outcome.clay .outcome-label { color: inherit; font-size: 14px; font-weight: 800; }
+.band .outcome .outcome-hint { color: inherit; opacity: 0.78; }
+.band .outcome .msr { color: inherit !important; }
+
+.band-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: -4px; }
+.band-ghost {
+  display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 2px;
+  font-size: 14px; font-weight: 800; color: var(--on-band);
+}
+.band-ghost:disabled { opacity: 0.45; }
+.band-ball { font-size: 13px; font-weight: 700; color: rgba(var(--on-band-rgb), 0.88); }
+.band .voicelog {
+  width: 44px; height: 44px; border-radius: 22px; border: 0;
+  background: rgba(var(--on-band-rgb), 0.14); color: var(--on-band);
+}
+.band .voicelog.on { background: var(--on-band); color: var(--band); }
+.band-note {
+  margin: 0; font-size: 14px; font-weight: 600; line-height: 1.45; text-wrap: pretty;
+  padding: 12px 14px; border-radius: 18px; background: rgba(var(--on-band-rgb), 0.1);
+}
+
+/* setup chips, best-club field, drill cards and stick notes, on a band */
+.band .setup-row .rgrp-lbl, .band .grp-lbl { color: rgba(var(--on-band-rgb), 0.88); }
+.band .setup-sel { color: var(--on-band); }
+.band .chip-btn {
+  height: 38px; padding: 0 14px; border: 0; border-radius: 19px;
+  background: rgba(var(--on-band-rgb), 0.14); color: var(--on-band); font-weight: 800;
+}
+.band .chip-btn.on { background: var(--on-band); color: var(--band); }
+.band .field { border: 0; background: rgba(var(--on-band-rgb), 0.14); color: var(--on-band); border-radius: 18px; }
+.band .field input { caret-color: var(--on-band); }
+.band .field input::placeholder { color: rgba(var(--on-band-rgb), 0.7); }
+.band .drill { border: 0; border-radius: 20px; background: rgba(var(--on-band-rgb), 0.1); }
+.band .drill-t, .band .drill-b { color: var(--on-band); }
+.band .drill-video { background: rgba(var(--on-band-rgb), 0.14); color: var(--on-band); }
+.band .stick { border: 0; border-radius: 20px; background: rgba(var(--on-band-rgb), 0.1); }
+.band .stick-b, .band .stick-b b { color: var(--on-band); }
+.band .block-continue {
+  min-height: 56px; border: 0; background: var(--on-band); color: var(--band); font-size: 15px;
+}
+
+/* ---------- log: around the bands ---------- */
+.screen.log .flowstrip { border: 0; background: var(--card); border-radius: 22px; }
+.screen.log .session-finish .notes,
+.screen.log .session-finish .datefield { border: 0; background: var(--card); border-radius: 18px; }
+.screen.log .session-finish .btn-ghost { border: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .band-dot.good, .band-dot.miss { animation: none; }
+}

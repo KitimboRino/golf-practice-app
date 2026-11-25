@@ -1446,17 +1446,22 @@ type AreaKey = "chipping" | "irons" | "driving" | "pitching" | "putting";
 type Tone = "good" | "sand" | "clay";
 type StepDef = {
   id: string; area: AreaKey; name: string; icon: string; drillIcon: string; target: number;
+  // how the area's success rate reads: the big number's caption ("struck
+  // solid") and the short form on a folded band ("7/10 solid")
+  metric: string; short: string;
   outcomes: { key: string; tone: Tone; icon: string; label: string; hint: string }[];
   distUnit?: "yd" | "ft"; dists?: number[]; clubs?: string[];
 };
 
 const STEPS: StepDef[] = [
   { id: "chip", area: "chipping", name: "Chipping", icon: "swipe_up", drillIcon: "crop_square", target: 10,
+    metric: "on the towel", short: "on",
     outcomes: [
       { key: "on", tone: "good", icon: "check", label: "On towel", hint: "landed on it" },
       { key: "off", tone: "clay", icon: "close", label: "Off towel", hint: "missed the mark" },
     ] },
   { id: "pitch", area: "pitching", name: "Pitching", icon: "arrow_outward", drillIcon: "flag", target: 10,
+    metric: "finished close", short: "close",
     distUnit: "yd", dists: [35, 45, 55, 65], clubs: ["54°", "56°", "58°", "60°"],
     outcomes: [
       { key: "close", tone: "good", icon: "check", label: "Close", hint: "inside ~3 steps" },
@@ -1464,6 +1469,7 @@ const STEPS: StepDef[] = [
       { key: "long", tone: "clay", icon: "arrow_upward", label: "Long", hint: "carried past" },
     ] },
   { id: "iron", area: "irons", name: "Irons", icon: "golf_course", drillIcon: "stacked_line_chart", target: 9,
+    metric: "struck solid", short: "solid",
     clubs: ["6i", "7i", "8i", "9i"],
     outcomes: [
       { key: "solid", tone: "good", icon: "check", label: "Solid", hint: "flush contact" },
@@ -1471,6 +1477,7 @@ const STEPS: StepDef[] = [
       { key: "thin", tone: "clay", icon: "north_east", label: "Thin", hint: "caught it low" },
     ] },
   { id: "drive", area: "driving", name: "Driving", icon: "sports_golf", drillIcon: "near_me", target: 10,
+    metric: "started on line", short: "on line",
     clubs: ["Driver", "3W", "5W", "Iron"],
     outcomes: [
       { key: "fairway", tone: "good", icon: "check", label: "On line", hint: "started at target" },
@@ -1478,6 +1485,7 @@ const STEPS: StepDef[] = [
       { key: "right", tone: "clay", icon: "east", label: "Right", hint: "pushed / sliced" },
     ] },
   { id: "putt", area: "putting", name: "Putting", icon: "adjust", drillIcon: "door_sliding", target: 10,
+    metric: "holed", short: "holed",
     distUnit: "ft", dists: [3, 6, 10, 20],
     outcomes: [
       { key: "in", tone: "good", icon: "golf_course", label: "In", hint: "holed / through the gate" },
@@ -1586,6 +1594,7 @@ function SessionScreen({
   const logged = steps.filter((s) => areaLogged(s.area)).length;
   const total = steps.length;
   const canFinish = editMode || logged > 0;
+  const totalBalls = steps.reduce((n, s) => n + live.strips[s.area].length, 0);
 
   const drillFor = (step: StepDef): { line: string; cards: { how: string; name?: string; video?: string }[]; sticks: string[]; swapped?: boolean } => {
     const ov = editMode ? undefined : overrides[step.area];
@@ -1607,31 +1616,34 @@ function SessionScreen({
 
   return (
     <>
-      <header className="hdr">
-        <div className="hdr-row">
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="hdr-eyebrow">
-              {editMode ? "Editing session" : isQuick ? "Quick session" : "Session log"}
-            </div>
-            <div className="hdr-title sm">
+      <header className="log-hdr">
+        <div className="log-hdr-row">
+          <div className="log-hdr-text">
+            <span className="kicker">
+              {editMode ? "Editing · " : ""}
               {isQuick
-                ? `Quick session`
-                : `${week.short} · ${session.label.replace(/ —.*/, "")}`}
-            </div>
-            <div className="hdr-sub sm">
-              {isQuick
-                ? `${total} area${total === 1 ? "" : "s"} · log as many balls as you like`
-                : venueLimited
-                  ? `${week.title} block · ${total} of 5 areas`
-                  : `${week.title} block · 5 areas`}
-            </div>
+                ? `${total} area${total === 1 ? "" : "s"} · as many balls as you like`
+                : `${week.short} · ${session.label.replace(/ —.*/, "")}${venueLimited ? ` · ${total} of 5 areas` : ""}`}
+            </span>
+            <h1 className="display-xl">{isQuick ? "Quick session" : week.title}</h1>
           </div>
-          <div className="hdr-actions">
+          <div className="log-hdr-side">
             <GlareToggle />
-            <div className="chip"><Icon name="check_circle" size={16} fill={logged === total} />{logged}/{total}</div>
+            <span className="log-balls">
+              <b className="num">{totalBalls}</b>
+              <span>{totalBalls === 1 ? "ball" : "balls"}</span>
+            </span>
           </div>
         </div>
-        <div className="pbar"><span style={{ transform: `scaleX(${total ? logged / total : 0})` }} /></div>
+        <div className="area-progress" role="img"
+             aria-label={`${logged} of ${total} areas logged, ${totalBalls} balls`}
+             style={{ gridTemplateColumns: `repeat(${total}, minmax(0, 1fr))` }}>
+          {steps.map((s) => (
+            <span key={s.id} className={`area-progress-seg area-${s.area}`}>
+              <i style={{ width: `${Math.min(100, (live.strips[s.area].length / s.target) * 100)}%` }} />
+            </span>
+          ))}
+        </div>
       </header>
 
       <div className="screen log">
@@ -1657,6 +1669,7 @@ function SessionScreen({
           </details>
         )}
 
+        <div className="bands">
         {steps.map((step, stepIdx) => {
           const strip = live.strips[step.area];
           const done = areaLogged(step.area);
@@ -1665,14 +1678,16 @@ function SessionScreen({
           const goodN = strip.reduce((a, x) => (x === good ? a + 1 : a), 0);
           const goodPct = strip.length ? Math.round((goodN / strip.length) * 100) : null;
           const nextStep = steps[stepIdx + 1];
+          const isOpen = openId === step.id;
+          const summary = strip.length
+            ? `${goodN}/${strip.length} ${step.short}`
+            : done ? "Club noted" : isOpen ? "" : "Not started";
           return (
-            <Block key={step.id} id={step.id} name={step.name} area={step.area} logged={done}
-                   count={strip.length} target={step.target} goodPct={goodPct}
-                   open={openId === step.id} toggle={() => toggle(step.id)}>
+            <Block key={step.id} id={step.id} name={step.name} area={step.area}
+                   summary={summary} full={strip.length >= step.target}
+                   open={isOpen} toggle={() => toggle(step.id)}>
               {!isQuick && (
-                <div className="drline">
-                  <Icon name={step.drillIcon} size={17} color="var(--blue)" style={{ marginTop: 1 }} />{d.line}
-                </div>
+                <p className="band-drill">{d.line}</p>
               )}
               {!isQuick && d.swapped && (
                 <div className="drswap">
@@ -1734,38 +1749,31 @@ function SessionScreen({
                 </div>
               )}
 
-              <div className="shotstrip">
-                <div className="shotstrip-head">
-                  <span className="eyebrow dim">Ball {Math.min(step.target, strip.length + 1)} of {step.target}</span>
-                  <span className="shotstrip-right">
-                    {strip.length > 0 && (
-                      <span className="shotstrip-rate" style={{ color: goodN / strip.length >= 0.5 ? "var(--green)" : "var(--sand)" }}>
-                        <Icon name="insights" size={14} />{Math.round((goodN / strip.length) * 100)}% on line
-                      </span>
-                    )}
-                    <VoiceLogButton outcomes={step.outcomes} onMatch={(key) => push(step.area, key)} />
-                  </span>
-                </div>
-                <div className="shotstrip-dots">
-                  {Array.from({ length: step.target }).map((_, i) => {
-                    const k = strip[i];
-                    const o = step.outcomes.find((x) => x.key === k);
-                    return (
-                      <span key={i} className={"strip-dot" + (o ? " " + o.tone : "")}>
-                        {o && <Icon name={o.icon} size={13} />}
-                      </span>
-                    );
-                  })}
-                  {strip.slice(step.target).map((k, i) => {
-                    const o = step.outcomes.find((x) => x.key === k);
-                    return <span key={"x" + i} className={"strip-dot" + (o ? " " + o.tone : "")}>{o && <Icon name={o.icon} size={13} />}</span>;
-                  })}
-                </div>
-                {strip.length >= 3 && (
-                  <div className="shotstrip-note">
-                    <Icon name="lightbulb" size={16} color="var(--blue-icon)" />{liveNote(step.area, strip)}
-                  </div>
-                )}
+              <div className="band-hero">
+                <span className="band-pct num">
+                  {goodPct ?? "–"}{goodPct !== null && <small>%</small>}
+                </span>
+                <span className="band-pct-side">
+                  <b>{step.metric}</b>
+                  <span>{strip.length ? `${goodN} of ${strip.length} balls` : "No balls yet"}</span>
+                </span>
+              </div>
+
+              {/* one dot per ball: filled = the good outcome, ringed letter = a
+                  miss (F/T, L/R, S/L…), faint = still to hit */}
+              <div className="band-dots" role="img"
+                   style={{ gridTemplateColumns: `repeat(${step.target}, minmax(0, 1fr))` }}
+                   aria-label={`${strip.length} balls logged, ${goodN} ${step.short}`}>
+                {Array.from({ length: Math.max(step.target, strip.length) }).map((_, i) => {
+                  const k = strip[i];
+                  const o = step.outcomes.find((x) => x.key === k);
+                  const cls = !o ? "" : o.key === good ? " good" : " miss";
+                  return (
+                    <span key={i} className={"band-dot" + cls}>
+                      {o && o.key !== good ? o.label[0] : ""}
+                    </span>
+                  );
+                })}
               </div>
 
               <div className="outcomes">
@@ -1777,12 +1785,19 @@ function SessionScreen({
                 ))}
               </div>
 
-              <div className="strip-actions">
-                <button className="btn-ghost sm" onClick={() => popLast(step.area)} disabled={!strip.length}>
-                  <Icon name="undo" size={16} />Undo last
+              <div className="band-actions">
+                <button className="band-ghost" onClick={() => popLast(step.area)} disabled={!strip.length}>
+                  <Icon name="undo" size={18} />Undo last
                 </button>
-                <span className="hint" style={{ margin: 0 }}>hold a count to subtract</span>
+                <span className="band-ball num">
+                  {strip.length >= step.target ? `All ${step.target} logged` : `Ball ${strip.length + 1} of ${step.target}`}
+                </span>
+                <VoiceLogButton outcomes={step.outcomes} onMatch={(key) => push(step.area, key)} />
               </div>
+
+              {strip.length >= 3 && (
+                <p className="band-note">{liveNote(step.area, strip)}</p>
+              )}
 
               {!isQuick && d.cards.map((c, i) => <DrillCard key={i} how={c.how} name={c.name} video={c.video} />)}
               {!isQuick && d.sticks.map((s, i) => <Stick key={i} text={s} />)}
@@ -1795,6 +1810,7 @@ function SessionScreen({
             </Block>
           );
         })}
+        </div>
 
         <div className="grp session-finish" style={{ paddingTop: 8 }}>
           <div className="label-row"><Icon name="event" size={16} />Session date</div>
@@ -1819,32 +1835,26 @@ function SessionScreen({
   );
 }
 
+// One practice area as a colour band. Folded, it's just the area name and its
+// score; open, it holds the whole logging surface. Bands overlap their
+// neighbour slightly (see .bands in globals.css) so the session reads as a
+// stack, top to bottom in session order.
 function Block({
-  id, name, area, logged, count, target, goodPct, open, toggle, children,
+  id, name, area, summary, full, open, toggle, children,
 }: {
-  id: string; name: string; area: AreaKey; logged: boolean;
-  count: number; target: number; goodPct: number | null;
+  id: string; name: string; area: AreaKey; summary: string; full: boolean;
   open: boolean; toggle: () => void; children: React.ReactNode;
 }) {
-  const full = count >= target;
-  const cls = "block" + (!logged && !open ? " empty" : "") + (!open ? " collapsed" : "") + (open ? " active" : "");
   return (
-    <section className={cls} data-block={id}>
-      <button className="block-head" onClick={toggle} aria-expanded={open}>
-        <span className="block-name">
-          <AreaIcon area={area} size={21} color={logged || open ? "var(--green)" : "var(--icon-muted)"} />{name}
-        </span>
-        <span className="block-right">
-          <span className={"block-tally" + (!logged ? " none" : full ? " full" : "")}>
-            {logged
-              ? `${count}/${target}${goodPct !== null ? ` · ${goodPct}%` : ""}`
-              : "Not logged"}
-          </span>
-          <Icon name="expand_more" size={22} color="var(--icon-muted)"
-                className={"rot-chev" + (open ? " open" : "")} />
+    <section className={`band area-${area}${open ? " open" : ""}`} data-block={id} aria-label={name}>
+      <button className="band-head" onClick={toggle} aria-expanded={open}>
+        <span className="band-title">{name}</span>
+        <span className="band-summary">
+          {summary && <span>{summary}</span>}
+          {full && <Icon name="check_circle" size={20} />}
         </span>
       </button>
-      {open && <div className="block-body">{children}</div>}
+      {open && <div className="band-body">{children}</div>}
     </section>
   );
 }
