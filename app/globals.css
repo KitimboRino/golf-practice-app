@@ -3492,3 +3492,15 @@ h1, h2, h3, .display-xl, .hdr-title, .plan-hero-title, .deal-h, .reveal-verdict,
 .fr-wrap.practice .coach-card .coach-body { color: #3E4856; }
 .fr-wrap.practice .coach-card .coach-pips span { background: rgba(15, 19, 33, 0.15); }
 .fr-wrap.practice .coach-card .coach-pips span.on { background: var(--area-driving); }
+/* the deal heading's own rule is more specific than the shared heading
+   line-height above, so set it here too */
+.fr.deal .deal-h { line-height: 1.02; }
+/* first-run questions ("where does your bad one go?", "your level?") lead
+   with a real heading, like every other screen */
+.fr-head.bare .fr-head-title {
+  font-family: var(--font-display); font-stretch: 118%; font-weight: 900;
+  font-size: 30px; line-height: 1.02; letter-spacing: -0.025em; text-wrap: balance;
+}
+.fr-head.bare .fr-head-sub { margin-top: 8px; font-size: 15px; line-height: 1.4; }
+.scorecard-lbl { font-size: 11px; }
+.fr-head.bare:has(> .icon-btn) { flex-direction: column; align-items: flex-start; gap: 14px; }
