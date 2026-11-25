@@ -34,16 +34,45 @@ function seekTo(video: HTMLVideoElement, t: number): Promise<void> {
   });
 }
 
+// Chrome's MediaRecorder writes WebM without a duration in the header, so
+// video.duration reads Infinity until the browser has scanned to the end.
+// Seeking far past the end forces that scan; durationchange then reports the
+// real length. Bounded by a timeout so a browser that never updates it can't
+// hang the analysis — callers still clamp to MAX_CLIP_SECONDS.
+function resolveDuration(video: HTMLVideoElement): Promise<void> {
+  return new Promise((resolve) => {
+    let finished = false;
+    const done = () => {
+      if (finished) return;
+      finished = true;
+      video.removeEventListener("durationchange", onChange);
+      clearTimeout(timer);
+      seekTo(video, 0).then(resolve);
+    };
+    const onChange = () => { if (isFinite(video.duration)) done(); };
+    const timer = window.setTimeout(done, 2000);
+    video.addEventListener("durationchange", onChange);
+    video.currentTime = Number.MAX_SAFE_INTEGER;
+  });
+}
+
 function loadVideo(blob: Blob): Promise<HTMLVideoElement> {
   const video = document.createElement("video");
   video.muted = true;
   video.playsInline = true;
   video.src = URL.createObjectURL(blob);
   return new Promise((resolve, reject) => {
-    video.onloadedmetadata = () => resolve(video);
+    video.onloadedmetadata = () => {
+      if (isFinite(video.duration)) resolve(video);
+      else resolveDuration(video).then(() => resolve(video));
+    };
     video.onerror = () => reject(new Error("Couldn't read the recorded clip"));
   });
 }
+
+// Recordings are 4s (SwingCheck's RECORD_MS); anything longer, or a duration
+// that never resolved, is clamped so the frame loop always terminates.
+const MAX_CLIP_SECONDS = 10;
 
 // Decodes the recorded clip by seeking a hidden <video> frame by frame (not
 // real-time playback) and running pose estimation on each sampled frame via
@@ -56,7 +85,9 @@ export async function analyzeSwingVideo(
   const detector = await getDetector();
   const video = await loadVideo(blob);
   try {
-    const duration = video.duration;
+    const duration = isFinite(video.duration)
+      ? Math.min(video.duration, MAX_CLIP_SECONDS)
+      : MAX_CLIP_SECONDS;
     const step = 1 / SAMPLE_FPS;
     const canvas = document.createElement("canvas");
     canvas.width = video.videoWidth;

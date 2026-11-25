@@ -792,6 +792,17 @@ export const PLANS: Record<Level, Week[]> = {
 // the "jump to a session" grid) should use PLANS[level], not this.
 export const ALL_WEEKS: Week[] = [...PLAN_BEGINNER, ...PLAN_INTERMEDIATE, ...PLAN_PROFESSIONAL];
 
+// which level a (possibly historical) week id belongs to — undefined for
+// ad-hoc sessions or ids no plan knows about
+export const levelOfWeek = (weekId: string): Level | undefined =>
+  (Object.keys(PLANS) as Level[]).find((l) => PLANS[l].some((w) => w.id === weekId));
+
+// a "Test Day" is the labelled session in the LAST week of any level's plan —
+// not a hardcoded intermediate "week4", so Beginner/Professional count too
+const FINAL_WEEK_IDS = new Set(Object.values(PLANS).map((p) => p[p.length - 1].id));
+export const isTestDay = (weekId: string, label: string) =>
+  FINAL_WEEK_IDS.has(weekId) && /test/i.test(label);
+
 export const planSlotKey = (weekId: string, label: string) => `${weekId}|${label}`;
 // every (week, session) slot in one level's plan, flattened — used to detect
 // the moment every slot in THAT level has been logged at least once (the
