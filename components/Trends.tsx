@@ -213,14 +213,14 @@ export function Trends({
 
   return (
     <>
-      <header className="hero">
-        <div className="hero-row">
+      <header className="hdr">
+        <div className="hdr-row" style={{ alignItems: "center" }}>
           <button className="icon-btn" onClick={onBack} aria-label="Back">
             <Icon name="arrow_back" size={22} />
           </button>
           <div style={{ flex: 1 }}>
-            <div className="hero-h">Trends</div>
-            <div className="hero-sub">
+            <div className="hdr-title">Trends</div>
+            <div className="hdr-sub">
               {history.length} {history.length === 1 ? "session" : "sessions"} · weeks 1-4
             </div>
           </div>
@@ -235,7 +235,7 @@ export function Trends({
         </div>
       </header>
 
-      <div className="sheet">
+      <div className="screen trends-screen">
         {showData && (
           <div className="datamenu">
             <button onClick={doExport}>
@@ -273,10 +273,10 @@ export function Trends({
           <Compare baseline={baseline} target={target} isTest={testIdx >= 0} />
         )}
 
-        <ChartCard title="Solid strike %" icon="sports_golf" data={solid} />
-        <ChartCard title="Fairways found %" icon="golf_course" data={fair} />
-        {pitchLogged && <ChartCard title="Pitch accuracy %" icon="arrow_outward" data={pitch} />}
-        <ChartCard title="Putts made %" icon="adjust" data={putt} />
+        <ChartCard title="Solid strike %" icon="sports_golf" data={solid} band="irons" />
+        <ChartCard title="Fairways found %" icon="golf_course" data={fair} band="driving" />
+        {pitchLogged && <ChartCard title="Pitch accuracy %" icon="arrow_outward" data={pitch} band="pitching" />}
+        <ChartCard title="Putts made %" icon="adjust" data={putt} band="putting" />
         {swingLogged && (
           <>
             <ChartCard title="Shoulder turn at top" icon="videocam" data={shoulderTurnTop} unit="°" max={100} axPrefix="" />
@@ -765,9 +765,10 @@ function Compare({
 }
 
 function ChartCard({
-  title, icon, data, unit = "%", max = 100, axPrefix = "S",
+  title, icon, data, unit = "%", max = 100, axPrefix = "S", band,
 }: {
   title: string;
+  band?: AreaKey; // takes that practice area's colour band
   icon: string;
   data: number[];
   unit?: string;
@@ -786,7 +787,7 @@ function ChartCard({
   const gid = "ar-" + title.replace(/\W/g, "");
 
   return (
-    <div className="chart">
+    <div className={"chart" + (band ? ` banded area-${band}` : "")}>
       <div className="chart-top">
         <div>
           <div className="chart-t"><Icon name={icon} size={18} color="var(--icon-muted)" />{title}</div>

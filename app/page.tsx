@@ -351,7 +351,7 @@ function QuickPick({
           {QUICK_AREAS.map((a) => {
             const on = picked.has(a.key);
             return (
-              <button key={a.key} className={"area-pick" + (on ? " on" : "")}
+              <button key={a.key} className={`area-pick area-${a.key}` + (on ? " on" : "")}
                       aria-pressed={on} onClick={() => toggle(a.key)}>
                 <span className="icon-tile sm"><Icon name={a.icon} size={16} /></span>
                 <span>{a.name}</span>
@@ -1066,17 +1066,18 @@ function More({
           </div>
         )}
 
+        <div className="more-tiles">
+          <button className="more-tile area-irons" onClick={onOpenTrends}>
+            <span className="more-tile-t">Trends</span>
+            <span className="more-tile-s">Your numbers, session by session</span>
+          </button>
+          <button className="more-tile area-pitching" onClick={() => setView("games")}>
+            <span className="more-tile-t">Practice games</span>
+            <span className="more-tile-s">Scored challenges to beat your best</span>
+          </button>
+        </div>
+
         <div className="more-list">
-          <button className="more-row" onClick={onOpenTrends}>
-            <span className="more-ic"><Icon name="show_chart" size={22} color="var(--green)" /></span>
-            <span className="more-txt"><b>Trends</b><span>Your numbers, session by session</span></span>
-            <Icon name="chevron_right" size={20} color="var(--icon-muted)" />
-          </button>
-          <button className="more-row" onClick={() => setView("games")}>
-            <span className="more-ic"><Icon name="emoji_events" size={22} color="var(--green)" /></span>
-            <span className="more-txt"><b>Practice games</b><span>Scored challenges to beat your best</span></span>
-            <Icon name="chevron_right" size={20} color="var(--icon-muted)" />
-          </button>
           <button className="more-row" onClick={() => setView("fixes")}>
             <span className="more-ic"><Icon name="build" size={22} color="var(--green)" /></span>
             <span className="more-txt"><b>Fixes</b><span>Your miss pattern and its first fix</span></span>
