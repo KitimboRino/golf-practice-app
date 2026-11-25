@@ -277,7 +277,7 @@ function LogButtons({
 // 3b — Practice run (coach marks)
 
 const COACH = [
-  { head: "Say that one started at the flag.", body: "Tap the big green button below. That's the whole app, really." },
+  { head: "Say that one started at the flag.", body: "Tap the big On my line button below. That's the whole app, really." },
   { head: "Now say this one missed.", body: "It leaked right. Tap Right. The miss buttons work the same way." },
   { head: "Mis-tapped? Undo it.", body: "One press takes back the last ball. No hold, no dialog." },
 ];

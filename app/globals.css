@@ -3432,3 +3432,63 @@ body:has(.plan-screen):has(.install-card) .app { padding-bottom: calc(176px + en
 .routine-rehearse .btn-ghost { color: #FFFFFF; }
 .routine-stage-title { font-size: 34px; padding: 0 10px; }
 .hdr-row:has(> .icon-btn:first-child) .hdr-title.sm { font-size: 36px; }
+
+/* =========================================================================
+   Text pass — sizes, contrast and wrapping, from an in-browser audit of
+   every screen (truncation, contrast against the real background, font
+   size, stranded words)
+   ========================================================================= */
+
+/* 1. nothing readable below 11px; small caps labels at 11–12px */
+.eyebrow, .hdr-eyebrow, .kicker, .rgrp-lbl, .photo-hdr-eyebrow { font-size: 11px; letter-spacing: 0.1em; }
+.game-tag, .lib-tag, .focus-tag, .miss-row .focus-tag { font-size: 11px; letter-spacing: 0.05em; }
+.rbtn-std { font-size: 10px; padding: 2px 5px; }
+.rbtn-hint { font-size: 12px; }
+.outcome-hint { font-size: 11.5px; }
+.band .outcome .outcome-hint { opacity: 0.9; }
+.plan-slot { font-size: 12px; }
+.chart-ax { font-size: 12px; }
+
+/* 2. clay carried too little contrast for faded secondary text: deepen it
+   a touch (white on it goes from ~5.0:1 to ~5.8:1) and keep secondary text
+   on every band at 92% so it stays above 4.5:1 on all five colours */
+:root { --area-pitching: #A9482F; }
+.band-summary, .band-drill, .band-pct-side span, .band-ball,
+.more-tile-s, .tile.banded .eyebrow, .tile.banded .tile-lbl,
+.game-row .more-txt > span, .game-row .game-row-best, .game-row .game-row-none,
+.chart.banded .chart-ax, .fault-hero-k, .fault-hero .eyebrow, .fault-hero .fault-k,
+.receipt-weak, .band .setup-row .rgrp-lbl, .band .grp-lbl {
+  color: rgba(var(--on-band-rgb), 0.92);
+}
+.game-row .game-tag { background: rgba(var(--on-band-rgb), 0.2); }
+
+/* 3. the warm-up's "now" label, the first-ten read's tick, practice-run
+   buttons that are dimmed until their coach step */
+.warm-now .eyebrow { color: #CDEEF4; }
+.fr-wrap.read .slot.fairway, .fr-wrap.practice .slot.fairway { color: var(--area-driving); }
+.fr-wrap.practice .logbtn.inert, .fr-wrap.practice .undo-btn.inert { opacity: 0.5; }
+
+/* 4. the greeting wraps to two lines instead of being cut off */
+.plan-greet > span { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.3; text-align: left; }
+
+/* 5. headings: balanced wrapping (no single stranded word) and enough line
+   height that two wrapped lines of the extended display face don't touch */
+h1, h2, h3, .display-xl, .hdr-title, .plan-hero-title, .deal-h, .reveal-verdict,
+.coach-head, .verdict-h, .band-title, .more-tile-t, .plan-onething-title,
+.routine-stage-title, .warm-now-name, .fault-hero-pat, .photo-hdr-title,
+.receipt-title, .round-sum-course, .game-row-name { text-wrap: balance; }
+.display-xl, .hdr-title, .deal-h, .reveal-verdict, .photo-hdr-title,
+.trends-screen .verdict-h, .warm-now-name, .routine-stage-title, .receipt-title { line-height: 1; }
+.plan-hero-title { line-height: 0.95; }
+.fault-hero-pat, .more-tile-t, .plan-onething-title { line-height: 1.05; }
+.rbtn-std { font-size: 11px; }
+.welcome-lbl { font-size: 11px; }
+/* area tags on a coloured game card: an inverted pill, so the small
+   uppercase text reads on every band (clay included) */
+.game-row .game-tag { background: var(--on-band); color: var(--band); }
+/* the practice coach card is always white, so its text must not follow the
+   theme's (light-in-dark-mode) text colours */
+.fr-wrap.practice .coach-card .coach-head { color: #0F1321; }
+.fr-wrap.practice .coach-card .coach-body { color: #3E4856; }
+.fr-wrap.practice .coach-card .coach-pips span { background: rgba(15, 19, 33, 0.15); }
+.fr-wrap.practice .coach-card .coach-pips span.on { background: var(--area-driving); }
