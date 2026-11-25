@@ -3760,3 +3760,6 @@ body:has(.plan-screen):has(.install-card) .app { padding-bottom: calc(176px + en
 .warm-now-actions .icon-btn { border-radius: 30px; width: 60px; height: 60px; background: rgba(255, 255, 255, 0.14); color: #FFFFFF; }
 .fr.deal .deal-h { font-size: 36px; }
 .receipt-screen .receipt-next small { color: var(--on-ink); opacity: 0.78; }
+/* the icon is a span too — only the label should stretch */
+.draft-banner > .msr { flex: none; }
+.draft-banner > span:not(.msr) { flex: 1 1 auto; }
