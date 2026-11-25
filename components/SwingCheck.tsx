@@ -9,6 +9,7 @@ import { analyzeSwingVideo, frameThumbnail } from "@/lib/swingPose";
 import { detectPhases } from "@/lib/swingPhases";
 import { measurePhases } from "@/lib/swingAngles";
 import { SWING_BASELINE, statusFor } from "@/lib/swingBaseline";
+import { localDate } from "@/lib/date";
 
 const RECORD_MS = 4000;
 const COUNTDOWN_FROM = 3; // seconds — only for the manual button; auto-detect must fire instantly
@@ -36,7 +37,7 @@ const QUIET_STREAK_NEEDED = 8; // consecutive quiet samples (~0.7s) before armin
 type Stage = "intro" | "camera" | "recording" | "processing" | "results";
 type ArmState = "settling" | "ready" | null;
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => localDate();
 
 // Stage 1 of the swing-check feature (see the plan doc): record a swing,
 // run on-device pose estimation, show the golfer their own measured joint
@@ -71,8 +72,11 @@ export function SwingCheck({ onBack }: { onBack: () => void }) {
     setChecked(true);
   }, []);
 
+  const mountedRef = useRef(true);
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
+      mountedRef.current = false;
       streamRef.current?.getTracks().forEach((t) => t.stop());
       if (stopTimerRef.current) clearTimeout(stopTimerRef.current);
     };
@@ -198,8 +202,11 @@ export function SwingCheck({ onBack }: { onBack: () => void }) {
     streamRef.current = null;
   };
 
-  const startCamera = async () => {
-    tapFx();
+  // Acquires a fresh stream and moves to the "camera" stage. Used both for
+  // the first start and to recover after a failed analysis — the recorder's
+  // onstop already released the previous stream, so "camera" without a new
+  // one would be a black preview whose record() silently no-ops.
+  const openCamera = async () => {
     try {
       // `ideal`, not a bare string — a bare facingMode is a hard constraint
       // that throws NotFoundError on any device that doesn't cleanly expose
@@ -209,6 +216,12 @@ export function SwingCheck({ onBack }: { onBack: () => void }) {
         video: { facingMode: { ideal: "environment" } },
         audio: false,
       });
+      // left the screen while the permission prompt / camera was opening —
+      // release it now, or the camera stays on with nothing to stop it
+      if (!mountedRef.current) {
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
       streamRef.current = stream;
       // Don't attach to videoRef here — the <video> element only mounts once
       // stage flips to "camera", so videoRef.current is still null at this
@@ -216,7 +229,20 @@ export function SwingCheck({ onBack }: { onBack: () => void }) {
       setStage("camera");
     } catch {
       toast.show("Can't use the camera — check camera permission");
+      setStage("intro");
     }
+  };
+
+  const startCamera = () => {
+    tapFx();
+    return openCamera();
+  };
+
+  // After a failed analysis: explain, then put the golfer straight back in
+  // front of a live camera for another try.
+  const retryCapture = (message: string) => {
+    toast.show(message);
+    return openCamera();
   };
 
   const process = async (blob: Blob) => {
@@ -226,8 +252,7 @@ export function SwingCheck({ onBack }: { onBack: () => void }) {
       const frames = await analyzeSwingVideo(blob, setProgress);
       const phases = detectPhases(frames);
       if (!phases) {
-        toast.show("Couldn't follow the swing clearly enough in that clip — try again with your full body in frame");
-        setStage("camera");
+        await retryCapture("Couldn't follow the swing clearly enough in that clip — try again with your full body in frame");
         return;
       }
       const thumbnails: Record<SwingPhase, string> = {
@@ -238,17 +263,18 @@ export function SwingCheck({ onBack }: { onBack: () => void }) {
       };
       const result = measurePhases(frames, phases, thumbnails);
       if (!result) {
-        toast.show("Couldn't get a clear enough read on your position — try again with better lighting or a closer frame");
-        setStage("camera");
+        await retryCapture("Couldn't get a clear enough read on your position — try again with better lighting or a closer frame");
         return;
       }
       doneFx();
       setMeasurements(result);
       setStage("results");
-      await saveSwing({ id: uuid(), date: today(), measurements: result, createdAt: Date.now() });
+      // results are already on screen — a failed save shouldn't bounce the
+      // golfer back to the camera, just tell them it wasn't kept
+      saveSwing({ id: uuid(), date: today(), measurements: result, createdAt: Date.now() })
+        .catch(() => toast.show("Couldn't save this swing to your history"));
     } catch {
-      toast.show("Something went wrong analyzing that clip — try again");
-      setStage("camera");
+      await retryCapture("Something went wrong analyzing that clip — try again");
     }
   };
 

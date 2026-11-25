@@ -71,8 +71,10 @@ export function roundStats(holes: RoundHole[]): RoundStats {
     firPct: firHoles.length ? Math.round((firMade / firHoles.length) * 100) : null,
     firMade,
     firOf: firHoles.length,
-    fairwayLeft: holes.filter((h) => h.fairwayMiss === "left").length,
-    fairwayRight: holes.filter((h) => h.fairwayMiss === "right").length,
+    // only counted where a fairway miss is real — rounds saved before par-3
+    // switching cleared fairwayMiss can still carry a stale one on a par 3
+    fairwayLeft: firHoles.filter((h) => h.fairwayHit === false && h.fairwayMiss === "left").length,
+    fairwayRight: firHoles.filter((h) => h.fairwayHit === false && h.fairwayMiss === "right").length,
     girPct: girHoles.length ? Math.round((girMade / girHoles.length) * 100) : null,
     girMade,
     girOf: girHoles.length,

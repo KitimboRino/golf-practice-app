@@ -60,6 +60,17 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+// Content-hashed build chunks from old deploys are never requested again, but
+// would otherwise sit in ASSET_CACHE until VERSION is bumped. Keep the most
+// recent MAX_STATIC of them (cache keys come back in insertion order, so the
+// oldest are first) — comfortably more than one build's worth.
+const MAX_STATIC = 150;
+async function trimStatic(cache) {
+  const keys = (await cache.keys()).filter((r) => new URL(r.url).pathname.startsWith("/_next/static/"));
+  const excess = keys.length - MAX_STATIC;
+  if (excess > 0) await Promise.all(keys.slice(0, excess).map((r) => cache.delete(r)));
+}
+
 const withTimeout = (promise, ms) =>
   Promise.race([
     promise,
@@ -84,8 +95,12 @@ self.addEventListener("fetch", (event) => {
       (async () => {
         try {
           const res = await withTimeout(fetch(request), NET_TIMEOUT);
-          const cache = await caches.open(NAV_CACHE);
-          cache.put(request, res.clone());
+          // only a good page becomes the offline fallback — caching a 500 or
+          // 404 here would serve that error page every time we're offline
+          if (res.ok) {
+            const cache = await caches.open(NAV_CACHE);
+            cache.put(request, res.clone());
+          }
           return res;
         } catch {
           const cache = await caches.open(NAV_CACHE);
@@ -113,7 +128,10 @@ self.addEventListener("fetch", (event) => {
         const hit = await cache.match(request);
         if (hit) return hit;
         const res = await fetch(request);
-        if (res.ok) cache.put(request, res.clone());
+        if (res.ok) {
+          await cache.put(request, res.clone());
+          event.waitUntil(trimStatic(cache));
+        }
         return res;
       })(),
     );
