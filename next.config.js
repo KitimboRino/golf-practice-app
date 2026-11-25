@@ -74,6 +74,14 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_APP_VERSION: require("./package.json").version,
   },
+  turbopack: {
+    resolveAlias: {
+      // pose-detection imports `Pose` from this global-script package, which
+      // has no ES exports and fails the Turbopack build. Unused here (MoveNet
+      // on TF.js) — see lib/shims/mediapipe-pose.ts.
+      "@mediapipe/pose": "./lib/shims/mediapipe-pose.ts",
+    },
+  },
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },

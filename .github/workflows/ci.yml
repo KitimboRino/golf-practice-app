@@ -18,7 +18,8 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npx tsc --noEmit
+      # Next 16: generate route types first (next-env.d.ts references them)
+      - run: npm run typecheck
       - run: npx next build
         env:
           NODE_ENV: production
@@ -34,9 +35,6 @@ jobs:
       - run: npm ci
       # Blocks the build on a critical advisory.
       - run: npm audit --omit=dev --audit-level=critical
-      # Surfaces high advisories without blocking. next-pwa is gone (replaced
-      # by the hand-written public/sw.js); the remaining highs come in through
-      # next's own dependency tree (postcss / source-map-js) and clear with the
-      # Next.js upgrade — make this blocking after that.
+      # Blocks on high advisories too — clean since the Next 16 upgrade
+      # (next-pwa is long gone; it was the old source of build-time highs).
       - run: npm audit --omit=dev --audit-level=high
-        continue-on-error: true
