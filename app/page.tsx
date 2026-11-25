@@ -351,7 +351,7 @@ function QuickPick({
           {QUICK_AREAS.map((a) => {
             const on = picked.has(a.key);
             return (
-              <button key={a.key} className={"area-pick" + (on ? " on" : "")}
+              <button key={a.key} className={`area-pick area-${a.key}` + (on ? " on" : "")}
                       aria-pressed={on} onClick={() => toggle(a.key)}>
                 <span className="icon-tile sm"><Icon name={a.icon} size={16} /></span>
                 <span>{a.name}</span>
@@ -1066,17 +1066,18 @@ function More({
           </div>
         )}
 
+        <div className="more-tiles">
+          <button className="more-tile area-irons" onClick={onOpenTrends}>
+            <span className="more-tile-t">Trends</span>
+            <span className="more-tile-s">Your numbers, session by session</span>
+          </button>
+          <button className="more-tile area-pitching" onClick={() => setView("games")}>
+            <span className="more-tile-t">Practice games</span>
+            <span className="more-tile-s">Scored challenges to beat your best</span>
+          </button>
+        </div>
+
         <div className="more-list">
-          <button className="more-row" onClick={onOpenTrends}>
-            <span className="more-ic"><Icon name="show_chart" size={22} color="var(--green)" /></span>
-            <span className="more-txt"><b>Trends</b><span>Your numbers, session by session</span></span>
-            <Icon name="chevron_right" size={20} color="var(--icon-muted)" />
-          </button>
-          <button className="more-row" onClick={() => setView("games")}>
-            <span className="more-ic"><Icon name="emoji_events" size={22} color="var(--green)" /></span>
-            <span className="more-txt"><b>Practice games</b><span>Scored challenges to beat your best</span></span>
-            <Icon name="chevron_right" size={20} color="var(--icon-muted)" />
-          </button>
           <button className="more-row" onClick={() => setView("fixes")}>
             <span className="more-ic"><Icon name="build" size={22} color="var(--green)" /></span>
             <span className="more-txt"><b>Fixes</b><span>Your miss pattern and its first fix</span></span>
@@ -1235,210 +1236,144 @@ function Home({
     daysSinceLast !== null && daysSinceLast >= 5 && nudgeDismissedAt !== lastSession.date;
 
   return (
-    <>
-      <PhotoHeader
-        src="/range-bays.webp"
-        alt="A golfer swinging on a quiet driving range under a clear sky"
-        height={280}
-        position="60% 62%"
-        imgW={900}
-        imgH={617}
-        top={
-          <>
-            {!firstRun ? (
-              <button className="greeting" onClick={onEditName} aria-label="Edit your name">
-                <span>{greeting}</span><Icon name="edit" size={13} />
-              </button>
-            ) : <span />}
-            <div className="hdr-actions">
-              {monthCount >= 2 && (
-                <div className="chip" title={`${monthCount} sessions logged this calendar month`}>
-                  <Icon name="event_available" size={15} />{monthCount}
-                  <span className="chip-lbl"> this month</span>
-                </div>
-              )}
-              <GlareToggle />
-              <ThemeToggle />
-            </div>
-          </>
-        }
-        bottom={
-          <>
-            <span className="photo-hdr-eyebrow">
-              Week {cursor.week + 1} · Session {cursor.session + 1} of {week.sessions.length}
-            </span>
-            <h1 className="photo-hdr-title">{week.title}</h1>
-          </>
-        }
-      />
-
-      <div className="sheet">
-        {showResumeBanner && (
-          <button className="draft-banner" onClick={onResume}>
-            <Icon name="pending_actions" size={18} />
-            <span>Unfinished · {draftLabel}</span>
-            <b>Resume</b>
+    <div className="plan-screen">
+      <div className="plan-top">
+        {!firstRun ? (
+          <button className="plan-greet" onClick={onEditName} aria-label="Edit your name">
+            <span>{greeting}</span><Icon name="edit" size={13} />
           </button>
-        )}
-
-        {showNudge && lastSession && (
-          <div className="nudge-row">
-            <button className="draft-banner nudge-start" onClick={() => onStart()}>
-              <Icon name="event_busy" size={18} />
-              <span>{daysSinceLast}-day gap</span>
-              <b>Start</b>
-            </button>
-            <button className="nudge-dismiss" aria-label="Dismiss reminder" onClick={() => onDismissNudge(lastSession.date)}>
-              <Icon name="close" size={16} />
-            </button>
-          </div>
-        )}
-
-        {firstRun && (
-          <div className="home-hero">
-            <div className="eyebrow">
-              <span className="icon-tile sm"><Icon name="sports_golf" size={15} /></span>
-              Session one
-            </div>
-            <button className="home-hero-h" onClick={onEditName} aria-label="Edit your name">
-              {name ? `Welcome, ${name}.` : "Welcome."}
-              <Icon name="edit" size={15} />
-            </button>
-            <p className="home-hero-p">
-              Let&apos;s get your baseline down. One honest pass through all five areas.
-              No targets to hit today, just the truth about where your game is.
-            </p>
-            <div className="home-hero-meta">
-              <span><Icon name="format_list_bulleted" size={15} />5 areas</span>
-              <span><Icon name="sports_golf" size={15} />~10 balls each</span>
-              <span><Icon name="schedule" size={15} />about 40 min</span>
-            </div>
-          </div>
-        )}
-
-        {oneThing && (
-          <div className="onething plancard">
-            <div className="lbl">
-              <span className="icon-tile sm"><Icon name="target" size={15} /></span>
-              <span className="eyebrow">Today&apos;s one thing</span>
-            </div>
-            <div className="onething-title">{oneThing.title}</div>
-            <div className="onething-body">{oneThing.body}</div>
-            <div className="onething-src"><Icon name="auto_awesome" size={15} />{oneThing.source}</div>
-          </div>
-        )}
-
-        {!firstRun && (
-        <div className="tiles">
-          <div className="tile">
-            <div className="tile-head">
-              <span className="eyebrow">Plan progress</span>
-              <span className="icon-tile sm dim"><Icon name="event_available" size={15} /></span>
-            </div>
-            <div className="tile-val num">{loggedCount}<span className="frac">/{flat.length}</span></div>
-            <div className="tile-foot">
-              <span className="tile-lbl">plan sessions logged</span>
-              <span className="tile-lbl num">{donePct}%</span>
-            </div>
-          </div>
-          <div className="tile accent">
-            <div className="tile-head">
-              <span className="eyebrow">Solid rate</span>
-              <span className="icon-tile sm"><Icon name="trending_up" size={15} /></span>
-            </div>
-            <div className="tile-val num">
-              {lastSolid === null ? "—" : <>{lastSolid}<span className="u">%</span></>}
-            </div>
-            <div className="tile-foot">
-              <span className="tile-lbl">last solid rate</span>
-              {solidDelta !== null && solidDelta !== 0 && (
-                <span className={"delta" + (solidDelta < 0 ? " down" : "")}>
-                  {solidDelta > 0 ? "+" : "−"}{Math.abs(solidDelta)}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-        )}
-
-        <p className="week-focus"><b>This week</b>{week.focus}</p>
-
-        <div className="grp">
-          <div className="sec-head">
-            <span className="icon-tile sm"><Icon name="calendar_month" size={15} /></span>
-            <h3>Jump to a session</h3>
-            <span className={"count-pill" + (loggedCount === flat.length ? " go" : "")}>
-              {loggedCount} of {flat.length} logged
-            </span>
-          </div>
-          <div className="sgrid">
-            {flat.map((f, i) => {
-              const cls = i < curIdx ? "past" : i === curIdx ? "cur" : "";
-              const isDone = loggedSlots.has(`${f.id}|${f.label}`);
-              return (
-                <button key={f.id + f.si}
-                        className={`spill ${cls}${isDone ? " done" : ""}${f.test ? " test-pill" : ""}`}
-                        onClick={() => setCursor({ week: f.wi, session: f.si })}>
-                  <span>
-                    W{f.wi + 1}
-                    {isDone
-                      ? <Icon name="check_circle" size={13} className="spill-check" fill />
-                      : cls === "cur"
-                        ? <span className="spill-now">Now</span>
-                        : null}
-                  </span>
-                  <span className={`s${f.test ? " test" : ""}`}>{f.test ? "Test" : `S${f.si + 1}`}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="grp" style={{ paddingTop: 4 }}>
-          <button className="cta" onClick={() => onStart(v.areas)}>
-            <Icon name="play_arrow" size={22} fill />
-            {draftHere ? "Resume session" : venue === "full" ? "Start this session" : `Start · ${v.label}`}
-          </button>
-
-          {!draftHere && (
-            <details className="venue">
-              <summary>
-                <Icon name="place" size={16} />
-                {venue === "full" ? "Somewhere smaller today?" : v.label}
-                <Icon name="expand_more" size={18} className="venue-chev" />
-              </summary>
-              <div className="venue-opts">
-                {VENUES.map((opt) => (
-                  <button
-                    key={opt.key}
-                    className={"venue-opt" + (opt.key === venue ? " on" : "")}
-                    aria-pressed={opt.key === venue}
-                    onClick={() => setVenue(opt.key)}
-                  >
-                    <Icon name={opt.icon} size={17} />
-                    <span>{opt.label}</span>
-                    <small>{opt.areas.length ? `${opt.areas.length} area${opt.areas.length === 1 ? "" : "s"}` : "all 5"}</small>
-                  </button>
-                ))}
-              </div>
-            </details>
-          )}
-
-          <button className="btn-ghost" onClick={onQuick}>
-            <Icon name="bolt" size={17} />Quick session, just a few balls
-          </button>
-          <div className="arealist">
-            <div className="arealist-track">
-              {AREAS.concat(AREAS).map(([n, ic], i) => (
-                <span key={i} aria-hidden={i >= AREAS.length}>
-                  <Icon name={ic} size={15} />{n}
-                </span>
-              ))}
-            </div>
-          </div>
+        ) : <span />}
+        <div className="plan-top-actions">
+          <GlareToggle />
+          <ThemeToggle />
         </div>
       </div>
-    </>
+
+      {showResumeBanner && (
+        <button className="plan-banner" onClick={onResume}>
+          <Icon name="pending_actions" size={19} />
+          <span>Unfinished · {draftLabel}</span>
+          <b>Resume</b>
+        </button>
+      )}
+
+      {showNudge && lastSession && (
+        <div className="plan-banner-row">
+          <button className="plan-banner" onClick={() => onStart()}>
+            <Icon name="event_busy" size={19} />
+            <span>{daysSinceLast} days since your last session</span>
+            <b>Start</b>
+          </button>
+          <button className="plan-banner-x" aria-label="Dismiss reminder" onClick={() => onDismissNudge(lastSession.date)}>
+            <Icon name="close" size={18} />
+          </button>
+        </div>
+      )}
+
+      <section className="plan-hero" aria-label="Your next session">
+        <div className="plan-hero-text">
+          <span className="kicker plan-hero-kicker">
+            {firstRun
+              ? "Session one · your baseline"
+              : `Week ${cursor.week + 1} · Session ${cursor.session + 1} of ${week.sessions.length}`}
+          </span>
+          <h1 className="display-xl plan-hero-title">
+            {firstRun ? (name ? `Welcome, ${name}.` : "Welcome.") : week.title}
+          </h1>
+          <p className="plan-hero-p">
+            {firstRun
+              ? "One honest pass through all five areas, about ten balls each. No targets today, just where your game is."
+              : week.focus}
+          </p>
+        </div>
+
+        {/* the whole plan as one strip; each slot jumps the cursor there */}
+        <div className="plan-slots" role="group" aria-label={`Plan: ${loggedCount} of ${flat.length} sessions logged`}>
+          {flat.map((f, i) => {
+            const isDone = loggedSlots.has(`${f.id}|${f.label}`);
+            const isCur = i === curIdx;
+            return (
+              <button key={f.id + f.si}
+                      className={"plan-slot" + (isDone ? " done" : "") + (isCur ? " cur" : "")}
+                      aria-pressed={isCur}
+                      aria-label={`Week ${f.wi + 1}, ${f.test ? "test day" : `session ${f.si + 1}`}${isDone ? ", logged" : ""}`}
+                      onClick={() => setCursor({ week: f.wi, session: f.si })}>
+                <span>W{f.wi + 1}</span>
+                <span>{f.test ? "Test" : `S${f.si + 1}`}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="plan-slots-foot">
+          <span>{loggedCount} of {flat.length} logged</span>
+          <span>{donePct}%</span>
+        </div>
+
+        <div className="plan-start-row">
+          <button className="plan-start" onClick={() => onStart(v.areas)}>
+            <Icon name="play_arrow" size={22} fill />
+            {draftHere ? "Resume session" : venue === "full" ? "Start session" : `Start · ${v.label}`}
+          </button>
+          <button className="plan-quick" onClick={onQuick} aria-label="Quick session, just a few balls">
+            <Icon name="bolt" size={22} />
+          </button>
+        </div>
+
+        {!draftHere && (
+          <details className="venue plan-venue">
+            <summary>
+              <Icon name="place" size={16} />
+              {venue === "full" ? "Somewhere smaller today?" : v.label}
+              <Icon name="expand_more" size={18} className="venue-chev" />
+            </summary>
+            <div className="venue-opts">
+              {VENUES.map((opt) => (
+                <button
+                  key={opt.key}
+                  className={"venue-opt" + (opt.key === venue ? " on" : "")}
+                  aria-pressed={opt.key === venue}
+                  onClick={() => setVenue(opt.key)}
+                >
+                  <Icon name={opt.icon} size={17} />
+                  <span>{opt.label}</span>
+                  <small>{opt.areas.length ? `${opt.areas.length} area${opt.areas.length === 1 ? "" : "s"}` : "all 5"}</small>
+                </button>
+              ))}
+            </div>
+          </details>
+        )}
+      </section>
+
+      {oneThing && (
+        <section className="plan-onething area-putting" aria-label="Your one thing today">
+          <span className="kicker">Your one thing today</span>
+          <p className="plan-onething-title">{oneThing.title}</p>
+          <p className="plan-onething-body">{oneThing.body}</p>
+          <span className="plan-onething-src">{oneThing.source}</span>
+        </section>
+      )}
+
+      {!firstRun && (
+        <div className="plan-stats">
+          <div className="plan-stat">
+            <span className="plan-stat-val num">
+              {lastSolid === null ? "–" : <>{lastSolid}<small>%</small></>}
+            </span>
+            <span className="plan-stat-lbl">
+              solid strike{solidDelta ? `, ${solidDelta > 0 ? "up" : "down"} ${Math.abs(solidDelta)}` : ""}
+            </span>
+          </div>
+          <div className="plan-stat">
+            <span className="plan-stat-val num">{loggedCount}<small>/{flat.length}</small></span>
+            <span className="plan-stat-lbl">plan sessions logged</span>
+          </div>
+          <div className="plan-stat">
+            <span className="plan-stat-val num">{monthCount}</span>
+            <span className="plan-stat-lbl">{monthCount === 1 ? "session" : "sessions"} this month</span>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -1446,17 +1381,22 @@ type AreaKey = "chipping" | "irons" | "driving" | "pitching" | "putting";
 type Tone = "good" | "sand" | "clay";
 type StepDef = {
   id: string; area: AreaKey; name: string; icon: string; drillIcon: string; target: number;
+  // how the area's success rate reads: the big number's caption ("struck
+  // solid") and the short form on a folded band ("7/10 solid")
+  metric: string; short: string;
   outcomes: { key: string; tone: Tone; icon: string; label: string; hint: string }[];
   distUnit?: "yd" | "ft"; dists?: number[]; clubs?: string[];
 };
 
 const STEPS: StepDef[] = [
   { id: "chip", area: "chipping", name: "Chipping", icon: "swipe_up", drillIcon: "crop_square", target: 10,
+    metric: "on the towel", short: "on",
     outcomes: [
       { key: "on", tone: "good", icon: "check", label: "On towel", hint: "landed on it" },
       { key: "off", tone: "clay", icon: "close", label: "Off towel", hint: "missed the mark" },
     ] },
   { id: "pitch", area: "pitching", name: "Pitching", icon: "arrow_outward", drillIcon: "flag", target: 10,
+    metric: "finished close", short: "close",
     distUnit: "yd", dists: [35, 45, 55, 65], clubs: ["54°", "56°", "58°", "60°"],
     outcomes: [
       { key: "close", tone: "good", icon: "check", label: "Close", hint: "inside ~3 steps" },
@@ -1464,6 +1404,7 @@ const STEPS: StepDef[] = [
       { key: "long", tone: "clay", icon: "arrow_upward", label: "Long", hint: "carried past" },
     ] },
   { id: "iron", area: "irons", name: "Irons", icon: "golf_course", drillIcon: "stacked_line_chart", target: 9,
+    metric: "struck solid", short: "solid",
     clubs: ["6i", "7i", "8i", "9i"],
     outcomes: [
       { key: "solid", tone: "good", icon: "check", label: "Solid", hint: "flush contact" },
@@ -1471,6 +1412,7 @@ const STEPS: StepDef[] = [
       { key: "thin", tone: "clay", icon: "north_east", label: "Thin", hint: "caught it low" },
     ] },
   { id: "drive", area: "driving", name: "Driving", icon: "sports_golf", drillIcon: "near_me", target: 10,
+    metric: "started on line", short: "on line",
     clubs: ["Driver", "3W", "5W", "Iron"],
     outcomes: [
       { key: "fairway", tone: "good", icon: "check", label: "On line", hint: "started at target" },
@@ -1478,6 +1420,7 @@ const STEPS: StepDef[] = [
       { key: "right", tone: "clay", icon: "east", label: "Right", hint: "pushed / sliced" },
     ] },
   { id: "putt", area: "putting", name: "Putting", icon: "adjust", drillIcon: "door_sliding", target: 10,
+    metric: "holed", short: "holed",
     distUnit: "ft", dists: [3, 6, 10, 20],
     outcomes: [
       { key: "in", tone: "good", icon: "golf_course", label: "In", hint: "holed / through the gate" },
@@ -1586,6 +1529,7 @@ function SessionScreen({
   const logged = steps.filter((s) => areaLogged(s.area)).length;
   const total = steps.length;
   const canFinish = editMode || logged > 0;
+  const totalBalls = steps.reduce((n, s) => n + live.strips[s.area].length, 0);
 
   const drillFor = (step: StepDef): { line: string; cards: { how: string; name?: string; video?: string }[]; sticks: string[]; swapped?: boolean } => {
     const ov = editMode ? undefined : overrides[step.area];
@@ -1607,31 +1551,34 @@ function SessionScreen({
 
   return (
     <>
-      <header className="hdr">
-        <div className="hdr-row">
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="hdr-eyebrow">
-              {editMode ? "Editing session" : isQuick ? "Quick session" : "Session log"}
-            </div>
-            <div className="hdr-title sm">
+      <header className="log-hdr">
+        <div className="log-hdr-row">
+          <div className="log-hdr-text">
+            <span className="kicker">
+              {editMode ? "Editing · " : ""}
               {isQuick
-                ? `Quick session`
-                : `${week.short} · ${session.label.replace(/ —.*/, "")}`}
-            </div>
-            <div className="hdr-sub sm">
-              {isQuick
-                ? `${total} area${total === 1 ? "" : "s"} · log as many balls as you like`
-                : venueLimited
-                  ? `${week.title} block · ${total} of 5 areas`
-                  : `${week.title} block · 5 areas`}
-            </div>
+                ? `${total} area${total === 1 ? "" : "s"} · as many balls as you like`
+                : `${week.short} · ${session.label.replace(/ —.*/, "")}${venueLimited ? ` · ${total} of 5 areas` : ""}`}
+            </span>
+            <h1 className="display-xl">{isQuick ? "Quick session" : week.title}</h1>
           </div>
-          <div className="hdr-actions">
+          <div className="log-hdr-side">
             <GlareToggle />
-            <div className="chip"><Icon name="check_circle" size={16} fill={logged === total} />{logged}/{total}</div>
+            <span className="log-balls">
+              <b className="num">{totalBalls}</b>
+              <span>{totalBalls === 1 ? "ball" : "balls"}</span>
+            </span>
           </div>
         </div>
-        <div className="pbar"><span style={{ transform: `scaleX(${total ? logged / total : 0})` }} /></div>
+        <div className="area-progress" role="img"
+             aria-label={`${logged} of ${total} areas logged, ${totalBalls} balls`}
+             style={{ gridTemplateColumns: `repeat(${total}, minmax(0, 1fr))` }}>
+          {steps.map((s) => (
+            <span key={s.id} className={`area-progress-seg area-${s.area}`}>
+              <i style={{ width: `${Math.min(100, (live.strips[s.area].length / s.target) * 100)}%` }} />
+            </span>
+          ))}
+        </div>
       </header>
 
       <div className="screen log">
@@ -1657,6 +1604,7 @@ function SessionScreen({
           </details>
         )}
 
+        <div className="bands">
         {steps.map((step, stepIdx) => {
           const strip = live.strips[step.area];
           const done = areaLogged(step.area);
@@ -1665,14 +1613,16 @@ function SessionScreen({
           const goodN = strip.reduce((a, x) => (x === good ? a + 1 : a), 0);
           const goodPct = strip.length ? Math.round((goodN / strip.length) * 100) : null;
           const nextStep = steps[stepIdx + 1];
+          const isOpen = openId === step.id;
+          const summary = strip.length
+            ? `${goodN}/${strip.length} ${step.short}`
+            : done ? "Club noted" : isOpen ? "" : "Not started";
           return (
-            <Block key={step.id} id={step.id} name={step.name} area={step.area} logged={done}
-                   count={strip.length} target={step.target} goodPct={goodPct}
-                   open={openId === step.id} toggle={() => toggle(step.id)}>
+            <Block key={step.id} id={step.id} name={step.name} area={step.area}
+                   summary={summary} full={strip.length >= step.target}
+                   open={isOpen} toggle={() => toggle(step.id)}>
               {!isQuick && (
-                <div className="drline">
-                  <Icon name={step.drillIcon} size={17} color="var(--blue)" style={{ marginTop: 1 }} />{d.line}
-                </div>
+                <p className="band-drill">{d.line}</p>
               )}
               {!isQuick && d.swapped && (
                 <div className="drswap">
@@ -1734,38 +1684,31 @@ function SessionScreen({
                 </div>
               )}
 
-              <div className="shotstrip">
-                <div className="shotstrip-head">
-                  <span className="eyebrow dim">Ball {Math.min(step.target, strip.length + 1)} of {step.target}</span>
-                  <span className="shotstrip-right">
-                    {strip.length > 0 && (
-                      <span className="shotstrip-rate" style={{ color: goodN / strip.length >= 0.5 ? "var(--green)" : "var(--sand)" }}>
-                        <Icon name="insights" size={14} />{Math.round((goodN / strip.length) * 100)}% on line
-                      </span>
-                    )}
-                    <VoiceLogButton outcomes={step.outcomes} onMatch={(key) => push(step.area, key)} />
-                  </span>
-                </div>
-                <div className="shotstrip-dots">
-                  {Array.from({ length: step.target }).map((_, i) => {
-                    const k = strip[i];
-                    const o = step.outcomes.find((x) => x.key === k);
-                    return (
-                      <span key={i} className={"strip-dot" + (o ? " " + o.tone : "")}>
-                        {o && <Icon name={o.icon} size={13} />}
-                      </span>
-                    );
-                  })}
-                  {strip.slice(step.target).map((k, i) => {
-                    const o = step.outcomes.find((x) => x.key === k);
-                    return <span key={"x" + i} className={"strip-dot" + (o ? " " + o.tone : "")}>{o && <Icon name={o.icon} size={13} />}</span>;
-                  })}
-                </div>
-                {strip.length >= 3 && (
-                  <div className="shotstrip-note">
-                    <Icon name="lightbulb" size={16} color="var(--blue-icon)" />{liveNote(step.area, strip)}
-                  </div>
-                )}
+              <div className="band-hero">
+                <span className="band-pct num">
+                  {goodPct ?? "–"}{goodPct !== null && <small>%</small>}
+                </span>
+                <span className="band-pct-side">
+                  <b>{step.metric}</b>
+                  <span>{strip.length ? `${goodN} of ${strip.length} balls` : "No balls yet"}</span>
+                </span>
+              </div>
+
+              {/* one dot per ball: filled = the good outcome, ringed letter = a
+                  miss (F/T, L/R, S/L…), faint = still to hit */}
+              <div className="band-dots" role="img"
+                   style={{ gridTemplateColumns: `repeat(${step.target}, minmax(0, 1fr))` }}
+                   aria-label={`${strip.length} balls logged, ${goodN} ${step.short}`}>
+                {Array.from({ length: Math.max(step.target, strip.length) }).map((_, i) => {
+                  const k = strip[i];
+                  const o = step.outcomes.find((x) => x.key === k);
+                  const cls = !o ? "" : o.key === good ? " good" : " miss";
+                  return (
+                    <span key={i} className={"band-dot" + cls}>
+                      {o && o.key !== good ? o.label[0] : ""}
+                    </span>
+                  );
+                })}
               </div>
 
               <div className="outcomes">
@@ -1777,12 +1720,19 @@ function SessionScreen({
                 ))}
               </div>
 
-              <div className="strip-actions">
-                <button className="btn-ghost sm" onClick={() => popLast(step.area)} disabled={!strip.length}>
-                  <Icon name="undo" size={16} />Undo last
+              <div className="band-actions">
+                <button className="band-ghost" onClick={() => popLast(step.area)} disabled={!strip.length}>
+                  <Icon name="undo" size={18} />Undo last
                 </button>
-                <span className="hint" style={{ margin: 0 }}>hold a count to subtract</span>
+                <span className="band-ball num">
+                  {strip.length >= step.target ? `All ${step.target} logged` : `Ball ${strip.length + 1} of ${step.target}`}
+                </span>
+                <VoiceLogButton outcomes={step.outcomes} onMatch={(key) => push(step.area, key)} />
               </div>
+
+              {strip.length >= 3 && (
+                <p className="band-note">{liveNote(step.area, strip)}</p>
+              )}
 
               {!isQuick && d.cards.map((c, i) => <DrillCard key={i} how={c.how} name={c.name} video={c.video} />)}
               {!isQuick && d.sticks.map((s, i) => <Stick key={i} text={s} />)}
@@ -1795,6 +1745,7 @@ function SessionScreen({
             </Block>
           );
         })}
+        </div>
 
         <div className="grp session-finish" style={{ paddingTop: 8 }}>
           <div className="label-row"><Icon name="event" size={16} />Session date</div>
@@ -1819,32 +1770,26 @@ function SessionScreen({
   );
 }
 
+// One practice area as a colour band. Folded, it's just the area name and its
+// score; open, it holds the whole logging surface. Bands overlap their
+// neighbour slightly (see .bands in globals.css) so the session reads as a
+// stack, top to bottom in session order.
 function Block({
-  id, name, area, logged, count, target, goodPct, open, toggle, children,
+  id, name, area, summary, full, open, toggle, children,
 }: {
-  id: string; name: string; area: AreaKey; logged: boolean;
-  count: number; target: number; goodPct: number | null;
+  id: string; name: string; area: AreaKey; summary: string; full: boolean;
   open: boolean; toggle: () => void; children: React.ReactNode;
 }) {
-  const full = count >= target;
-  const cls = "block" + (!logged && !open ? " empty" : "") + (!open ? " collapsed" : "") + (open ? " active" : "");
   return (
-    <section className={cls} data-block={id}>
-      <button className="block-head" onClick={toggle} aria-expanded={open}>
-        <span className="block-name">
-          <AreaIcon area={area} size={21} color={logged || open ? "var(--green)" : "var(--icon-muted)"} />{name}
-        </span>
-        <span className="block-right">
-          <span className={"block-tally" + (!logged ? " none" : full ? " full" : "")}>
-            {logged
-              ? `${count}/${target}${goodPct !== null ? ` · ${goodPct}%` : ""}`
-              : "Not logged"}
-          </span>
-          <Icon name="expand_more" size={22} color="var(--icon-muted)"
-                className={"rot-chev" + (open ? " open" : "")} />
+    <section className={`band area-${area}${open ? " open" : ""}`} data-block={id} aria-label={name}>
+      <button className="band-head" onClick={toggle} aria-expanded={open}>
+        <span className="band-title">{name}</span>
+        <span className="band-summary">
+          {summary && <span>{summary}</span>}
+          {full && <Icon name="check_circle" size={20} />}
         </span>
       </button>
-      {open && <div className="block-body">{children}</div>}
+      {open && <div className="band-body">{children}</div>}
     </section>
   );
 }

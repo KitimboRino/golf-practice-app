@@ -72,7 +72,7 @@ export function Games({
           const pb = gamePB(forGame(g.id));
           const meta = GAME_AREA[g.area];
           return (
-            <button key={g.id} className="more-row game-row" onClick={() => setOpenId(g.id)}>
+            <button key={g.id} className={`more-row game-row area-${g.area}`} onClick={() => setOpenId(g.id)}>
               <span className="more-ic"><AreaIcon area={g.area} size={22} color="var(--green)" /></span>
               <span className="more-txt">
                 <b className="game-row-name">{g.name}<span className="game-tag">{meta.label}</span></b>
@@ -149,7 +149,7 @@ function GameDetail({
       </header>
 
       <div className="screen">
-        <div className="game-rules">
+        <div className={`game-rules area-${game.area}`}>
           <div className="game-rules-h"><Icon name="flag" size={17} color="var(--green)" />How it works</div>
           <p>{game.rules}</p>
           {game.target != null && (

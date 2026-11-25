@@ -492,30 +492,44 @@ function RoundPlay({
 
   return (
     <>
-      <header className="hdr">
-        <div className="hdr-row">
-          <div>
-            <div className="hdr-eyebrow">{editing ? "Editing · " : ""}{round.course || "Round"}</div>
-            <button className="hdr-title sm hole-jump-toggle" onClick={() => { tapFx(); setShowGrid((v) => !v); }}
-                    aria-expanded={showGrid} aria-label={`Hole ${i + 1} of ${round.holes} — tap to jump to another hole`}>
-              Hole {i + 1} of {round.holes}
-              <Icon name="expand_more" size={18} className={"rot-chev" + (showGrid ? " open" : "")} />
-            </button>
-            <div className="hdr-sub sm">
-              {[
-                st.scoredHoles > 0 && `${toParLabel(st.toPar)} thru ${st.scoredHoles}`,
-                st.firOf > 0 && `FIR ${st.firMade}/${st.firOf}`,
-                st.girOf > 0 && `GIR ${st.girMade}/${st.girOf}`,
-                st.puttsOf > 0 && `${st.putts} putt${st.putts === 1 ? "" : "s"}`,
-              ].filter(Boolean).join(" · ") || "Tap to log this hole"}
-            </div>
-          </div>
+      <header className="hole-hdr">
+        <div className="hole-hdr-top">
+          <span className="kicker hole-course">{editing ? "Editing · " : ""}{round.course || "Round"}</span>
           <div className="hdr-actions">
             <GlareToggle />
             <button className="link-btn" onClick={quit}>{editing ? "Cancel" : "Discard"}</button>
           </div>
         </div>
-        <div className="stepdots" aria-hidden>
+        <div className="hole-hdr-main">
+          <button className="hole-big" onClick={() => { tapFx(); setShowGrid((v) => !v); }}
+                  aria-expanded={showGrid} aria-label={`Hole ${i + 1} of ${round.holes} — tap to jump to another hole`}>
+            <span className="hole-big-lbl">Hole</span>
+            <span className="hole-big-num num">{i + 1}</span>
+            <span className="hole-big-of">
+              of {round.holes}
+              <Icon name="expand_more" size={18} className={"rot-chev" + (showGrid ? " open" : "")} />
+            </span>
+          </button>
+          <div className="hole-running">
+            {st.scoredHoles > 0 ? (
+              <>
+                <b className="num">{toParLabel(st.toPar)}</b>
+                <span>thru {st.scoredHoles}</span>
+              </>
+            ) : <span>Tap below to log this hole</span>}
+            {(st.firOf > 0 || st.girOf > 0 || st.puttsOf > 0) && (
+              <span>
+                {[
+                  st.firOf > 0 && `FIR ${st.firMade}/${st.firOf}`,
+                  st.girOf > 0 && `GIR ${st.girMade}/${st.girOf}`,
+                  st.puttsOf > 0 && `${st.putts} putt${st.putts === 1 ? "" : "s"}`,
+                ].filter(Boolean).join(" · ")}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="hole-ticks" aria-hidden
+             style={{ gridTemplateColumns: `repeat(${round.holes}, minmax(0, 1fr))` }}>
           {Array.from({ length: round.holes }, (_, n) => (
             <i key={n} className={n < i ? "done" : n === i ? "cur" : ""} />
           ))}
@@ -907,45 +921,39 @@ export function RoundSummary({
   }
 
   return (
-    <>
-      <header className="hero">
-        <div className="receipt-top">
-          <span className="icon-tile lg glow" style={{ position: "relative" }}>
-            {isBest && <Burst />}
-            {fresh ? <Glyph name="flag" /> : <Icon name="golf_course" size={26} fill />}
-          </span>
-          <div className="receipt-h">{fresh ? "Round logged" : roundLabel(round)}</div>
-          {isBest && (
-            <span className="receipt-best">
-              <Icon name="emoji_events" size={13} fill />Your best round yet
+    <div className="receipt-screen round-sum">
+      <div className="receipt-top">
+        <span className="kicker">
+          {fresh ? "Round logged · " : ""}{fmtDate(round.date)} · {round.holes} holes
+        </span>
+        <button className="icon-btn" onClick={onDone} aria-label="Close">
+          <Icon name="close" size={20} />
+        </button>
+      </div>
+
+      <div className="receipt-hero">
+        <span className="round-sum-course">{roundLabel(round)}</span>
+        <h1 className="round-sum-score">
+          <span className="num">{s.scoredHoles ? toParLabel(s.toPar) : "–"}</span>
+          {s.scoredHoles > 0 && (
+            <span className="round-sum-side">
+              <b className="num">{s.strokes}</b>
+              <span>
+                strokes{s.scoredHoles < round.holeData.length ? ` over ${s.scoredHoles} holes` : ""}
+              </span>
             </span>
           )}
-          <div className="receipt-meta">
-            {fresh && round.course?.trim() ? `${round.course.trim()} · ` : ""}
-            {fmtDate(round.date)} · {round.holes} holes
-          </div>
-        </div>
-      </header>
+        </h1>
+        {(isBest || breakdown) && (
+          <p className="receipt-lede">
+            {isBest && <b>Your best round yet. </b>}{breakdown}
+          </p>
+        )}
+      </div>
 
-      <div className="sheet">
-        <div className="tile accent">
-          <div className="tile-head">
-            <span className="eyebrow">Score</span>
-            <span className="icon-tile sm"><Icon name="flag" size={15} /></span>
-          </div>
-          <div className="tile-val num">
-            {s.scoredHoles ? s.strokes : "—"}
-            {s.scoredHoles > 0 && s.scoredHoles < round.holeData.length && <span className="frac">/{s.scoredHoles}</span>}
-          </div>
-          <div className="tile-foot">
-            <span className="tile-lbl">
-              {s.scoredHoles ? `${toParLabel(s.toPar)} to par${breakdown ? ` · ${breakdown}` : ""}` : "not logged"}
-            </span>
-          </div>
-        </div>
-
+      <div className="round-sum-body">
         <div className="tiles">
-          <div className="tile">
+          <div className="tile banded area-driving">
             <div className="tile-head">
               <span className="eyebrow">Fairways hit</span>
               <span className="icon-tile sm dim"><AreaIcon area="driving" size={15} /></span>
@@ -956,7 +964,7 @@ export function RoundSummary({
             </div>
           </div>
 
-          <div className="tile">
+          <div className="tile banded area-irons">
             <div className="tile-head">
               <span className="eyebrow">Greens in reg.</span>
               <span className="icon-tile sm dim"><AreaIcon area="irons" size={15} /></span>
@@ -967,7 +975,7 @@ export function RoundSummary({
             </div>
           </div>
 
-          <div className="tile">
+          <div className="tile banded area-putting">
             <div className="tile-head">
               <span className="eyebrow">Total putts</span>
               <span className="icon-tile sm dim"><AreaIcon area="putting" size={15} /></span>
@@ -981,7 +989,7 @@ export function RoundSummary({
             </div>
           </div>
 
-          <div className="tile">
+          <div className="tile banded area-chipping">
             <div className="tile-head">
               <span className="eyebrow">Scrambling</span>
               <span className="icon-tile sm dim"><AreaIcon area="chipping" size={15} /></span>
@@ -1027,7 +1035,7 @@ export function RoundSummary({
           <button className="btn-ghost" onClick={onDone}>Done</button>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 

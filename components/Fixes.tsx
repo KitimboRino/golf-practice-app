@@ -168,10 +168,10 @@ export function Fixes({
 
       <div className="screen">
         {hero ? (
-          <div className="fault-hero">
+          <div className={`fault-hero area-${hero.area}`}>
             <div className="fault-hero-top">
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="eyebrow" style={{ color: "var(--clay)" }}>
+                <div className="eyebrow fault-hero-k">
                   <Icon name="my_location" size={15} />
                   {heroContext ?? "Your miss"}
                 </div>

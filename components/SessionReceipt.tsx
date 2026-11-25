@@ -6,7 +6,6 @@ import { solidPct } from "@/lib/stats";
 import { sessionBalls, sessionMinutes } from "@/lib/verdict";
 import { shareCard } from "@/lib/shareCard";
 import { Icon } from "./Icon";
-import { PhotoHeader } from "./PhotoHeader";
 import { useToast } from "./Toast";
 
 const wkNum = (id: string) => id.replace(/[^0-9]/g, "") || "0";
@@ -37,12 +36,13 @@ export function SessionReceipt({
     const bits = [s.dist != null ? `${s.dist}${a === "putting" ? "ft" : "yd"}` : null, s.club].filter(Boolean);
     return bits.length ? bits.join(" ") : undefined;
   };
-  const rows: { label: string; note?: string; made: number; of: number }[] = [
-    { label: "Chipping · on towel", note: tag("chipping"), made: session.chipping.on, of: session.chipping.on + session.chipping.off },
-    { label: "Pitching · close", note: tag("pitching"), made: p.close, of: p.close + p.short + p.long },
-    { label: "Irons · solid", note: tag("irons"), made: session.irons.solid, of: session.irons.solid + session.irons.fat + session.irons.thin },
-    { label: "Driving · on line", note: tag("driving"), made: session.driving.fairway, of: session.driving.fairway + session.driving.left + session.driving.right },
-    { label: "Putting · made", note: tag("putting"), made: session.putting.in, of: session.putting.in + session.putting.out },
+  type Area = "chipping" | "pitching" | "irons" | "driving" | "putting";
+  const rows: { area: Area; name: string; short: string; label: string; note?: string; made: number; of: number }[] = [
+    { area: "chipping" as Area, name: "Chipping", short: "on", label: "Chipping · on towel", note: tag("chipping"), made: session.chipping.on, of: session.chipping.on + session.chipping.off },
+    { area: "pitching" as Area, name: "Pitching", short: "close", label: "Pitching · close", note: tag("pitching"), made: p.close, of: p.close + p.short + p.long },
+    { area: "irons" as Area, name: "Irons", short: "solid", label: "Irons · solid", note: tag("irons"), made: session.irons.solid, of: session.irons.solid + session.irons.fat + session.irons.thin },
+    { area: "driving" as Area, name: "Driving", short: "on line", label: "Driving · on line", note: tag("driving"), made: session.driving.fairway, of: session.driving.fairway + session.driving.left + session.driving.right },
+    { area: "putting" as Area, name: "Putting", short: "holed", label: "Putting · made", note: tag("putting"), made: session.putting.in, of: session.putting.in + session.putting.out },
   ].filter((r) => r.of > 0);
 
   const worst = [...rows].sort((a, b) => a.made / a.of - b.made / b.of)[0];
@@ -98,87 +98,80 @@ export function SessionReceipt({
     else if (outcome === "failed") toast.show("Couldn't share that — try again");
   }
 
+  const kicker = planComplete
+    ? "Plan complete"
+    : quick
+    ? "Quick session · logged"
+    : `Logged · Week ${wkNum(session.weekId)} · Session ${sNum(session.sessionLabel)}`;
+  const movedLine = delta === null
+    ? `${headCap[0].toUpperCase() + headCap.slice(1)}: ${solidNow}%.`
+    : best
+    ? `Solid strike ${solidNow}%, your best session yet.`
+    : `Solid strike ${solidNow}%, ${delta >= 0 ? "up" : "down"} ${Math.abs(delta)} on last time.`;
+  const weak = worst && worst.made / worst.of < 0.5 ? worst : null;
+
   return (
-    <>
-      <PhotoHeader
-        src="/ball-tee.webp"
-        alt="A golf ball on a tee in the grass, background softly out of focus"
-        height={280}
-        position="50% 40%"
-        imgW={600}
-        imgH={900}
-        bottom={
-          <>
-            <span className={"photo-hdr-badge" + (planComplete ? " gold" : "")}>
-              <Icon name={planComplete ? "emoji_events" : "check"} size={14} />
-              {planComplete ? "PLAN COMPLETE" : "LOGGED"}
-            </span>
-            <h1 className="photo-hdr-title">
-              {planComplete
-                ? `You finished the ${levelLabel ?? ""} plan.`
-                : quick ? "Quick session, done." : `Session ${sNum(session.sessionLabel)}, done.`}
-            </h1>
-            <span className="photo-hdr-sub">
-              {planComplete
-                ? `4 weeks · 8 sessions · ${planBalls} balls hit`
-                : quick
-                ? `${balls} ball${balls === 1 ? "" : "s"}${mins ? ` · ${mins} min` : ""}`
-                : `W${wkNum(session.weekId)}${ownWeek ? ` · ${ownWeek.title}` : ""} · ${balls} balls${mins ? ` · ${mins} min` : ""}`}
-            </span>
-          </>
-        }
-      />
+    <div className="receipt-screen">
+      <div className="receipt-top">
+        <span className="kicker">{kicker}</span>
+        <button className="icon-btn" onClick={onDone} aria-label="Close">
+          <Icon name="close" size={20} />
+        </button>
+      </div>
 
-      <div className="sheet">
-        <div className="receipt-moved">
-          <div className="eyebrow">{headRow ? "Where you landed" : "What moved"}</div>
-          <div className="receipt-big">
-            <span className="receipt-delta">
-              {delta === null ? solidNow + "%" : (delta >= 0 ? "+" : "") + delta}
-            </span>
-            <span className="receipt-cap">
-              {delta === null ? headCap : "points of solid rate"}
-              <br />{best ? "your best session yet" : delta !== null && delta >= 0 ? "moving the right way" : delta !== null ? "off your recent best" : "logged"}
-            </span>
-          </div>
-          <div className="receipt-rows">
-            {rows.map((r) => (
-              <div className="receipt-row" key={r.label}>
-                <span>{r.label}{r.note && <span className="receipt-row-tag">{r.note}</span>}</span>
-                <b className={r === worst && r.made / r.of < 0.5 ? "low" : ""}>{r.made} of {r.of}</b>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {session.notes.trim() && (
-          <div className="receipt-note">
-            <div className="eyebrow dim"><Icon name="bookmark" size={14} color="var(--blue-icon)" /> Remember this</div>
-            <div className="receipt-quote">&ldquo;{session.notes.trim()}&rdquo;</div>
-            <div className="receipt-sub">Your note, pinned to the top of your next session.</div>
-          </div>
+      <div className="receipt-hero">
+        {planComplete ? (
+          <h1 className="display-xl receipt-title">You finished the {levelLabel ?? ""} plan.</h1>
+        ) : (
+          <h1 className="receipt-balls">
+            <span className="num">{balls}</span>
+            <span className="receipt-balls-u">{balls === 1 ? "ball" : "balls"}</span>
+          </h1>
         )}
+        <p className="receipt-lede">
+          {planComplete
+            ? `4 weeks, 8 sessions, ${planBalls} balls hit. `
+            : `${mins ? `${mins} minutes${ownWeek && !quick ? ` of ${ownWeek.title.toLowerCase()}` : ""}. ` : ""}`}
+          <b>{movedLine}</b>
+        </p>
+      </div>
 
-        <div className="receipt-actions">
-          <button className="cta" onClick={share}>
-            <Icon name="ios_share" size={22} />Share this card
+      <div className="bands receipt-bands">
+        {rows.map((r) => (
+          <section key={r.area} className={`band area-${r.area}`} aria-label={r.name}>
+            <div className="band-head">
+              <span className="band-title">{r.name}</span>
+              <span className="band-summary">
+                <span>{r.made}/{r.of} {r.short}{r.note ? ` · ${r.note}` : ""}</span>
+              </span>
+            </div>
+            {r === weak && (
+              <p className="receipt-weak">{`Weakest today. Start next session with ${r.name.toLowerCase()}.`}</p>
+            )}
+          </section>
+        ))}
+      </div>
+
+      {session.notes.trim() && (
+        <div className="receipt-note">
+          <span className="kicker">Remember this</span>
+          <p className="receipt-quote">&ldquo;{session.notes.trim()}&rdquo;</p>
+          <span className="receipt-sub">Pinned to the top of your next session.</span>
+        </div>
+      )}
+
+      <div className="receipt-actions">
+        <button className="receipt-next" onClick={onNext}>
+          <span>{planComplete ? "Keep practising" : quick ? "Back to your plan" : "Next session"}</span>
+          <small>{nextWeek.short} · {nextSession.label.replace(/ —.*/, "")}</small>
+        </button>
+        <div className="receipt-row2">
+          <button className="receipt-ghost" onClick={share}>
+            <Icon name="ios_share" size={19} />Share card
           </button>
-          <button className="receipt-next" onClick={onNext}>
-            <span>
-              <b>{planComplete
-                ? `Keep practicing · ${nextWeek.short} · ${nextSession.label.replace(/ —.*/, "")}`
-                : quick
-                ? `Back to your plan · ${nextWeek.short} · ${nextSession.label.replace(/ —.*/, "")}`
-                : `Next: ${nextWeek.short} · ${nextSession.label.replace(/ —.*/, "")}`}</b>
-              <small>{planComplete
-                ? "Replaying the plan — jump to any session anytime"
-                : worst ? `${worst.label.split(" ·")[0]} needs the attention` : "Keep the plan"}</small>
-            </span>
-            <span className="icon-tile sm dim"><Icon name={planComplete ? "replay" : quick ? "flag" : "event"} size={16} /></span>
-          </button>
-          <button className="btn-ghost" onClick={onDone}>Done</button>
+          <button className="receipt-ghost" onClick={onDone}>Done</button>
         </div>
       </div>
-    </>
+    </div>
   );
 }

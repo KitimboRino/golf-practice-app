@@ -40,7 +40,7 @@ export function Prep({ onBack }: { onBack?: () => void }) {
       </header>
 
       <div className="screen">
-        <div className="stick">
+        <div className="stick prep-safety area-pitching">
           <Icon name="health_and_safety" size={18} color="var(--blue-icon)" style={{ marginTop: 1 }} />
           <div className="stick-b"><b>Safety</b> {SAFETY}</div>
         </div>
