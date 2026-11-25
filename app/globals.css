@@ -294,14 +294,10 @@
 :root[data-glare="on"] .field,
 :root[data-glare="on"] .notes,
 :root[data-glare="on"] .datefield,
-:root[data-glare="on"] .shotstrip,
-:root[data-glare="on"] .block-tally,
-:root[data-glare="on"] .strip-dot,
 :root[data-glare="on"] .chip { border-width: 1.5px; }
 :root[data-glare="on"] .hint,
 :root[data-glare="on"] .outcome-hint,
-:root[data-glare="on"] .hdr-sub,
-:root[data-glare="on"] .drline { opacity: 1; color: var(--text-2); }
+:root[data-glare="on"] .hdr-sub { opacity: 1; color: var(--text-2); }
 :root[data-glare="on"] .flowstrip > summary { color: var(--text-2); }
 
 @media (prefers-color-scheme: dark) {
@@ -475,8 +471,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
    Fraunces on the big display headings; data / numerals stay in the grotesque —
    the serif-vs-sans contrast is the device. Weight 500 for presence, relaxed
    tracking (serifs don't need the tight negative letter-spacing the sans wanted). */
-.home-hero-h,
-.onething-title,
 .verdict-h,
 .receipt-h,
 .deal-h,
@@ -492,15 +486,13 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-weight: 500;
   letter-spacing: -0.006em;
 }
-.home-hero-h { font-size: clamp(30px, 8.6vw, 40px); line-height: 1.07; }
-.onething-title { font-size: 24px; line-height: 1.18; }
 .verdict-h { font-size: 30px; line-height: 1.12; }
 .reveal-verdict { font-size: clamp(29px, 8.6vw, 36px); line-height: 1.1; }
 .deal-h { font-size: clamp(27px, 8vw, 33px); line-height: 1.16; }
 .routine-stage-title { font-size: clamp(26px, 7.6vw, 33px); line-height: 1.18; }
 .empty-h { font-size: 23px; line-height: 1.2; }
 /* italic serif for an emphasised fragment, where the markup provides one */
-.home-hero-h em, .deal-h em, .onething-title em, .reveal-verdict em {
+.deal-h em, .reveal-verdict em {
   font-style: italic; font-weight: 500; color: var(--green);
 }
 
@@ -553,22 +545,13 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   color: var(--green); font-size: 12px; font-weight: 800; letter-spacing: 0.02em; flex: none;
   white-space: nowrap;
 }
-.chip .chip-lbl { display: none; }
 /* raised from 400px: .hero-h runs bigger than the old .hdr-title did, so on
    the Plan header specifically (title + greeting + this chip + two toggles,
    all in one row) the label was tipping the title into a 3-line wrap. Icon +
    count alone is enough information; the full "N this month" only shows on
    wide-enough screens that there's room to spare. */
-@media (min-width: 460px) { .chip .chip-lbl { display: inline; } }
 /* per-step dot rail — the round tracker (one dot per hole), routine rehearse etc.
    indicator only; the header text and the Back/Next buttons do the navigating */
-.stepdots { display: flex; align-items: center; justify-content: center; gap: 5px; flex-wrap: wrap; padding: 1px 0; }
-.stepdots i {
-  width: 6px; height: 6px; border-radius: 999px; flex: none; background: var(--border);
-  transition: width var(--dur-base) var(--ease-out), background var(--dur-base) var(--ease-out), opacity var(--dur-base) var(--ease-out);
-}
-.stepdots i.done { background: var(--green); opacity: 0.45; }
-.stepdots i.cur { width: 22px; background: var(--green); }
 
 .pbar { height: 4px; background: var(--track); border-radius: 3px; overflow: hidden; }
 .pbar > span {
@@ -598,7 +581,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .tile-head .eyebrow { color: var(--muted); letter-spacing: 0.12em; }
 .tile-val { font-size: 40px; font-weight: 800; line-height: 0.92; letter-spacing: -0.055em; position: relative; z-index: 1; display: flex; align-items: baseline; gap: 3px; }
 .tile-val .u { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
-.tile-val .frac { font-size: 19px; font-weight: 600; color: var(--icon-muted); letter-spacing: -0.02em; }
 .tile.accent .tile-val { color: var(--green); }
 .tile-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 9px; border-top: 1px solid var(--edge); position: relative; z-index: 1; }
 .tile-lbl { font-size: 12px; color: var(--muted); line-height: 1.3; }
@@ -609,28 +591,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .delta.down { background: var(--clay-face); border-color: var(--clay-border); color: var(--clay); }
 
 /* ---------- first-session hero (Plan) ---------- */
-.home-hero {
-  display: flex; flex-direction: column; gap: 13px;
-  padding: 6px 2px 10px;
-}
-.home-hero .eyebrow { display: flex; align-items: center; gap: 8px; }
-.home-hero-h {
-  font-size: clamp(29px, 8.5vw, 37px); font-weight: 800;
-  letter-spacing: -0.045em; line-height: 1.02; text-wrap: balance; text-align: left;
-  display: inline-flex; align-items: flex-start; gap: 9px;
-}
-.home-hero-h .msr { margin-top: 6px; color: var(--icon-muted); opacity: 0.55; flex: none; }
-.home-hero-h:active { opacity: 0.75; }
-.home-hero-p {
-  font-size: 15px; line-height: 1.55; color: var(--muted);
-  text-wrap: pretty; max-width: 36ch;
-}
-.home-hero-meta {
-  display: flex; flex-wrap: wrap; gap: 9px 18px; margin-top: 3px;
-  font-size: 12.5px; font-weight: 600; color: var(--text-2);
-}
-.home-hero-meta span { display: inline-flex; align-items: center; gap: 6px; }
-.home-hero-meta .msr { color: var(--green); }
 
 /* ---------- today's one thing (Plan) ---------- */
 .onething {
@@ -639,31 +599,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   background-image: var(--rings), var(--glass-glow);
 }
 .onething .lbl { display: flex; align-items: center; gap: 8px; }
-.onething-title { font-size: 22px; font-weight: 800; letter-spacing: -0.035em; line-height: 1.2; text-wrap: pretty; }
 .onething-body { font-size: 14.5px; line-height: 1.5; color: var(--text-2); text-wrap: pretty; }
-.onething-src {
-  display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--muted);
-  border-top: 1px solid var(--edge); padding-top: 11px;
-}
-.onething-src .msr { color: var(--icon-muted); }
-
-.week-focus {
-  margin: 0; font-size: 15px; line-height: 1.5; color: var(--text-2); text-wrap: pretty;
-}
-.week-focus b {
-  display: block; font-size: 11px; font-weight: 800; letter-spacing: 0.08em;
-  text-transform: uppercase; color: var(--muted); margin-bottom: 4px;
-}
 
 /* ---------- focus card ---------- */
-.focuscard {
-  background: var(--glass-glow); border: 1px solid var(--edge-glow); border-radius: 20px;
-  padding: 18px; display: flex; flex-direction: column; gap: 11px; position: relative; overflow: hidden;
-  background-image: var(--rings), var(--glass-glow);
-}
-.focuscard .lbl { display: flex; align-items: center; gap: 8px; }
-.focuscard .lbl .eyebrow { letter-spacing: 0.15em; }
-.focuscard .body { font-size: 17px; font-weight: 600; line-height: 1.4; letter-spacing: -0.015em; text-wrap: pretty; }
 
 /* ---------- groups / session grid ---------- */
 .grp { display: flex; flex-direction: column; gap: 12px; }
@@ -671,47 +609,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .grp-lbl-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .grp-lbl-row .num { color: var(--text-2); font-weight: 600; }
 .label-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
-
-.sgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; }
-.spill {
-  position: relative;
-  height: 62px; border-radius: 16px; padding: 8px 9px;
-  display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between;
-  font-size: 15px; font-weight: 800; letter-spacing: -0.01em;
-  border: 1px solid var(--edge); background: var(--glass); color: var(--text);
-  transition: transform var(--dur-fast) var(--ease-out);
-}
-.spill:active { transform: scale(0.95); }
-.spill > span:first-child {
-  font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--icon-muted); width: 100%;
-  display: flex; align-items: center; justify-content: space-between;
-}
-.spill .s { font-size: 15px; font-weight: 800; color: var(--text-2); }
-.spill.past { background: transparent; border-color: var(--edge); color: var(--icon-muted); }
-.spill.past > span:first-child, .spill.past .s { color: var(--icon-muted); font-weight: 600; }
-.spill.cur {
-  background: linear-gradient(150deg, var(--chip-bg), transparent);
-  border-color: var(--pill-cur-border); color: var(--green);
-  box-shadow: 0 0 18px -3px var(--tile-glow);
-}
-.spill.cur > span:first-child { color: var(--green); }
-.spill.cur .s { color: var(--green); }
-.spill .s.test { color: var(--blue); }
-.spill.test-pill {
-  background: linear-gradient(150deg, rgba(91,147,196,0.14), transparent);
-  border-color: rgba(91,147,196,0.4);
-}
-.spill.test-pill > span:first-child { color: var(--blue-icon); }
-.spill.done { background: var(--glass); border-color: var(--pill-cur-border); color: var(--text); }
-.spill.done > span:first-child { color: var(--muted); }
-.spill.done .s { color: var(--text-2); }
-.spill.done.cur { background: linear-gradient(150deg, var(--chip-bg), transparent); color: var(--green); }
-.spill-check { color: var(--green); }
-.spill-now {
-  font-size: 8px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
-  background: var(--green); color: var(--on-green); padding: 1px 4px; border-radius: 4px;
-}
 
 /* ---------- primary button ---------- */
 .cta {
@@ -753,26 +650,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .venue-opt small { font-size: 11.5px; color: var(--hint); font-weight: 600; }
 .venue-opt.on { background: var(--chip-bg); border-color: var(--chip-border); color: var(--green); }
 .venue-opt.on small { color: var(--green-label); }
-
-.arealist {
-  padding: 9px 0; border-radius: 16px; background: var(--glass); border: 1px solid var(--edge);
-  overflow: hidden;
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 11%, #000 89%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 11%, #000 89%, transparent);
-}
-.arealist-track {
-  display: flex; width: max-content;
-  animation: area-marquee 22s linear infinite;
-}
-.arealist-track span {
-  display: flex; align-items: center; gap: 8px; flex: none; margin-right: 26px;
-  font-size: 12px; font-weight: 600; color: var(--muted); white-space: nowrap;
-}
-.arealist-track span .msr {
-  width: 30px; height: 30px; border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--glass); border: 1px solid var(--edge); color: var(--icon-muted);
-}
 @keyframes area-marquee { to { transform: translateX(-50%); } }
 /* reduced-motion handling for .arealist is folded into the block at end of file */
 
@@ -786,7 +663,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
   background: var(--green); border-radius: 3px 0 0 3px;
 }
-.block-head { display: flex; align-items: center; justify-content: space-between; min-height: 66px; padding: 12px 16px; width: 100%; gap: 10px; }
 .block-name { display: flex; align-items: center; gap: 12px; font-size: 16px; font-weight: 800; letter-spacing: -0.02em; }
 .block-name .msr {
   width: 36px; height: 36px; border-radius: 12px; flex: none;
@@ -794,15 +670,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 .block.empty .block-name { color: var(--text-2); }
 .block.empty .block-name .msr { background: var(--glass); border-color: var(--edge); }
-.block-right { display: flex; align-items: center; gap: 10px; flex: none; }
-.block-tally {
-  font-size: 12px; font-weight: 800; color: var(--text-2); letter-spacing: 0.02em;
-  padding: 4px 9px; border-radius: 999px; background: var(--glass); border: 1px solid var(--edge);
-  max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.block-tally.none { color: var(--hint); font-weight: 600; }
-.block-tally.full { color: var(--green); background: var(--chip-bg); border-color: var(--chip-border); }
-.block-body { padding: 4px 16px 18px; display: flex; flex-direction: column; gap: 14px; }
 
 /* "next area" hand-off button at the foot of the active block */
 .block-continue {
@@ -813,8 +680,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   transition: transform var(--dur-fast) var(--ease-out);
 }
 .block-continue:active { transform: scale(0.985); }
-
-.drline { display: flex; align-items: flex-start; gap: 9px; font-size: 14px; color: var(--muted); line-height: 1.4; text-wrap: pretty; }
 .drswap {
   display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
   margin-top: 8px; font-size: 12px; font-weight: 700; color: var(--green);
@@ -976,17 +841,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .score-step-val small.over { color: var(--clay); }
 
 /* compact inline stepper — penalty strokes (usually 0, so it stays low-key) */
-.pen-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 2px 2px; }
-.pen-step { display: flex; align-items: center; gap: 12px; flex: none; }
-.pen-step button {
-  width: 40px; height: 40px; border-radius: 12px; flex: none;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--glass); border: 1px solid var(--edge); color: var(--text);
-  transition: transform var(--dur-fast) var(--ease-out);
-}
-.pen-step button:active { transform: scale(0.92); }
-.pen-step button:disabled { opacity: 0.32; }
-.pen-step > .num { font-size: 20px; font-weight: 800; min-width: 14px; text-align: center; color: var(--text); }
 
 .rnav { display: flex; gap: 10px; margin-top: 6px; }
 .rnav .btn-ghost { flex: none; width: auto; padding: 0 18px; }
@@ -1229,13 +1083,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0.3); }
 }
 
-.receipt-best {
-  display: inline-flex; align-items: center; gap: 5px;
-  font-size: 11.5px; font-weight: 800; letter-spacing: 0.02em;
-  color: var(--green); background: var(--chip-bg); border: 1px solid var(--chip-border);
-  border-radius: 999px; padding: 3px 10px 3px 8px;
-}
-
 .game-pbline { font-size: 13px; color: var(--muted); text-wrap: pretty; padding: 0 2px; }
 .game-pbline b { color: var(--text); font-weight: 800; }
 
@@ -1364,13 +1211,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .hint { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; color: var(--hint); }
 
 /* ---------- shot strip ---------- */
-.shotstrip {
-  background: var(--recessed); border: 1px solid var(--border-recessed); border-radius: 16px;
-  padding: 13px 14px; display: flex; flex-direction: column; gap: 11px;
-}
-.shotstrip-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.shotstrip-right { display: flex; align-items: center; gap: 8px; flex: none; }
-.shotstrip-rate { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 800; }
 
 /* mic button — logs one ball by voice instead of a tap. Hidden entirely on
    browsers without the Web Speech API (see VoiceLog.tsx), so this never
@@ -1392,16 +1232,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 @media (prefers-reduced-motion: reduce) {
   .voicelog.on { animation: none; }
 }
-.shotstrip-dots { display: flex; flex-wrap: wrap; gap: 6px; }
-.strip-dot {
-  width: 25px; height: 25px; border-radius: 8px; flex: none;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--glass); border: 1px solid var(--edge); color: transparent;
-  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
-}
-.strip-dot.good { background: var(--good-face); border-color: var(--good-border); color: var(--green); }
-.strip-dot.sand { background: var(--sand-face); border-color: var(--sand-border); color: var(--sand); }
-.strip-dot.clay { background: var(--clay-face); border-color: var(--clay-border); color: var(--clay); }
 
 @keyframes tally-pop { from { transform: scale(1.22); } }
 @keyframes toggle-pop { from { transform: scale(0.9); } }
@@ -1410,14 +1240,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .hole-opt.on, .rbtn.on, .game-score.on, .area-pick.on {
   animation: toggle-pop var(--dur-base) var(--ease-spring);
 }
-.shotstrip-note {
-  display: flex; align-items: flex-start; gap: 8px;
-  font-size: 13px; line-height: 1.45; color: var(--text-2); text-wrap: pretty;
-  border-top: 1px solid var(--border-recessed); padding-top: 11px;
-}
-.shotstrip-note .msr { flex: none; margin-top: 1px; }
-.strip-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.strip-actions .btn-ghost.sm { width: auto; height: 38px; padding: 0 13px; }
 .btn-ghost:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* ---------- session receipt ---------- */
@@ -1425,19 +1247,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .receipt-top { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 8px 0 2px; }
 .receipt-top .icon-tile { margin-bottom: 4px; }
 .receipt-h { font-size: 25px; font-weight: 800; letter-spacing: -0.04em; line-height: 1.1; }
-.receipt-meta { font-size: 13px; color: var(--muted); }
-.receipt-moved {
-  background: var(--glass-glow); border: 1px solid var(--edge-glow); border-radius: 20px;
-  padding: 20px 18px; display: flex; flex-direction: column; gap: 14px;
-}
-.receipt-big { display: flex; align-items: flex-end; gap: 12px; }
 .receipt-delta { font-size: 54px; font-weight: 800; line-height: 0.82; letter-spacing: -0.05em; color: var(--green); }
-.receipt-cap { font-size: 14px; line-height: 1.35; color: var(--text-2); padding-bottom: 4px; }
-.receipt-rows { display: flex; flex-direction: column; gap: 9px; border-top: 1px solid var(--edge); padding-top: 15px; }
-.receipt-row { display: flex; align-items: center; justify-content: space-between; font-size: 14px; }
-.receipt-row span { color: var(--text-2); }
-.receipt-row b { font-weight: 800; }
-.receipt-row b.low { color: var(--clay); }
 .receipt-note {
   background: var(--glass); border: 1px solid var(--edge); border-radius: 20px;
   padding: 17px 18px; display: flex; flex-direction: column; gap: 9px;
@@ -1579,7 +1389,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 @media (prefers-reduced-motion: reduce) {
   .swingcheck-dot, .swingcheck-spinner { animation: none; }
 }
-.fault-pat { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
 .fault-line { font-size: 13.5px; line-height: 1.55; color: var(--text-2); text-wrap: pretty; }
 .fault-k { font-weight: 800; color: var(--muted); margin-right: 6px; font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; }
 .fault-k.fix { color: var(--green); }
@@ -1702,14 +1511,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .pitem > span { font-size: 13px; line-height: 1.5; color: var(--muted); text-wrap: pretty; }
 
 .checklist { background: var(--glass); border: 1px solid var(--edge); border-radius: 16px; padding: 2px 16px; box-shadow: var(--card-shadow); }
-.check-row { display: flex; align-items: flex-start; gap: 12px; width: 100%; text-align: left; padding: 13px 0; }
-.check-row + .check-row { border-top: 1px solid var(--hairline); }
-.check-box {
-  flex: none; width: 22px; height: 22px; border-radius: 7px; margin-top: 1px;
-  border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center;
-  color: transparent; transition: background var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out);
-}
-.check-row.on .check-box { background: var(--green); border-color: var(--green); color: var(--on-green); }
 
 /* guided warm-up */
 .warm-now {
@@ -1957,7 +1758,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
    Back/Next. The tiny progress dots above stay decorative (shared with other
    screens, and far too small to tap reliably); this is a separate, properly
    sized control. */
-.hole-jump-toggle { display: inline-flex; align-items: center; gap: 4px; text-align: left; }
 .hole-jump-grid {
   display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px;
   margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--hairline);
@@ -2090,12 +1890,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .setup-row .chip-btn:active { transform: scale(0.96); }
 .setup-row .chip-btn.on { font-weight: 800; }
 
-.receipt-row-tag {
-  margin-left: 7px; font-size: 11px; font-weight: 700; color: var(--green);
-  padding: 1px 7px; border-radius: 999px; background: var(--chip-bg); border: 1px solid var(--chip-border);
-  white-space: nowrap;
-}
-
 /* ---------- empty state ---------- */
 .empty-wrap { position: relative; display: flex; flex-direction: column; gap: 22px; padding: 22px; min-height: 62vh; justify-content: center; }
 /* the brand mark, oversized and cropped — a quiet watermark on the empty page */
@@ -2175,13 +1969,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 /* "haven't practiced in a while" nudge — same sand banner language as the
    draft banner above, plus a separate square dismiss button beside it (not
    nested inside — a button-in-a-button isn't valid markup). */
-.nudge-row { display: flex; align-items: stretch; gap: 8px; }
-.nudge-row .nudge-start { flex: 1; width: auto; }
-.nudge-dismiss {
-  flex: none; width: 44px; border-radius: 16px;
-  background: var(--sand-face); border: 1px solid var(--sand-border); color: var(--sand-label);
-  display: flex; align-items: center; justify-content: center;
-}
 
 /* ---------- date field + secondary button (Log) ---------- */
 .datefield {
@@ -2553,14 +2340,6 @@ body:has(.boot) .install { display: none; }
 body:has(.install) .app { padding-bottom: calc(150px + env(safe-area-inset-bottom)); }
 body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-bottom)); }
 
-.welcome-h {
-  font-family: var(--font-display);
-  font-size: 31px; font-weight: 500; letter-spacing: -0.006em; line-height: 1.12; text-wrap: balance;
-}
-.welcome.edit .welcome-h { font-size: 24px; }
-.welcome-h .grad { color: var(--green); font-style: italic; }
-.welcome-p { font-size: 14.5px; line-height: 1.55; color: var(--muted); text-wrap: pretty; max-width: 40ch; }
-
 .welcome-lbl {
   align-self: flex-start; margin: 8px 0 -4px 2px;
   font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
@@ -2568,15 +2347,6 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
 .welcome-lbl span { color: var(--hint); }
 .welcome-field { width: 100%; margin-top: 4px; position: relative; transition: border-color var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out), background var(--dur-base) var(--ease-out); }
 .welcome-field:focus-within { border-color: var(--edge-glow); box-shadow: 0 0 20px -4px var(--tile-glow); background: var(--inset); }
-.field-enter {
-  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
-  font-size: 10px; font-weight: 700; letter-spacing: 0.06em; color: var(--green);
-  padding: 3px 7px; border-radius: 999px; background: var(--chip-bg); border: 1px solid var(--chip-border);
-  opacity: 0; transition: opacity var(--dur-base) var(--ease-out); pointer-events: none;
-}
-.welcome-field:focus-within .field-enter { opacity: 1; }
-
-.welcome-hint { display: flex; align-items: center; gap: 6px; align-self: flex-start; margin: -4px 0 0 2px; font-size: 12px; color: var(--hint); }
 
 .miss-list { display: flex; flex-direction: column; gap: 10px; }
 .miss-row {
@@ -2592,15 +2362,6 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
 .miss-row small { font-size: 12.5px; color: var(--muted); }
 .miss-row.clay small { color: var(--clay-label); }
 .welcome .cta { margin-top: 6px; }
-.cta-arrow { transition: transform var(--dur-base) var(--ease-out); }
-
-.welcome-badge {
-  display: flex; align-items: center; gap: 8px; margin-top: 8px;
-  padding: 6px 13px; border-radius: 999px;
-  background: var(--glass); border: 1px solid var(--edge);
-  font-size: 10px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
-}
-.welcome-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); flex: none; }
 
 /* ---------- about ---------- */
 .about-id {
@@ -2687,7 +2448,6 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
 /* ---------- hover states — gated for touch (plan 003) ---------- */
 @media (hover: hover) and (pointer: fine) {
   .cta:hover { filter: brightness(1.05); }
-  .cta:hover .cta-arrow { transform: translateX(3px); }
   .icon-btn:hover { border-color: var(--edge-glow); color: var(--text); }
   .more-row:hover { border-color: var(--edge-glow); }
   .chip-btn:hover { border-color: var(--edge-glow); color: var(--text-2); }
@@ -2712,11 +2472,7 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
 
 @media (prefers-reduced-motion: reduce) {
   /* stop looping / decorative animation */
-  .boot-lockup, .arealist-track,
-  .tabview > *:not(.hdr) { animation: none !important; }
-  .arealist-track { width: 100%; flex-wrap: wrap; justify-content: center; row-gap: 10px; transform: none !important; }
-  .arealist { -webkit-mask-image: none; mask-image: none; }
-  .arealist-track span[aria-hidden="true"] { display: none; }
+  .boot-lockup, .tabview > *:not(.hdr) { animation: none !important; }
   /* toast + confirm keep their opacity fade (comprehension), lose the movement */
   .toast, .toast.leaving, .confirm, .confirm.leaving { transform: none !important; }
 
@@ -2731,10 +2487,7 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
     animation: none !important;
   }
   /* keep the press acknowledgement */
-  .cta:active, .confirm-go:active, .spill:active, .outcome:active,
-  .more-row:active, .icon-btn:active, .chip-btn:active, .miss-row:active,
-  .receipt-next:active, .hist-open:active, .fault-row:active,
-  .datamenu button:active, .warm-todo:active, .count-pill:active, .hist-del:active {
+  .cta:active, .confirm-go:active, .outcome:active, .more-row:active, .icon-btn:active, .chip-btn:active, .miss-row:active, .receipt-next:active, .hist-open:active, .fault-row:active, .datamenu button:active, .warm-todo:active, .count-pill:active, .hist-del:active {
     transition: transform 100ms linear !important;
   }
 }
@@ -2753,8 +2506,6 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
 
 /* ---------- A. display type ------------------------------------------------ */
 
-.home-hero-h,
-.onething-title,
 .verdict-h,
 .receipt-h,
 .deal-h,
@@ -2775,7 +2526,6 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
 
 /* Fraunces carried its presence in the serifs; Archivo carries it in the width,
    so the big sizes can come down a touch and still feel bigger. */
-.home-hero-h { font-size: clamp(29px, 8.2vw, 38px); line-height: 1.06; }
 .verdict-h { font-size: 29px; line-height: 1.12; }
 .reveal-verdict { font-size: clamp(28px, 8.2vw, 35px); line-height: 1.1; }
 .hdr-title { font-size: 27px; line-height: 1.1; }
@@ -2783,7 +2533,7 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
 
 /* The emphasis device changes. Archivo has no italic worth using, so an
    emphasised fragment is marked by colour, not slope. */
-.home-hero-h em, .deal-h em, .onething-title em, .reveal-verdict em {
+.deal-h em, .reveal-verdict em {
   font-style: normal;
   font-weight: 700;
   color: var(--green);
@@ -2807,9 +2557,9 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
 
 /* ---------- B. radii -------------------------------------------------------- */
 
-.block, .onething, .focuscard, .game-entry { border-radius: 28px; }
+.block, .onething, .game-entry { border-radius: 28px; }
 .tile, .leak, .games-intro, .game-rules, .hole-opt { border-radius: 26px; }
-.icon-btn, .rbtn, .spill, .venue-opt, .leak-appr { border-radius: 18px; }
+.icon-btn, .rbtn, .venue-opt, .leak-appr { border-radius: 18px; }
 .block-name .msr, .icon-tile.lg { border-radius: 16px; }
 
 /* The primary button stops being a full pill — the reference uses a soft
@@ -2824,8 +2574,6 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
 
 /* Progress rails use the AQUA FILL, not the text accent — this is the one place
    the two halves of the old --green token visibly separate. */
-.stepdots i.done { background: var(--state); opacity: 1; }
-.stepdots i.cur { background: var(--green); }
 
 /* ---------- C. new patterns ------------------------------------------------- */
 
@@ -2844,25 +2592,7 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
    plus a month chip and two toggles on the right) is denser than anything in
    the reference — when the title wraps to more than one line, centering the
    actions puts them floating beside the middle line instead of the top one. */
-.hero-row { display: flex; align-items: flex-start; gap: 12px; }
-.hero-row > :last-child { margin-left: auto; }
-.hero-h {
-  font-family: var(--font-display);
-  font-stretch: var(--display-stretch);
-  font-weight: 700;
-  font-size: clamp(26px, 7.8vw, 31px);
-  line-height: 1.14;
-  letter-spacing: -0.02em;
-  text-wrap: pretty;
-}
-.hero-sub { font-size: 15px; font-weight: 600; color: #294450; }
 /* circular well for icon buttons sitting on the aqua */
-.hero-ic {
-  width: 46px; height: 46px; border-radius: 50%; flex: none;
-  display: flex; align-items: center; justify-content: center;
-  background: rgba(255,255,255,0.55); color: var(--on-state); border: none;
-}
-.hero-ic.ink { background: var(--ink); color: var(--on-ink); }
 
 /* Existing shared toggles (GlareToggle, ThemeToggle) render as .icon-btn, which
    in dark mode is a near-transparent well meant for the app's dark --card/--bg
@@ -2880,12 +2610,10 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
 /* same problem, same fix, for the receipt's own icon-tile + meta line sitting
    directly in .hero (not inside .plancard — that one's fixed separately below). */
 .hero .icon-tile { background: rgba(15,19,33,0.12); border-color: transparent; color: var(--on-state); }
-.hero .receipt-meta { color: rgba(15,19,33,0.65); }
 /* .receipt-best (RoundSummary's "your best round yet" badge) is new to .hero —
    SessionReceipt never used it. Same ink-on-aqua treatment as everything else
    here: var(--green)/--chip-bg are tuned for --card/--bg and --green literally
    equals --state in dark mode, so left alone this badge would vanish. */
-.hero .receipt-best { background: rgba(15,19,33,0.12); border-color: rgba(15,19,33,0.18); color: var(--on-state); }
 
 /* ---------- photo header (handoff Phase 2) — components/PhotoHeader.tsx ---------- */
 .photo-hdr { position: relative; overflow: hidden; flex: none; }
@@ -2919,22 +2647,13 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
   position: absolute; left: 22px; right: 22px; bottom: 16px;
   display: flex; flex-direction: column; gap: 4px;
 }
-.photo-hdr-eyebrow {
-  font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--state);
-}
 .photo-hdr-title {
   margin: 0; font-family: var(--font-display); font-stretch: var(--display-stretch);
   font-weight: 700; font-size: 32px; line-height: 1.08; letter-spacing: -0.01em; color: #F2F5F9;
 }
 .photo-hdr-sub { font-size: 15px; color: #C3CBD8; }
-.photo-hdr-badge {
-  display: inline-flex; align-self: flex-start; align-items: center; gap: 6px;
-  padding: 6px 12px; border-radius: 14px; background: var(--state); color: var(--on-state);
-  font-size: 12px; font-weight: 800; letter-spacing: 0.05em;
-}
 /* the one-time "finished the 4-week plan" milestone badge — same shape,
    trophy tone instead of the ordinary logged-green */
-.photo-hdr-badge.gold { background: var(--sand); color: #2b1f05; }
 /* Same problem as .hero above, same fix: .icon-btn's --glass/--edge are tuned
    for sitting on --card/--bg, not an arbitrary photo. Scoped to photo headers
    only. */
@@ -3069,28 +2788,8 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
 .navpill .nav-dot { border-color: #0F1321; }
 
 /* C4. Round action button — the arrow on the plan card */
-.roundbtn {
-  width: 56px; height: 56px; border-radius: 50%; flex: none;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--ink); color: var(--on-ink);
-  transition: transform var(--dur-fast) var(--ease-out);
-}
-.roundbtn:active { transform: scale(0.94); }
-.roundbtn.quiet { background: var(--inset); color: var(--text); border: 1.5px solid var(--border); }
 
 /* The plan card itself: aqua fill, ink progress, round button. */
-.plancard {
-  background: var(--state);
-  color: var(--on-state);
-  border: none;
-  border-radius: 30px;
-  padding: 22px;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-.plancard .pbar { background: rgba(15,19,33,0.2); height: 8px; border-radius: 99px; }
-.plancard .pbar > span { background: var(--ink); }
 /* .plancard's children (when it's applied over .onething, as on Plan) carry
    colour tokens tuned for sitting on --card/--bg — muted greys, --green text,
    --chip-bg wells. None of that reads on the --state aqua fill; several
@@ -3098,14 +2797,9 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
    made the eyebrow/icon disappear entirely. --on-state is a fixed ink value
    in both themes, so these use it directly (plus fixed-opacity ink for the
    muted tiers) rather than tokens tuned for a different surface. */
-.plancard .eyebrow { color: var(--on-state); }
-.plancard .icon-tile { background: rgba(15,19,33,0.12); border-color: transparent; color: var(--on-state); }
-.plancard .onething-body { color: rgba(15,19,33,0.72); }
-.plancard .onething-src { color: rgba(15,19,33,0.6); border-top-color: rgba(15,19,33,0.16); }
-.plancard .onething-src .msr { color: rgba(15,19,33,0.6); }
 
 @media (prefers-reduced-motion: reduce) {
-  .navpill .nav-item, .navpill .nav-item .msr, .navpill .nav-lbl, .seg button, .roundbtn { transition: none; }
+  .navpill .nav-item, .navpill .nav-item .msr, .navpill .nav-lbl, .seg button { transition: none; }
   .navpill .nav-item .msr, .navpill .nav-item .msr::after { animation: none; }
   .navpill .nav-item .msr::after { opacity: 0; }
 }
@@ -3520,7 +3214,6 @@ body:has(.plan-screen):has(.install-card) .app { padding-bottom: calc(176px + en
   font-stretch: 125%; font-weight: 900; font-size: 54px; line-height: 0.9; letter-spacing: -0.035em;
 }
 .photo-hdr-sub { font-size: 15px; font-weight: 700; color: #DCE3EA; }
-.photo-hdr-eyebrow { font-size: 11px; font-weight: 800; }
 .photo-hdr-top .icon-btn { border: 0; }
 
 /* ---------- round: setup ---------- */
