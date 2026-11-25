@@ -18,7 +18,9 @@ export function Outcome({
   icon: string;
   count: number;
   tone: Tone;
-  onInc: () => void;
+  // the tapped button is passed along so the screen can animate the ball
+  // from it into the shot strip
+  onInc: (from: HTMLButtonElement) => void;
   onDec: () => void;
 }) {
   const timer = useRef<number | null>(null);
@@ -51,10 +53,10 @@ export function Outcome({
       onPointerUp={stop}
       onPointerLeave={stop}
       onPointerCancel={stop}
-      onClick={() => {
+      onClick={(e) => {
         if (held.current) { held.current = false; return; }
         tapFx();
-        onInc();
+        onInc(e.currentTarget);
       }}
       onContextMenu={(e) => { e.preventDefault(); bumpFx(); onDec(); }}
       aria-label={`${label}: ${count}. Tap to add, hold or right-click to subtract.`}

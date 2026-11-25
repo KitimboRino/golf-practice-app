@@ -137,8 +137,9 @@ export function SessionReceipt({
       </div>
 
       <div className="bands receipt-bands">
-        {rows.map((r) => (
-          <section key={r.area} className={`band area-${r.area}`} aria-label={r.name}>
+        {rows.map((r, i) => (
+          <section key={r.area} className={`band area-${r.area}`} aria-label={r.name}
+                   style={{ "--i": i } as React.CSSProperties}>
             <div className="band-head">
               <span className="band-title">{r.name}</span>
               <span className="band-summary">

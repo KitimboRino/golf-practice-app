@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import {
   PLANS, ALL_WEEKS, planSlotKey, planSlotKeysFor, Level, DEFAULT_LEVEL, LEVEL_LABEL, Week, Session,
 } from "@/lib/plan";
@@ -49,6 +50,8 @@ import { About } from "@/components/About";
 import { APP_VERSION } from "@/lib/version";
 import { doneFx, tapFx } from "@/lib/haptics";
 import { localDate } from "@/lib/date";
+import { useCountUp } from "@/lib/useCountUp";
+import { loadDemo, exitDemo } from "@/lib/demo";
 
 type Tab = "home" | "session" | "trends" | "more" | "warmup" | "welcome" | "receipt" | "quickpick" | "firstrun" | "round";
 
@@ -379,7 +382,19 @@ function QuickPick({
 }
 
 export default function Page() {
-  const [tab, setTab] = useState<Tab>("home");
+  const [tab, setTabNow] = useState<Tab>("home");
+  // Switching screens runs as a View Transition where the browser has it:
+  // the old screen fades, the new one rises in, and elements that share a
+  // view-transition-name (the session title, the nav pill) morph between
+  // the two. Elsewhere, or with reduced motion, it's an instant switch.
+  const setTab = useCallback((t: Tab) => {
+    const d = document as Document & { startViewTransition?: (cb: () => void) => unknown };
+    if (!d.startViewTransition || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setTabNow(t);
+      return;
+    }
+    d.startViewTransition(() => { flushSync(() => setTabNow(t)); });
+  }, []);
   const [trendsOpenData, setTrendsOpenData] = useState(false);
   const [goal, setGoalState] = useState<Goal | null>(null);
   const [history, setHistory] = useState<SavedSession[]>([]);
@@ -394,6 +409,7 @@ export default function Page() {
   const [plannedMiss, setPlannedMiss] = useState<string>("");
   const [level, setLevel] = useState<Level>(DEFAULT_LEVEL);
   const [nudgeDismissedAt, setNudgeDismissedAt] = useState<string | null>(null);
+  const [demo, setDemo] = useState(false);
   const [overrides, setOverrides] = useState<DrillOverrides>({});
   const [receipt, setReceipt] = useState<
     {
@@ -439,6 +455,7 @@ export default function Page() {
         const lvl = (await getMeta<Level>("planLevel")) ?? DEFAULT_LEVEL;
         setLevel(lvl);
         setNudgeDismissedAt((await getMeta<string>("nudgeDismissedAt")) ?? null);
+        setDemo(!!(await getMeta<boolean>("demo")));
         setGoalState((await getMeta<Goal>("goal")) ?? null);
         setOverrides((await getMeta<DrillOverrides>("drillOverrides")) ?? {});
         const ob = (await getMeta<string>("onboardedAt")) ?? null;
@@ -488,6 +505,23 @@ export default function Page() {
   async function onbReadShots(shots: Shot[]) {
     setReadShots(shots);
     await setMeta("readSession", { shots, completedAt: 0 } satisfies ReadSession);
+  }
+
+  // demo mode: load sample history and land on a full Plan screen; a reload
+  // is the simplest way to pick up every store the load effect reads
+  async function startDemo() {
+    await loadDemo();
+    window.location.reload();
+  }
+  async function leaveDemo() {
+    const ok = await confirm({
+      title: "Start your own plan?",
+      body: "This clears the sample data, and anything you logged while looking around, then starts your first ten balls.",
+      confirmLabel: "Clear and start",
+    });
+    if (!ok) return;
+    await exitDemo();
+    window.location.reload();
   }
 
   async function completeOnboarding(miss: string, chosenLevel: Level) {
@@ -857,6 +891,7 @@ export default function Page() {
         readShots={readShots}
         onReadShots={onbReadShots}
         onComplete={completeOnboarding}
+        onDemo={startDemo}
       />
     );
   }
@@ -906,7 +941,7 @@ export default function Page() {
       <main id="main" className="tabview" tabIndex={-1} key={tab}>
         {tab === "home" && (
           <Home week={week} cursor={safe} setCursor={setCursor} history={history} name={name}
-                activePlan={activePlan}
+                activePlan={activePlan} demo={demo} onLeaveDemo={leaveDemo}
                 greeting={greeting(name, history)} onEditName={() => setTab("welcome")}
                 oneThing={todaysOneThing(history, rounds, plannedMiss)} monthCount={sessionsThisMonth(history)}
                 onStart={startSession} onQuick={() => setTab("quickpick")}
@@ -1184,7 +1219,10 @@ function LevelSettings({
 function Home({
   week, cursor, setCursor, history, name, greeting, onEditName, oneThing, monthCount,
   activePlan, onStart, onQuick, draftLabel, draftHere, onResume, nudgeDismissedAt, onDismissNudge,
+  demo, onLeaveDemo,
 }: {
+  demo: boolean;
+  onLeaveDemo: () => void;
   week: Week;
   cursor: { week: number; session: number };
   setCursor: (c: { week: number; session: number }) => void;
@@ -1232,7 +1270,7 @@ function Home({
     : null;
   const showResumeBanner = !!draftLabel && !draftHere;
   const showNudge =
-    !firstRun && !showResumeBanner && !!lastSession &&
+    !firstRun && !demo && !showResumeBanner && !!lastSession &&
     daysSinceLast !== null && daysSinceLast >= 5 && nudgeDismissedAt !== lastSession.date;
 
   return (
@@ -1248,6 +1286,13 @@ function Home({
           <ThemeToggle />
         </div>
       </div>
+
+      {demo && (
+        <div className="plan-demo" role="status">
+          <span>You&apos;re looking at sample data</span>
+          <button onClick={onLeaveDemo}>Start my own</button>
+        </div>
+      )}
 
       {showResumeBanner && (
         <button className="plan-banner" onClick={onResume}>
@@ -1510,10 +1555,18 @@ function SessionScreen({
     }
   };
 
-  const push = (area: AreaKey, key: string) => {
+  const push = (area: AreaKey, key: string, from?: HTMLElement) => {
     const arr = live.strips[area];
     if (arr.length >= 60) return;
     set({ strips: { ...live.strips, [area]: [...arr, key] } });
+    // after the commit, the new ball's dot exists: fly a ball into it
+    const step = steps.find((s) => s.area === area);
+    if (from && step) {
+      const idx = arr.length + 1;
+      requestAnimationFrame(() => requestAnimationFrame(() =>
+        flyBall(from, document.querySelector(`[data-block="${step.id}"] .band-dot:nth-child(${idx})`)),
+      ));
+    }
   };
   const popType = (area: AreaKey, key: string) => {
     const arr = [...live.strips[area]];
@@ -1565,7 +1618,7 @@ function SessionScreen({
           <div className="log-hdr-side">
             <GlareToggle />
             <span className="log-balls">
-              <b className="num">{totalBalls}</b>
+              <b className="num" key={totalBalls}>{totalBalls}</b>
               <span>{totalBalls === 1 ? "ball" : "balls"}</span>
             </span>
           </div>
@@ -1618,7 +1671,7 @@ function SessionScreen({
             ? `${goodN}/${strip.length} ${step.short}`
             : done ? "Club noted" : isOpen ? "" : "Not started";
           return (
-            <Block key={step.id} id={step.id} name={step.name} area={step.area}
+            <Block key={step.id} id={step.id} name={step.name} area={step.area} index={stepIdx}
                    summary={summary} full={strip.length >= step.target}
                    open={isOpen} toggle={() => toggle(step.id)}>
               {!isQuick && (
@@ -1685,12 +1738,10 @@ function SessionScreen({
               )}
 
               <div className="band-hero">
-                <span className="band-pct num">
-                  {goodPct ?? "–"}{goodPct !== null && <small>%</small>}
-                </span>
+                <BandPct value={goodPct} />
                 <span className="band-pct-side">
                   <b>{step.metric}</b>
-                  <span>{strip.length ? `${goodN} of ${strip.length} balls` : "No balls yet"}</span>
+                  <span>{strip.length ? `${goodN} of ${strip.length} ${strip.length === 1 ? "ball" : "balls"}` : "No balls yet"}</span>
                 </span>
               </div>
 
@@ -1715,7 +1766,7 @@ function SessionScreen({
                 {step.outcomes.map((o) => (
                   <Outcome key={o.key} tone={o.tone} icon={o.icon} label={o.label} hint={o.hint}
                            count={strip.reduce((a, x) => (x === o.key ? a + 1 : a), 0)}
-                           onInc={() => push(step.area, o.key)}
+                           onInc={(from) => push(step.area, o.key, from)}
                            onDec={() => popType(step.area, o.key)} />
                 ))}
               </div>
@@ -1775,13 +1826,17 @@ function SessionScreen({
 // neighbour slightly (see .bands in globals.css) so the session reads as a
 // stack, top to bottom in session order.
 function Block({
-  id, name, area, summary, full, open, toggle, children,
+  id, name, area, summary, full, open, toggle, index, children,
 }: {
   id: string; name: string; area: AreaKey; summary: string; full: boolean;
-  open: boolean; toggle: () => void; children: React.ReactNode;
+  open: boolean; toggle: () => void; index: number; children: React.ReactNode;
 }) {
+  // The body stays mounted so it can animate open and shut (a grid-rows
+  // transition in globals.css); while shut it is inert, so it's out of the
+  // tab order and hidden from screen readers exactly as if unmounted.
   return (
-    <section className={`band area-${area}${open ? " open" : ""}`} data-block={id} aria-label={name}>
+    <section className={`band area-${area}${open ? " open" : ""}`} data-block={id} aria-label={name}
+             style={{ "--i": index } as React.CSSProperties}>
       <button className="band-head" onClick={toggle} aria-expanded={open}>
         <span className="band-title">{name}</span>
         <span className="band-summary">
@@ -1789,9 +1844,50 @@ function Block({
           {full && <Icon name="check_circle" size={20} />}
         </span>
       </button>
-      {open && <div className="band-body">{children}</div>}
+      <div className="band-body-wrap" inert={!open}>
+        <div className="band-body-clip">
+          <div className="band-body">{children}</div>
+        </div>
+      </div>
     </section>
   );
+}
+
+// the success rate counts to its new value as each ball is logged
+function BandPct({ value }: { value: number | null }) {
+  const shown = useCountUp(value ?? 0, 420);
+  return (
+    <span className="band-pct num" aria-label={value === null ? "no balls yet" : `${value}%`}>
+      {value === null ? "–" : shown}{value !== null && <small>%</small>}
+    </span>
+  );
+}
+
+// A ball flies in an arc from the tapped outcome button into its dot in the
+// shot strip; the dot itself is hidden until the ball lands on it.
+function flyBall(from: HTMLElement, to: Element | null) {
+  if (!(to instanceof HTMLElement)) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const a = from.getBoundingClientRect();
+  const b = to.getBoundingClientRect();
+  const size = b.width;
+  const band = from.closest(".band");
+  const color = band ? getComputedStyle(band).getPropertyValue("--on-band").trim() || "#fff" : "#fff";
+  const x0 = a.left + a.width / 2 - size / 2, y0 = a.top + a.height / 2 - size / 2;
+  const dx = b.left - x0, dy = b.top - y0;
+  const ball = document.createElement("div");
+  ball.className = "fly-ball";
+  Object.assign(ball.style, { left: `${x0}px`, top: `${y0}px`, width: `${size}px`, height: `${size}px`, background: color });
+  document.body.appendChild(ball);
+  to.style.visibility = "hidden";
+  const lift = Math.min(90, Math.abs(dy) * 0.45 + 30);
+  ball.animate([
+    { transform: "translate(0, 0) scale(1.5)", opacity: 0.85 },
+    { transform: `translate(${dx * 0.55}px, ${dy * 0.55 - lift}px) scale(1.15)`, opacity: 1, offset: 0.55 },
+    { transform: `translate(${dx}px, ${dy}px) scale(1)`, opacity: 1 },
+  ], { duration: 460, easing: "cubic-bezier(.33,.66,.4,1)" }).finished
+    .catch(() => {})
+    .finally(() => { ball.remove(); to.style.visibility = ""; });
 }
 
 function DrillCard({ how, name, video }: { how: string; name?: string; video?: string }) {
