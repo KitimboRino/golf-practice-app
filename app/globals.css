@@ -3763,3 +3763,59 @@ body:has(.plan-screen):has(.install-card) .app { padding-bottom: calc(176px + en
 /* the icon is a span too — only the label should stretch */
 .draft-banner > .msr { flex: none; }
 .draft-banner > span:not(.msr) { flex: 1 1 auto; }
+
+/* ---------- notes: no left-stripe cards anywhere ---------- */
+.stick, .coach, .hist-note, .strat-strip, .reassure, .fault-note {
+  border-left: 0; border: 0; border-radius: 18px;
+}
+.prep-safety { background: var(--band); color: var(--on-band); padding: 16px 18px; }
+.prep-safety .stick-b, .prep-safety .stick-b b { color: var(--on-band); }
+.prep-safety .msr { color: var(--on-band) !important; }
+
+/* ---------- fixes: the likely fault takes its area's colour ---------- */
+.fault-hero { border: 0; border-radius: 30px; background: var(--band); color: var(--on-band); }
+.fault-hero-k, .fault-hero .eyebrow { color: rgba(var(--on-band-rgb), 0.85); }
+.fault-hero-pat {
+  font-family: var(--font-display); font-stretch: 118%; font-weight: 900;
+  font-size: 34px; line-height: 0.98; letter-spacing: -0.03em; color: var(--on-band);
+}
+.fault-hero-lines { border-top-color: rgba(var(--on-band-rgb), 0.2); }
+.fault-hero .fault-line, .fault-hero-lines .fault-line:last-child,
+.fault-hero-lines .fault-k.fix + * { color: var(--on-band); }
+.fault-hero .fault-k { color: rgba(var(--on-band-rgb), 0.8); }
+.fault-hero .msr { color: inherit !important; }
+.fault-hero-go { background: var(--on-band); color: var(--band); box-shadow: none; }
+.fault-hero-alt { border: 0; background: rgba(var(--on-band-rgb), 0.14); color: var(--on-band); }
+.fault-hero .flight-target { stroke: rgba(var(--on-band-rgb), 0.6); }
+.fault-hero .flight-line { stroke: #E9A28E; }
+.fault-hero .flight-ball { fill: var(--on-band); }
+
+/* ---------- a game in play ---------- */
+.game-rules { border: 0; border-radius: 28px; background: var(--band); color: var(--on-band); }
+.game-rules p, .game-rules-h, .game-target, .game-target b { color: var(--on-band); }
+.game-rules .msr { color: inherit !important; }
+.game-rules .game-target { border-top-color: rgba(var(--on-band-rgb), 0.2); }
+.game-scores { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.game-score {
+  width: auto; aspect-ratio: 1; height: auto; border: 0; border-radius: 50%;
+  background: var(--bg); color: var(--text);
+  font-family: var(--font-display); font-stretch: 112%; font-weight: 900; font-size: 22px;
+}
+.game-score.on { background: var(--cta-face); color: var(--on-ink); }
+
+/* ---------- pre-shot routine: rehearse on a dark stage ---------- */
+.routine-rehearse { background: var(--hero-face); color: #FFFFFF; border-radius: 32px; overflow: hidden; }
+.routine-stage:active { background: rgba(255, 255, 255, 0.06); }
+.routine-stage-n { color: #96D6E2; }
+.routine-stage-title {
+  font-family: var(--font-display); font-stretch: 125%; font-weight: 900;
+  font-size: 40px; line-height: 0.95; letter-spacing: -0.03em; color: #FFFFFF;
+}
+.routine-stage-cue { color: rgba(255, 255, 255, 0.8); font-size: 16px; }
+.routine-rehearse .routine-tap, .routine-rehearse .routine-dots { color: rgba(255, 255, 255, 0.7); }
+.routine-complete-h { color: #FFFFFF; }
+.routine-complete-p { color: rgba(255, 255, 255, 0.8); }
+.routine-rehearse .cta { background: #FFFFFF; color: #0F1321; box-shadow: none; }
+.routine-rehearse .btn-ghost { color: #FFFFFF; }
+.routine-stage-title { font-size: 34px; padding: 0 10px; }
+.hdr-row:has(> .icon-btn:first-child) .hdr-title.sm { font-size: 36px; }

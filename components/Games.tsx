@@ -149,7 +149,7 @@ function GameDetail({
       </header>
 
       <div className="screen">
-        <div className="game-rules">
+        <div className={`game-rules area-${game.area}`}>
           <div className="game-rules-h"><Icon name="flag" size={17} color="var(--green)" />How it works</div>
           <p>{game.rules}</p>
           {game.target != null && (
