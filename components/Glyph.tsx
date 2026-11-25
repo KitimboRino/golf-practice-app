@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties, JSX } from "react";
 
 // Small line marks for arrival / completion moments only — a session filed, a
 // round finished, a routine rehearsed. A quieter voice than the Material Symbols
