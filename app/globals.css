@@ -3504,3 +3504,70 @@ h1, h2, h3, .display-xl, .hdr-title, .plan-hero-title, .deal-h, .reveal-verdict,
 .fr-head.bare .fr-head-sub { margin-top: 8px; font-size: 15px; line-height: 1.4; }
 .scorecard-lbl { font-size: 11px; }
 .fr-head.bare:has(> .icon-btn) { flex-direction: column; align-items: flex-start; gap: 14px; }
+
+/* =========================================================================
+   Responsive pass — display type scales with the screen
+   Every size below is exactly its previous value at 390px (and above —
+   the app column stops at 430px) and shrinks in proportion on narrower
+   phones, down to a floor. Without this, at 320px wide (iPhone SE 1st gen)
+   "Control", "Course management" and the receipt's ball count ran off
+   their boxes or under neighbouring buttons.
+   ========================================================================= */
+.plan-hero-title { font-size: clamp(44px, 16.4vw, 64px); }
+.display-xl { font-size: clamp(34px, 11.8vw, 46px); }
+.hdr-title, .hdr-row:has(> .icon-btn:first-child) .hdr-title.sm { font-size: clamp(28px, 9.2vw, 36px); }
+.hdr-title.sm { font-size: clamp(25px, 7.7vw, 30px); }
+.photo-hdr-title { font-size: clamp(40px, 13.8vw, 54px); }
+.band-pct { font-size: clamp(80px, 28.7vw, 112px); }
+.band-pct small { font-size: clamp(30px, 9.7vw, 38px); }
+.receipt-balls .num { font-size: clamp(92px, 32.8vw, 128px); }
+.receipt-balls-u { font-size: clamp(26px, 8.7vw, 34px); }
+.receipt-title { font-size: clamp(36px, 12.3vw, 48px); }
+.round-sum-score > .num { font-size: clamp(86px, 30.8vw, 120px); }
+.hole-big-num { font-size: clamp(82px, 28.7vw, 112px); }
+.fr.deal .deal-h { font-size: clamp(30px, 9.2vw, 36px); }
+.fr-wrap.reveal .reveal-verdict { font-size: clamp(36px, 12.3vw, 48px); }
+.trends-screen .verdict-h { font-size: clamp(38px, 12.8vw, 50px); }
+.warm-now-name { font-size: clamp(34px, 11.3vw, 44px); }
+.routine-stage-title { font-size: clamp(27px, 8.7vw, 34px); }
+.fault-hero-pat { font-size: clamp(27px, 8.7vw, 34px); }
+.fr-head.bare .fr-head-title { font-size: clamp(25px, 7.7vw, 30px); }
+.plan-stat-val { font-size: clamp(32px, 10.3vw, 40px); }
+.log-balls b { font-size: clamp(28px, 8.7vw, 34px); }
+.hole-running b { font-size: clamp(24px, 7.7vw, 30px); }
+.round-sum-side b { font-size: clamp(26px, 8.2vw, 32px); }
+
+/* a single word longer than the line (e.g. a long week or course name) may
+   break with a hyphen rather than run off the screen */
+h1, h2, .display-xl, .hdr-title, .plan-hero-title, .photo-hdr-title,
+.band-title, .fault-hero-pat, .warm-now-name, .routine-stage-title {
+  hyphens: auto; -webkit-hyphens: auto; overflow-wrap: break-word;
+}
+
+/* the log header: the title takes the room it needs, the glare toggle and
+   ball count never sit on top of it */
+.log-hdr-text { flex: 1 1 auto; }
+.log-hdr-side { gap: 10px; }
+
+/* scorecard: nine holes and the total fit the screen on narrow phones;
+   the horizontal scroll stays only as a fallback */
+.scorecard-block { width: 100%; min-width: 272px; }
+.scorecard-row { gap: 1px; }
+.scorecard-cell { flex: 1 1 0; width: auto; min-width: 21px; }
+.scorecard-lbl { flex: 0 0 40px; }
+.scorecard-sum { flex: 0 0 32px; }
+
+/* the par-4 "STD" tag tucks into the corner instead of over the number */
+.rbtn-std { top: 6px; right: 6px; }
+.rbtn.par { padding-top: 6px; }
+/* "STD" sits under the par number rather than in the corner, so it can't
+   collide with it on narrow phones */
+.rbtn-std { position: static; margin-top: 2px; }
+.rbtn.par { padding-top: 0; flex-direction: column; gap: 0; }
+.tile-foot { flex-wrap: wrap; row-gap: 6px; }
+
+/* on tablets/desktop the app is a centred phone-width column; full-colour
+   screens colour the whole page, not just that column */
+html:has(.fr-wrap .fr.deal), html:has(.fr-wrap .fr.deal) body::before { background: #0F1321; }
+html:has(.fr-wrap.read), html:has(.fr-wrap.read) body::before,
+html:has(.fr-wrap.practice), html:has(.fr-wrap.practice) body::before { background: var(--area-driving); }
