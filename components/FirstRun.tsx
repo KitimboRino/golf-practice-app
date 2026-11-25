@@ -36,13 +36,14 @@ const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 // ---------------------------------------------------------------------------
 
 export function FirstRun({
-  stage, onSetStage, readShots, onReadShots, onComplete,
+  stage, onSetStage, readShots, onReadShots, onComplete, onDemo,
 }: {
   stage: OnbStage;
   onSetStage: (s: OnbStage) => void;
   readShots: Shot[];
   onReadShots: (s: Shot[]) => void;
   onComplete: (miss: string, level: Level) => void;
+  onDemo?: () => void;
 }) {
   const [picker, setPicker] = useState<null | { prefill?: string }>(null);
   const [resolvedMiss, setResolvedMiss] = useState<string>("varies");
@@ -96,7 +97,7 @@ export function FirstRun({
     );
   }
 
-  return <Deal onStart={() => onSetStage("practice")} onKnowMiss={() => setPicker({})} />;
+  return <Deal onStart={() => onSetStage("practice")} onKnowMiss={() => setPicker({})} onDemo={onDemo} />;
 }
 
 // ---------------------------------------------------------------------------
@@ -132,7 +133,7 @@ function LevelPicker({ onPick }: { onPick: (level: Level) => void }) {
 // ---------------------------------------------------------------------------
 // 3a — The deal
 
-function Deal({ onStart, onKnowMiss }: { onStart: () => void; onKnowMiss: () => void }) {
+function Deal({ onStart, onKnowMiss, onDemo }: { onStart: () => void; onKnowMiss: () => void; onDemo?: () => void }) {
   const when = timeWord();
   const steps = [
     [`${cap(when)} · 10 balls`, "Five minutes. You find out your miss."],
@@ -167,6 +168,11 @@ function Deal({ onStart, onKnowMiss }: { onStart: () => void; onKnowMiss: () => 
           <span className="fr-cta-tile"><Icon name="play_arrow" size={24} fill /></span>
         </button>
         <button className="fr-secondary" onClick={onKnowMiss}>I already know my miss</button>
+        {onDemo && (
+          <button className="fr-demo" onClick={onDemo}>
+            Look around first<span>· explore with sample data</span>
+          </button>
+        )}
 
         <p className="fr-foot">
           <Icon name="lock" size={14} />No account. Nothing leaves this phone.

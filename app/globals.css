@@ -3571,3 +3571,85 @@ h1, h2, .display-xl, .hdr-title, .plan-hero-title, .photo-hdr-title,
 html:has(.fr-wrap .fr.deal), html:has(.fr-wrap .fr.deal) body::before { background: #0F1321; }
 html:has(.fr-wrap.read), html:has(.fr-wrap.read) body::before,
 html:has(.fr-wrap.practice), html:has(.fr-wrap.practice) body::before { background: var(--area-driving); }
+
+/* =========================================================================
+   Motion — the band stack, the ball, screen changes
+   One set of curves throughout: a soft spring for things that settle
+   (bands, the ball landing), a quick ease-out for things that appear.
+   Everything here is switched off under prefers-reduced-motion.
+   ========================================================================= */
+:root {
+  --spring: cubic-bezier(0.32, 1.25, 0.5, 1);
+  --settle: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* bands open and shut: the body grows from 0 to its height (grid-rows
+   0fr -> 1fr animates to the real content height), the content fades up */
+.band-body-wrap { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 460ms var(--settle); }
+.band.open .band-body-wrap { grid-template-rows: 1fr; }
+.band-body-clip { min-height: 0; overflow: hidden; }
+.band-body { transition: opacity 260ms ease, transform 420ms var(--settle); }
+.band:not(.open) .band-body { opacity: 0; transform: translateY(-10px); }
+.band.open .band-body { transition-delay: 60ms; }
+.band-head { transition: padding 380ms var(--settle); }
+.band-title { transition: font-size 380ms var(--settle); }
+
+/* the stack arrives in order */
+@keyframes band-in { from { opacity: 0; transform: translateY(28px); } }
+.bands .band { animation: band-in 560ms var(--settle) backwards; animation-delay: calc(var(--i, 0) * 60ms + 40ms); }
+
+/* the ball in flight (lib: flyBall in app/page.tsx) and its landing */
+.fly-ball { position: fixed; z-index: 60; border-radius: 50%; pointer-events: none; box-shadow: 0 6px 14px -6px rgba(0, 0, 0, 0.35); }
+.band-dot.good, .band-dot.miss { animation: dot-land 380ms var(--spring); }
+@keyframes dot-land { 0% { transform: scale(0.4); } 60% { transform: scale(1.18); } 100% { transform: scale(1); } }
+.band .outcome:active { transform: scale(0.95); }
+.log-balls b { animation: tally-pop 360ms var(--spring); display: inline-block; }
+
+/* Plan arrives in order too */
+@keyframes rise-in { from { opacity: 0; transform: translateY(18px); } }
+.plan-screen > * { animation: rise-in 520ms var(--settle) backwards; }
+.plan-screen > :nth-child(2) { animation-delay: 50ms; }
+.plan-screen > :nth-child(3) { animation-delay: 100ms; }
+.plan-screen > :nth-child(4) { animation-delay: 150ms; }
+.plan-screen > :nth-child(5) { animation-delay: 200ms; }
+.plan-screen > :nth-child(n+6) { animation-delay: 240ms; }
+.plan-slot { animation: rise-in 420ms var(--settle) backwards; }
+.plan-slot:nth-child(1) { animation-delay: 180ms; } .plan-slot:nth-child(2) { animation-delay: 205ms; }
+.plan-slot:nth-child(3) { animation-delay: 230ms; } .plan-slot:nth-child(4) { animation-delay: 255ms; }
+.plan-slot:nth-child(5) { animation-delay: 280ms; } .plan-slot:nth-child(6) { animation-delay: 305ms; }
+.plan-slot:nth-child(7) { animation-delay: 330ms; } .plan-slot:nth-child(8) { animation-delay: 355ms; }
+
+/* screen changes (View Transitions): the old screen fades, the new one
+   rises; the session title morphs from the Plan hero into the Log header,
+   and the nav pill stays put */
+.plan-hero-title, .log-hdr .display-xl { view-transition-name: session-title; }
+.navpill { view-transition-name: navpill; }
+@keyframes vt-out { to { opacity: 0; } }
+@keyframes vt-in { from { opacity: 0; transform: translateY(16px); } }
+::view-transition-old(root) { animation: 160ms ease-out both vt-out; }
+::view-transition-new(root) { animation: 360ms var(--settle) both vt-in; }
+::view-transition-group(session-title) { animation-duration: 460ms; animation-timing-function: var(--settle); }
+::view-transition-old(session-title), ::view-transition-new(session-title) { height: 100%; object-fit: none; object-position: left top; }
+
+/* ---------- demo mode ---------- */
+.plan-demo {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  min-height: 52px; padding: 6px 8px 6px 18px; border-radius: 22px;
+  background: #96D6E2; color: #0F1321; font-size: 14px; font-weight: 700;
+}
+.plan-demo button {
+  flex: none; min-height: 40px; padding: 0 16px; border-radius: 20px;
+  background: #0F1321; color: #FFFFFF; font-size: 14px; font-weight: 800;
+}
+.fr.deal .fr-demo {
+  align-self: center; min-height: 44px; padding: 8px 12px;
+  color: rgba(255, 255, 255, 0.86); font-size: 14px; font-weight: 700;
+  text-decoration: underline; text-underline-offset: 4px; text-decoration-color: rgba(255, 255, 255, 0.4);
+}
+.fr.deal .fr-demo span { margin-left: 6px; font-weight: 600; color: rgba(255, 255, 255, 0.7); text-decoration: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .band-body-wrap, .band-body, .band-head, .band-title { transition: none; }
+  .bands .band, .plan-screen > *, .plan-slot, .band-dot.good, .band-dot.miss, .log-balls b { animation: none; }
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}
