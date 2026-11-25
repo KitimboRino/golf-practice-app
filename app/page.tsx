@@ -1235,210 +1235,144 @@ function Home({
     daysSinceLast !== null && daysSinceLast >= 5 && nudgeDismissedAt !== lastSession.date;
 
   return (
-    <>
-      <PhotoHeader
-        src="/range-bays.webp"
-        alt="A golfer swinging on a quiet driving range under a clear sky"
-        height={280}
-        position="60% 62%"
-        imgW={900}
-        imgH={617}
-        top={
-          <>
-            {!firstRun ? (
-              <button className="greeting" onClick={onEditName} aria-label="Edit your name">
-                <span>{greeting}</span><Icon name="edit" size={13} />
-              </button>
-            ) : <span />}
-            <div className="hdr-actions">
-              {monthCount >= 2 && (
-                <div className="chip" title={`${monthCount} sessions logged this calendar month`}>
-                  <Icon name="event_available" size={15} />{monthCount}
-                  <span className="chip-lbl"> this month</span>
-                </div>
-              )}
-              <GlareToggle />
-              <ThemeToggle />
-            </div>
-          </>
-        }
-        bottom={
-          <>
-            <span className="photo-hdr-eyebrow">
-              Week {cursor.week + 1} · Session {cursor.session + 1} of {week.sessions.length}
-            </span>
-            <h1 className="photo-hdr-title">{week.title}</h1>
-          </>
-        }
-      />
-
-      <div className="sheet">
-        {showResumeBanner && (
-          <button className="draft-banner" onClick={onResume}>
-            <Icon name="pending_actions" size={18} />
-            <span>Unfinished · {draftLabel}</span>
-            <b>Resume</b>
+    <div className="plan-screen">
+      <div className="plan-top">
+        {!firstRun ? (
+          <button className="plan-greet" onClick={onEditName} aria-label="Edit your name">
+            <span>{greeting}</span><Icon name="edit" size={13} />
           </button>
-        )}
-
-        {showNudge && lastSession && (
-          <div className="nudge-row">
-            <button className="draft-banner nudge-start" onClick={() => onStart()}>
-              <Icon name="event_busy" size={18} />
-              <span>{daysSinceLast}-day gap</span>
-              <b>Start</b>
-            </button>
-            <button className="nudge-dismiss" aria-label="Dismiss reminder" onClick={() => onDismissNudge(lastSession.date)}>
-              <Icon name="close" size={16} />
-            </button>
-          </div>
-        )}
-
-        {firstRun && (
-          <div className="home-hero">
-            <div className="eyebrow">
-              <span className="icon-tile sm"><Icon name="sports_golf" size={15} /></span>
-              Session one
-            </div>
-            <button className="home-hero-h" onClick={onEditName} aria-label="Edit your name">
-              {name ? `Welcome, ${name}.` : "Welcome."}
-              <Icon name="edit" size={15} />
-            </button>
-            <p className="home-hero-p">
-              Let&apos;s get your baseline down. One honest pass through all five areas.
-              No targets to hit today, just the truth about where your game is.
-            </p>
-            <div className="home-hero-meta">
-              <span><Icon name="format_list_bulleted" size={15} />5 areas</span>
-              <span><Icon name="sports_golf" size={15} />~10 balls each</span>
-              <span><Icon name="schedule" size={15} />about 40 min</span>
-            </div>
-          </div>
-        )}
-
-        {oneThing && (
-          <div className="onething plancard">
-            <div className="lbl">
-              <span className="icon-tile sm"><Icon name="target" size={15} /></span>
-              <span className="eyebrow">Today&apos;s one thing</span>
-            </div>
-            <div className="onething-title">{oneThing.title}</div>
-            <div className="onething-body">{oneThing.body}</div>
-            <div className="onething-src"><Icon name="auto_awesome" size={15} />{oneThing.source}</div>
-          </div>
-        )}
-
-        {!firstRun && (
-        <div className="tiles">
-          <div className="tile">
-            <div className="tile-head">
-              <span className="eyebrow">Plan progress</span>
-              <span className="icon-tile sm dim"><Icon name="event_available" size={15} /></span>
-            </div>
-            <div className="tile-val num">{loggedCount}<span className="frac">/{flat.length}</span></div>
-            <div className="tile-foot">
-              <span className="tile-lbl">plan sessions logged</span>
-              <span className="tile-lbl num">{donePct}%</span>
-            </div>
-          </div>
-          <div className="tile accent">
-            <div className="tile-head">
-              <span className="eyebrow">Solid rate</span>
-              <span className="icon-tile sm"><Icon name="trending_up" size={15} /></span>
-            </div>
-            <div className="tile-val num">
-              {lastSolid === null ? "—" : <>{lastSolid}<span className="u">%</span></>}
-            </div>
-            <div className="tile-foot">
-              <span className="tile-lbl">last solid rate</span>
-              {solidDelta !== null && solidDelta !== 0 && (
-                <span className={"delta" + (solidDelta < 0 ? " down" : "")}>
-                  {solidDelta > 0 ? "+" : "−"}{Math.abs(solidDelta)}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-        )}
-
-        <p className="week-focus"><b>This week</b>{week.focus}</p>
-
-        <div className="grp">
-          <div className="sec-head">
-            <span className="icon-tile sm"><Icon name="calendar_month" size={15} /></span>
-            <h3>Jump to a session</h3>
-            <span className={"count-pill" + (loggedCount === flat.length ? " go" : "")}>
-              {loggedCount} of {flat.length} logged
-            </span>
-          </div>
-          <div className="sgrid">
-            {flat.map((f, i) => {
-              const cls = i < curIdx ? "past" : i === curIdx ? "cur" : "";
-              const isDone = loggedSlots.has(`${f.id}|${f.label}`);
-              return (
-                <button key={f.id + f.si}
-                        className={`spill ${cls}${isDone ? " done" : ""}${f.test ? " test-pill" : ""}`}
-                        onClick={() => setCursor({ week: f.wi, session: f.si })}>
-                  <span>
-                    W{f.wi + 1}
-                    {isDone
-                      ? <Icon name="check_circle" size={13} className="spill-check" fill />
-                      : cls === "cur"
-                        ? <span className="spill-now">Now</span>
-                        : null}
-                  </span>
-                  <span className={`s${f.test ? " test" : ""}`}>{f.test ? "Test" : `S${f.si + 1}`}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="grp" style={{ paddingTop: 4 }}>
-          <button className="cta" onClick={() => onStart(v.areas)}>
-            <Icon name="play_arrow" size={22} fill />
-            {draftHere ? "Resume session" : venue === "full" ? "Start this session" : `Start · ${v.label}`}
-          </button>
-
-          {!draftHere && (
-            <details className="venue">
-              <summary>
-                <Icon name="place" size={16} />
-                {venue === "full" ? "Somewhere smaller today?" : v.label}
-                <Icon name="expand_more" size={18} className="venue-chev" />
-              </summary>
-              <div className="venue-opts">
-                {VENUES.map((opt) => (
-                  <button
-                    key={opt.key}
-                    className={"venue-opt" + (opt.key === venue ? " on" : "")}
-                    aria-pressed={opt.key === venue}
-                    onClick={() => setVenue(opt.key)}
-                  >
-                    <Icon name={opt.icon} size={17} />
-                    <span>{opt.label}</span>
-                    <small>{opt.areas.length ? `${opt.areas.length} area${opt.areas.length === 1 ? "" : "s"}` : "all 5"}</small>
-                  </button>
-                ))}
-              </div>
-            </details>
-          )}
-
-          <button className="btn-ghost" onClick={onQuick}>
-            <Icon name="bolt" size={17} />Quick session, just a few balls
-          </button>
-          <div className="arealist">
-            <div className="arealist-track">
-              {AREAS.concat(AREAS).map(([n, ic], i) => (
-                <span key={i} aria-hidden={i >= AREAS.length}>
-                  <Icon name={ic} size={15} />{n}
-                </span>
-              ))}
-            </div>
-          </div>
+        ) : <span />}
+        <div className="plan-top-actions">
+          <GlareToggle />
+          <ThemeToggle />
         </div>
       </div>
-    </>
+
+      {showResumeBanner && (
+        <button className="plan-banner" onClick={onResume}>
+          <Icon name="pending_actions" size={19} />
+          <span>Unfinished · {draftLabel}</span>
+          <b>Resume</b>
+        </button>
+      )}
+
+      {showNudge && lastSession && (
+        <div className="plan-banner-row">
+          <button className="plan-banner" onClick={() => onStart()}>
+            <Icon name="event_busy" size={19} />
+            <span>{daysSinceLast} days since your last session</span>
+            <b>Start</b>
+          </button>
+          <button className="plan-banner-x" aria-label="Dismiss reminder" onClick={() => onDismissNudge(lastSession.date)}>
+            <Icon name="close" size={18} />
+          </button>
+        </div>
+      )}
+
+      <section className="plan-hero" aria-label="Your next session">
+        <div className="plan-hero-text">
+          <span className="kicker plan-hero-kicker">
+            {firstRun
+              ? "Session one · your baseline"
+              : `Week ${cursor.week + 1} · Session ${cursor.session + 1} of ${week.sessions.length}`}
+          </span>
+          <h1 className="display-xl plan-hero-title">
+            {firstRun ? (name ? `Welcome, ${name}.` : "Welcome.") : week.title}
+          </h1>
+          <p className="plan-hero-p">
+            {firstRun
+              ? "One honest pass through all five areas, about ten balls each. No targets today, just where your game is."
+              : week.focus}
+          </p>
+        </div>
+
+        {/* the whole plan as one strip; each slot jumps the cursor there */}
+        <div className="plan-slots" role="group" aria-label={`Plan: ${loggedCount} of ${flat.length} sessions logged`}>
+          {flat.map((f, i) => {
+            const isDone = loggedSlots.has(`${f.id}|${f.label}`);
+            const isCur = i === curIdx;
+            return (
+              <button key={f.id + f.si}
+                      className={"plan-slot" + (isDone ? " done" : "") + (isCur ? " cur" : "")}
+                      aria-pressed={isCur}
+                      aria-label={`Week ${f.wi + 1}, ${f.test ? "test day" : `session ${f.si + 1}`}${isDone ? ", logged" : ""}`}
+                      onClick={() => setCursor({ week: f.wi, session: f.si })}>
+                <span>W{f.wi + 1}</span>
+                <span>{f.test ? "Test" : `S${f.si + 1}`}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="plan-slots-foot">
+          <span>{loggedCount} of {flat.length} logged</span>
+          <span>{donePct}%</span>
+        </div>
+
+        <div className="plan-start-row">
+          <button className="plan-start" onClick={() => onStart(v.areas)}>
+            <Icon name="play_arrow" size={22} fill />
+            {draftHere ? "Resume session" : venue === "full" ? "Start session" : `Start · ${v.label}`}
+          </button>
+          <button className="plan-quick" onClick={onQuick} aria-label="Quick session, just a few balls">
+            <Icon name="bolt" size={22} />
+          </button>
+        </div>
+
+        {!draftHere && (
+          <details className="venue plan-venue">
+            <summary>
+              <Icon name="place" size={16} />
+              {venue === "full" ? "Somewhere smaller today?" : v.label}
+              <Icon name="expand_more" size={18} className="venue-chev" />
+            </summary>
+            <div className="venue-opts">
+              {VENUES.map((opt) => (
+                <button
+                  key={opt.key}
+                  className={"venue-opt" + (opt.key === venue ? " on" : "")}
+                  aria-pressed={opt.key === venue}
+                  onClick={() => setVenue(opt.key)}
+                >
+                  <Icon name={opt.icon} size={17} />
+                  <span>{opt.label}</span>
+                  <small>{opt.areas.length ? `${opt.areas.length} area${opt.areas.length === 1 ? "" : "s"}` : "all 5"}</small>
+                </button>
+              ))}
+            </div>
+          </details>
+        )}
+      </section>
+
+      {oneThing && (
+        <section className="plan-onething area-putting" aria-label="Your one thing today">
+          <span className="kicker">Your one thing today</span>
+          <p className="plan-onething-title">{oneThing.title}</p>
+          <p className="plan-onething-body">{oneThing.body}</p>
+          <span className="plan-onething-src">{oneThing.source}</span>
+        </section>
+      )}
+
+      {!firstRun && (
+        <div className="plan-stats">
+          <div className="plan-stat">
+            <span className="plan-stat-val num">
+              {lastSolid === null ? "–" : <>{lastSolid}<small>%</small></>}
+            </span>
+            <span className="plan-stat-lbl">
+              solid strike{solidDelta ? `, ${solidDelta > 0 ? "up" : "down"} ${Math.abs(solidDelta)}` : ""}
+            </span>
+          </div>
+          <div className="plan-stat">
+            <span className="plan-stat-val num">{loggedCount}<small>/{flat.length}</small></span>
+            <span className="plan-stat-lbl">plan sessions logged</span>
+          </div>
+          <div className="plan-stat">
+            <span className="plan-stat-val num">{monthCount}</span>
+            <span className="plan-stat-lbl">{monthCount === 1 ? "session" : "sessions"} this month</span>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
