@@ -3849,3 +3849,9 @@ html:has(.landing), html:has(.landing) body::before { background: #0F1321; }
   .strata-key-i { flex-direction: column; gap: 3px; }
   .strata { padding-left: 12px; padding-right: 12px; }
 }
+
+/* =========================================================================
+   Icons — RangeCard's own SVG set (components/icons.tsx) inside span.msr
+   ========================================================================= */
+.msr.ico { flex: none; line-height: 0; }
+.msr.ico svg { display: block; overflow: visible; }
