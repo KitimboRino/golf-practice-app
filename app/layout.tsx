@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import { manrope, archivo, materialSymbols } from "./fonts";
+import { manrope, archivo } from "./fonts";
 import { ToastProvider } from "@/components/Toast";
 import { ConfirmProvider } from "@/components/Confirm";
 import { InstallPrompt } from "@/components/InstallPrompt";
@@ -99,7 +99,7 @@ const recoveryScript = `setTimeout(function(){
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${manrope.variable} ${archivo.variable} ${materialSymbols.variable}`}>
+    <html lang="en" className={`${manrope.variable} ${archivo.variable}`}>
       <body>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <script dangerouslySetInnerHTML={{ __html: recoveryScript }} />

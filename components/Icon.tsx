@@ -3,8 +3,8 @@ import { GLYPHS } from "./icons";
 
 // RangeCard's own icon set (components/icons.tsx), drawn to match Archivo's
 // stroke weight. `fill` switches to the selected/active variant where one
-// exists. Any name not drawn there falls back to the Material Symbols font,
-// so an icon is never blank.
+// exists. Names follow Material Symbols, which the app used to load as a
+// 1.4 MB icon font; every icon is now drawn here instead.
 //
 // The SVG sits inside the same span.msr the font glyph used, so every
 // existing colour / size rule, and the nav pill's ripple (a ::after on that
@@ -31,9 +31,8 @@ export function Icon({
       </span>
     );
   }
-  return (
-    <span aria-hidden className={cls} style={{ fontSize: size, color, ...style }}>
-      {name}
-    </span>
-  );
+  // every name the app uses is drawn in icons.tsx; an unknown one keeps its
+  // box (so layout doesn't jump) and says so in development
+  if (process.env.NODE_ENV !== "production") console.warn(`Icon: no glyph for "${name}"`);
+  return <span aria-hidden className={cls} style={{ width: size, height: size, color, ...style }} />;
 }

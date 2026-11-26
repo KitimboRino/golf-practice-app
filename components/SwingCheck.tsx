@@ -5,7 +5,6 @@ import { Icon } from "./Icon";
 import { useToast } from "./Toast";
 import { tapFx, bumpFx, doneFx } from "@/lib/haptics";
 import { uuid, saveSwing, SwingPhase, SwingMeasurement } from "@/lib/db";
-import { analyzeSwingVideo, frameThumbnail } from "@/lib/swingPose";
 import { detectPhases } from "@/lib/swingPhases";
 import { measurePhases } from "@/lib/swingAngles";
 import { SWING_BASELINE, statusFor } from "@/lib/swingBaseline";
@@ -249,6 +248,9 @@ export function SwingCheck({ onBack }: { onBack: () => void }) {
     setStage("processing");
     setProgress(0);
     try {
+      // TensorFlow and the pose model are ~1.7 MB of script: fetch them only
+      // when a clip is actually being analysed, not with the app shell
+      const { analyzeSwingVideo, frameThumbnail } = await import("@/lib/swingPose");
       const frames = await analyzeSwingVideo(blob, setProgress);
       const phases = detectPhases(frames);
       if (!phases) {

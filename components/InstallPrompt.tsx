@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Icon } from "./Icon";
 
 type BIPEvent = Event & {
   prompt: () => Promise<void>;
@@ -61,14 +62,14 @@ export function InstallPrompt() {
       <div className="install">
         <div className="install-ios">
           <button className="install-x" onClick={close} aria-label="Dismiss">
-            <span className="msr" style={{ fontSize: 18 }}>close</span>
+            <Icon name="close" size={18} />
           </button>
           <div className="install-ios-h">
-            <span className="msr" style={{ fontSize: 20, color: "var(--green)" }}>add_to_home_screen</span>
+            <Icon name="add_to_home_screen" size={20} color="var(--green)" />
             Add RangeCard to your Home Screen
           </div>
           <ol className="install-steps">
-            <li>Tap <span className="msr">ios_share</span> Share in the Safari toolbar</li>
+            <li>Tap <Icon name="ios_share" size={16} /> Share in the Safari toolbar</li>
             <li>Scroll down and choose <b>Add to Home Screen</b></li>
           </ol>
           <p className="install-ios-note">Opens full-screen, works offline. No App Store needed.</p>
@@ -82,11 +83,11 @@ export function InstallPrompt() {
   return (
     <div className="install">
       <div className="install-card">
-        <span className="msr" style={{ fontSize: 19, color: "var(--green)" }}>install_mobile</span>
+        <Icon name="install_mobile" size={19} color="var(--green)" />
         <span className="install-txt">Install RangeCard for offline, full-screen use</span>
         <button className="install-go" onClick={install}>Install</button>
         <button className="install-x" onClick={close} aria-label="Dismiss">
-          <span className="msr" style={{ fontSize: 18 }}>close</span>
+          <Icon name="close" size={18} />
         </button>
       </div>
     </div>

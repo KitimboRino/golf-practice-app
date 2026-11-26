@@ -4,7 +4,8 @@ import type { ReactNode } from "react";
 // the lines sit at the same weight as Archivo's strokes; geometric, open,
 // no hairlines. Each entry is the SVG body; Icon wraps it. A `fill` entry is
 // the selected / active variant. Names follow Material Symbols so call
-// sites don't change; anything not drawn here falls back to the font.
+// sites read naturally; components/Icon.tsx renders an empty box for any
+// name not drawn here.
 
 type Glyph = { d: ReactNode; fill?: ReactNode };
 const p = (d: string) => <path d={d} />;
@@ -129,4 +130,25 @@ export const GLYPHS: Record<string, Glyph> = {
   wb_twilight: { d: p("M3 18.5h18M7 18.5a5 5 0 0 1 10 0M12 7v2.5M5.5 10.5l1.6 1.6M18.5 10.5l-1.6 1.6") },
   self_improvement: { d: <><circle cx="12" cy="5" r="2" />{p("M12 8v5M6.5 11.5l5.5 1.8 5.5-1.8M8 18l4-2.5 4 2.5M4.5 20.5c2.2-.9 4.8-1.3 7.5-1.3s5.3.4 7.5 1.3")}</> },
   person: { d: <><circle cx="12" cy="8" r="4" />{p("M4.5 21a7.5 7.5 0 0 1 15 0")}</> },
+
+  // theme toggle: system is a half-filled disc, light a sun, dark a crescent
+  contrast: { d: <><circle cx="12" cy="12" r="8.5" /><path d="M12 3.5a8.5 8.5 0 0 1 0 17Z" fill="currentColor" /></> },
+  light_mode: { d: <><circle cx="12" cy="12" r="4" />{p("M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4")}</> },
+  dark_mode: { d: p("M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z") },
+  // course notes
+  air: { d: p("M3 8h10.5a2.5 2.5 0 1 0-2.5-2.5M3 12h15.5a2.5 2.5 0 1 1-2.5 2.5M3 16h7") },
+  grain: { d: <>{dot(6, 7)}{dot(12, 5)}{dot(18, 8)}{dot(9, 12)}{dot(15, 13)}{dot(5, 17)}{dot(11, 18)}{dot(18, 18)}</> },
+  psychology: { d: <>{p("M7 21v-4.2A7 7 0 1 1 18.8 12l1.7 3.2h-2.3V18a2 2 0 0 1-2 2h-2.2v1")}{p("M10 10.5a2 2 0 1 1 2.5 1.9V14")}</> },
+  // setup checklist
+  back_hand: { d: p("M8 13V5.5a1.5 1.5 0 0 1 3 0V11M11 11V4a1.5 1.5 0 0 1 3 0v7M14 11V5.5a1.5 1.5 0 0 1 3 0V13M17 13v-2.5a1.5 1.5 0 0 1 3 0V15a7 7 0 0 1-7 7h-.5a6 6 0 0 1-4.6-2.2L4.6 16a1.6 1.6 0 0 1 2.3-2.2L8 15") },
+  accessibility_new: { d: <><circle cx="12" cy="4.5" r="1.8" />{p("M4.5 8.5c2.4.8 4.9 1.2 7.5 1.2s5.1-.4 7.5-1.2M12 9.7V14M12 14l-3 7M12 14l3 7")}</> },
+  balance: { d: p("M12 4v16M8 20h8M4 7h16M6 7l-3 6a3 3 0 0 0 6 0Zm12 0l-3 6a3 3 0 0 0 6 0Z") },
+  // misc controls
+  swap_vert: { d: p("M8 19V5M4.5 8.5 8 5l3.5 3.5M16 5v14M12.5 15.5 16 19l3.5-3.5") },
+  toggle_off: { d: <><rect x="2.5" y="6.5" width="19" height="11" rx="5.5" /><circle cx="8" cy="12" r="3" /></>,
+                fill: <><rect x="2.5" y="6.5" width="19" height="11" rx="5.5" /><circle cx="8" cy="12" r="3" /></> },
+  toggle_on: { d: <><rect x="2.5" y="6.5" width="19" height="11" rx="5.5" /><circle cx="16" cy="12" r="3" fill="currentColor" /></>,
+               fill: <><rect x="2.5" y="6.5" width="19" height="11" rx="5.5" fill="currentColor" /><circle cx="16" cy="12" r="3" fill="var(--card, #fff)" stroke="none" /></> },
+  install_mobile: { d: <>{p("M15 3H8.5A1.5 1.5 0 0 0 7 4.5v15A1.5 1.5 0 0 0 8.5 21h7a1.5 1.5 0 0 0 1.5-1.5V15M11 18h2")}{p("M19 3v8M16 8l3 3 3-3")}</> },
+  add_to_home_screen: { d: <>{p("M10 3h5.5A1.5 1.5 0 0 1 17 4.5v15a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 7 19.5V15M11 18h2")}{p("M2.5 10h9M8 6.5l3.5 3.5L8 13.5")}</> },
 };

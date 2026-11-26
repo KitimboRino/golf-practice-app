@@ -13,20 +13,42 @@ import { VoiceLogButton } from "@/components/VoiceLog";
 import { Goal } from "@/lib/goal";
 import { Icon } from "@/components/Icon";
 import { AreaIcon } from "@/components/AreaIcon";
-import { Trends } from "@/components/Trends";
-import { Fixes } from "@/components/Fixes";
-import { Prep } from "@/components/Prep";
-import { Library } from "@/components/Library";
 import { Warmup } from "@/components/Warmup";
 import { Welcome } from "@/components/Welcome";
 import { FirstRun } from "@/components/FirstRun";
 import { Onboarding, OnbStage, FRESH_ONB, Shot, ReadSession } from "@/lib/onboarding";
-import { Round, RoundSummary } from "@/components/Round";
-import { Games } from "@/components/Games";
-import { Routine } from "@/components/Routine";
-import { Course } from "@/components/Course";
-import { SwingCheck } from "@/components/SwingCheck";
 import { Mark } from "@/components/Mark";
+import dynamic from "next/dynamic";
+
+// Secondary screens are split out of the app shell so the first screen
+// paints sooner. Page prefetches them all at idle (see below), so by the
+// time anyone taps through they're loaded, and cached for offline use.
+const SCREENS = {
+  trends: () => import("@/components/Trends"),
+  round: () => import("@/components/Round"),
+  fixes: () => import("@/components/Fixes"),
+  prep: () => import("@/components/Prep"),
+  library: () => import("@/components/Library"),
+  games: () => import("@/components/Games"),
+  routine: () => import("@/components/Routine"),
+  course: () => import("@/components/Course"),
+  swing: () => import("@/components/SwingCheck"),
+  // TensorFlow + the pose model code (~1.7 MB), which SwingCheck itself only
+  // imports when a clip is analysed; warming it here gets it into the service
+  // worker's cache so swing check works offline. App route only, so the
+  // landing page never downloads it.
+  pose: () => import("@/lib/swingPose"),
+};
+const Trends = dynamic(() => SCREENS.trends().then((m) => m.Trends));
+const Round = dynamic(() => SCREENS.round().then((m) => m.Round));
+const RoundSummary = dynamic(() => SCREENS.round().then((m) => m.RoundSummary));
+const Fixes = dynamic(() => SCREENS.fixes().then((m) => m.Fixes));
+const Prep = dynamic(() => SCREENS.prep().then((m) => m.Prep));
+const Library = dynamic(() => SCREENS.library().then((m) => m.Library));
+const Games = dynamic(() => SCREENS.games().then((m) => m.Games));
+const Routine = dynamic(() => SCREENS.routine().then((m) => m.Routine));
+const Course = dynamic(() => SCREENS.course().then((m) => m.Course));
+const SwingCheck = dynamic(() => SCREENS.swing().then((m) => m.SwingCheck));
 import { LiveRound } from "@/lib/round";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { GlareToggle } from "@/components/GlareToggle";
@@ -384,6 +406,17 @@ function QuickPick({
 
 export default function Page() {
   const [tab, setTabNow] = useState<Tab>("home");
+
+  // warm the split-out screens a few seconds after load, once the first
+  // screen has painted, so they don't compete with it for the network
+  useEffect(() => {
+    const warm = () => Object.values(SCREENS).forEach((load) => load().catch(() => {}));
+    const t = setTimeout(() => {
+      if ("requestIdleCallback" in window) requestIdleCallback(warm, { timeout: 3000 });
+      else warm();
+    }, 3000);
+    return () => clearTimeout(t);
+  }, []);
   // Switching screens runs as a View Transition where the browser has it:
   // the old screen fades, the new one rises in, and elements that share a
   // view-transition-name (the session title, the nav pill) morph between
@@ -446,20 +479,30 @@ export default function Page() {
 
     (async () => {
       try {
-        setHistory(await allSessions());
-        setRounds(await allRounds());
-        setGames(await allGameAttempts());
-        setSwings(await allSwings());
-        setRound((await getMeta<LiveRound>("roundDraft")) ?? null);
-        setName((await getMeta<string>("name")) ?? "");
-        setPlannedMiss((await getMeta<string>("plannedMiss")) ?? "");
-        const lvl = (await getMeta<Level>("planLevel")) ?? DEFAULT_LEVEL;
+        // independent reads, issued together rather than one after another
+        const [
+          sessions, savedRounds, attempts, savedSwings, roundDraft, savedName, miss,
+          savedLevel, nudgeAt, isDemo, savedGoal, savedOverrides, onboarded,
+        ] = await Promise.all([
+          allSessions(), allRounds(), allGameAttempts(), allSwings(),
+          getMeta<LiveRound>("roundDraft"), getMeta<string>("name"), getMeta<string>("plannedMiss"),
+          getMeta<Level>("planLevel"), getMeta<string>("nudgeDismissedAt"), getMeta<boolean>("demo"),
+          getMeta<Goal>("goal"), getMeta<DrillOverrides>("drillOverrides"), getMeta<string>("onboardedAt"),
+        ]);
+        setHistory(sessions);
+        setRounds(savedRounds);
+        setGames(attempts);
+        setSwings(savedSwings);
+        setRound(roundDraft ?? null);
+        setName(savedName ?? "");
+        setPlannedMiss(miss ?? "");
+        const lvl = savedLevel ?? DEFAULT_LEVEL;
         setLevel(lvl);
-        setNudgeDismissedAt((await getMeta<string>("nudgeDismissedAt")) ?? null);
-        setDemo(!!(await getMeta<boolean>("demo")));
-        setGoalState((await getMeta<Goal>("goal")) ?? null);
-        setOverrides((await getMeta<DrillOverrides>("drillOverrides")) ?? {});
-        const ob = (await getMeta<string>("onboardedAt")) ?? null;
+        setNudgeDismissedAt(nudgeAt ?? null);
+        setDemo(!!isDemo);
+        setGoalState(savedGoal ?? null);
+        setOverrides(savedOverrides ?? {});
+        const ob = onboarded ?? null;
         // "/?demo=1" (the landing page's "Look around first") on a fresh
         // install loads the sample history. Never touches real data: it only
         // fires when nothing has been set up yet.
@@ -482,7 +525,9 @@ export default function Page() {
           const c = await getMeta<{ week: number; session: number }>("cursor");
           if (c) setCursor(clampCursor(PLANS[lvl], c));
         }
-        if (!ob) setTab("firstrun");
+        // set directly: a view transition here would only crossfade from the
+        // splash and hold back the first real paint
+        if (!ob) setTabNow("firstrun");
       } catch (e) {
         console.error("RangeCard failed to load local data:", e);
       } finally {

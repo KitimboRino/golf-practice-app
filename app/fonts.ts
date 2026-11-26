@@ -1,5 +1,4 @@
 import { Manrope, Archivo } from "next/font/google";
-import localFont from "next/font/local";
 
 // Body / UI face. Unchanged — Manrope survives the restyle and holds CLS at 0
 // with its size-adjusted fallback metrics.
@@ -21,12 +20,4 @@ export const archivo = Archivo({
   axes: ["wdth"],
   display: "swap",
   variable: "--font-display-face",
-});
-
-// Material Symbols Rounded (variable: opsz, wght, FILL, GRAD). Self-hosted so the
-// installed PWA renders its icons on first paint and fully offline.
-export const materialSymbols = localFont({
-  src: "./fonts/material-symbols-rounded.woff2",
-  display: "block",
-  variable: "--font-icon",
 });
