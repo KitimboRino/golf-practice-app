@@ -1242,29 +1242,31 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   aspect-ratio: 3 / 4;
 }
 .swingcheck-video { width: 100%; height: 100%; object-fit: cover; display: block; }
-/* a translucent golfer at address to line yourself up against, the way a
-   camera-calibration overlay would: decorative, not computed from the feed
-   or the pose model. Opacity sits on the whole svg so overlapping parts
-   flatten into one even silhouette; the hairlines and the brighter arms,
-   cap and club keep it readable as a figure rather than a blob. */
+/* translucent golfer-at-address outlines to line yourself up against, the
+   way a camera-calibration overlay would: decorative, not computed from the
+   feed or the pose model. Opacity sits on the whole svg so overlapping parts
+   flatten into one even silhouette; slightly brighter arms, cap and club,
+   with hairline edges on the arms, keep it reading as a figure. */
 .swingcheck-guide {
-  position: absolute; inset: 4% 24%; width: 52%; height: 92%; pointer-events: none;
-  opacity: 0.6; filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.35));
+  position: absolute; top: 4%; height: 92%; pointer-events: none;
+  opacity: 0.78; filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.35));
 }
-.swingcheck-guide .sg-body, .swingcheck-guide .sg-body * { fill: #e9ecef; }
-.swingcheck-guide .sg-club { fill: #fff; stroke: #fff; stroke-width: 3; stroke-linecap: round; }
-.swingcheck-guide .sg-club :is(path, circle) { stroke: none; }
-.swingcheck-guide .sg-arms, .swingcheck-guide .sg-cap, .swingcheck-guide .sg-brim { fill: #fff; }
-.swingcheck-guide .sg-arms, .swingcheck-guide .sg-brim {
-  stroke: rgba(0, 0, 0, 0.22); stroke-width: 1.3; stroke-linejoin: round;
-}
+.swingcheck-guide.face { left: 24%; width: 52%; }
+.swingcheck-guide.dtl { left: 8%; width: 80%; }
+.swingcheck-guide .sg-b { fill: #d4d6d9; }
+.swingcheck-guide .sg-a { fill: #e6e8ea; stroke: rgba(0, 0, 0, 0.18); stroke-width: 1; stroke-linejoin: round; }
+.swingcheck-guide .sg-c { fill: #e6e8ea; }
+.swingcheck-guide .sg-s { stroke: #e6e8ea; stroke-width: 2.6; stroke-linecap: round; }
+.swingcheck-views button { min-height: 38px; font-size: 14px; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--on-ink); }
+
 /* the camera wants the whole screen: no tab bar over the record button */
 body:has(.swingcheck-capture) :is(.navpill, .install) { display: none; }
 body:has(.swingcheck-capture) .app { padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
-/* keep the record button above the fold on short phones: ~330px is the
-   header, hint, button and gaps around the preview */
+/* keep the record button above the fold on short phones: ~396px is the
+   header, view switch, hint, button and gaps around the preview */
 .swingcheck-preview {
-  max-height: max(260px, calc(100dvh - 330px - env(safe-area-inset-top) - env(safe-area-inset-bottom)));
+  max-height: max(260px, calc(100dvh - 396px - env(safe-area-inset-top) - env(safe-area-inset-bottom)));
 }
 
 /* recording badge: a real countdown ring (SVG stroke animated via CSS

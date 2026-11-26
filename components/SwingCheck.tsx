@@ -51,6 +51,16 @@ export function SwingCheck({ onBack }: { onBack: () => void }) {
   const [progress, setProgress] = useState(0);
   const [measurements, setMeasurements] = useState<Record<SwingPhase, SwingMeasurement> | null>(null);
   const [autoDetect, setAutoDetect] = useState(true);
+  // which outline to line up against; face-on is what the angles are built for
+  const [view, setViewState] = useState<GuideView>("face");
+  useEffect(() => {
+    try { if (localStorage.getItem("swingView") === "dtl") setViewState("dtl"); } catch { /* ignore */ }
+  }, []);
+  const setView = (v: GuideView) => {
+    tapFx();
+    setViewState(v);
+    try { localStorage.setItem("swingView", v); } catch { /* ignore */ }
+  };
   const [armState, setArmState] = useState<ArmState>(null); // mirrors armStateRef, for display only
   const [countdown, setCountdown] = useState<number | null>(null); // manual-button only
   const [recordKey, setRecordKey] = useState(0); // bumped each recording start, so the progress ring replays
@@ -343,7 +353,7 @@ export function SwingCheck({ onBack }: { onBack: () => void }) {
             <div className="swingcheck-setup">
               <div className="rgrp-lbl">Before you record</div>
               <ul className="swingcheck-tips">
-                <li>Stand about 8ft (2.5m) back, face-on, full body in frame</li>
+                <li>Stand about 8ft (2.5m) back with your full body in frame: face-on gives the truest numbers, down the line works too</li>
                 <li>Prop the phone up rather than holding it</li>
                 <li>A 4-second clip is plenty — the swing itself is quick</li>
                 <li>Recording starts on its own once it sees you swing — no need to tap anything after you&apos;re set up</li>
@@ -357,33 +367,15 @@ export function SwingCheck({ onBack }: { onBack: () => void }) {
 
         {supported && (stage === "camera" || stage === "recording") && (
           <div className="swingcheck-capture">
+            {stage === "camera" && (
+              <div className="seg swingcheck-views" role="group" aria-label="Camera angle">
+                <button aria-pressed={view === "face"} onClick={() => setView("face")}>Face-on</button>
+                <button aria-pressed={view === "dtl"} onClick={() => setView("dtl")}>Down the line</button>
+              </div>
+            )}
             <div className="swingcheck-preview">
               <video ref={videoRef} playsInline muted className="swingcheck-video" />
-              <svg className="swingcheck-guide" viewBox="0 0 160 300" preserveAspectRatio="xMidYMid meet" aria-hidden>
-                {/* a golfer at address, face-on: the pose the analysis expects */}
-                <g className="sg-body">
-                  <path d="M56 128 L104 128 L106 150 L114 206 L118 264 L101 266 L93 207 L81 156 L79 156 L67 207 L59 266 L42 264 L46 206 L54 150 Z" />
-                  <ellipse cx="49" cy="268" rx="14" ry="5.5" transform="rotate(-6 49 268)" />
-                  <ellipse cx="111" cy="268" rx="14" ry="5.5" transform="rotate(6 111 268)" />
-                </g>
-                <g className="sg-club">
-                  <line x1="89" y1="170" x2="79" y2="262" />
-                  <path d="M68 262 Q68 258 74 258 L85 259 Q90 260 89 265 Q88 269 82 269 L73 269 Q68 268 68 262 Z" />
-                  <circle cx="95" cy="266" r="4" />
-                </g>
-                {/* upper body tilted away from the target: trail shoulder lower, head behind the ball */}
-                <g transform="rotate(-5 80 130)">
-                  <path className="sg-body" d="M46 74 Q44 63 56 61 L104 59 Q116 60 114 72 L108 140 Q104 146 80 146 Q56 146 52 140 Z" />
-                  <g className="sg-arms">
-                    <path d="M48 70 Q50 63 57 65 L90 160 L80 168 Z" />
-                    <path d="M112 68 Q112 61 104 63 L80 160 L92 168 Z" />
-                    <circle cx="86" cy="168" r="7.5" />
-                  </g>
-                  <circle className="sg-body" cx="80" cy="44" r="12.5" />
-                  <path className="sg-cap" d="M67 41 Q67 27 80 27 Q93 27 93 41 Z" />
-                  <path className="sg-brim" d="M65 40.5 Q80 47 95 40.5 Q80 43.5 65 40.5 Z" />
-                </g>
-              </svg>
+              {view === "face" ? <GuideFaceOn /> : <GuideDownLine />}
               {stage === "recording" && (
                 <span className="swingcheck-rec" key={recordKey}>
                   <RecordingRing ms={RECORD_MS} />
@@ -408,8 +400,8 @@ export function SwingCheck({ onBack }: { onBack: () => void }) {
                   : armState === "ready"
                     ? "Watching — it'll start recording the moment you move"
                     : armState === "settling"
-                      ? "Full body in frame, face-on, about 8ft back — hold still a moment"
-                      : "Full body in frame, face-on, about 8ft back"}
+                      ? `${VIEW_HINT[view]} — hold still a moment`
+                      : VIEW_HINT[view]}
             </div>
             <button
               className="cta"
@@ -449,6 +441,16 @@ export function SwingCheck({ onBack }: { onBack: () => void }) {
                 came from. Treat it as a direction, not a verdict.
               </span>
             </div>
+            {view === "dtl" && (
+              <div className="fault-note">
+                <span className="icon-tile sm dim"><Icon name="info" size={15} /></span>
+                <span>
+                  Filmed down the line. From the side your shoulders and hips overlap in the
+                  frame, so turn and tilt read rougher than face-on. Use it to compare swings
+                  filmed the same way.
+                </span>
+              </div>
+            )}
             <div className="swingcheck-grid">
               {PHASE_ORDER.map((phase) => {
                 const m = measurements[phase];
@@ -520,4 +522,45 @@ function pickMimeType(): string {
     if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported?.(c)) return c;
   }
   return "video/webm";
+}
+
+type GuideView = "face" | "dtl";
+const VIEW_HINT: Record<GuideView, string> = {
+  face: "Full body in frame, face-on, about 8ft back",
+  dtl: "Full body in frame, behind your hands on the target line, about 8ft back",
+};
+
+// Translucent golfer-at-address outlines to line up against, one per camera
+// angle. Decorative: not computed from the feed or the pose model.
+function GuideFaceOn() {
+  return (
+    <svg className="swingcheck-guide face" viewBox="0 0 160 300" preserveAspectRatio="xMidYMid meet" aria-hidden>
+      <path className="sg-b" d="M57 124 C51 146 47 170 47 196 C47 220 41 244 41 264 L31 272 C28 277 32 280 39 280 L57 280 C60 278 59 270 56 265 C57 244 61 222 65 200 C69 184 74 170 80 162 C86 170 91 184 95 200 C99 222 103 244 104 265 C101 270 100 278 103 280 L121 280 C128 280 132 277 129 272 L119 264 C119 244 113 220 113 196 C113 170 109 146 103 124 Z" />
+      <line className="sg-s" x1="81" y1="166" x2="77" y2="262" />
+      <path className="sg-c" d="M66 261 C66 257 71 256 77 257 L85 258 C89 259 89 266 84 268 L71 268 C67 267 66 264 66 261 Z" />
+      {/* upper body tilted away from the target: trail shoulder lower, head behind the ball */}
+      <g transform="rotate(-4 80 130)">
+        <path className="sg-b" d="M70 58 C58 60 46 62 42 72 C40 82 46 96 52 106 C56 114 58 122 60 132 L100 132 C102 122 104 114 108 106 C114 96 120 82 118 72 C114 62 102 60 90 58 Z" />
+        <path className="sg-a" d="M42 70 C40 82 50 104 60 124 C66 138 72 150 76 160 L84 158 C80 146 74 130 70 116 C64 98 58 82 54 70 Z" />
+        <path className="sg-a" d="M118 70 C120 82 110 104 100 124 C94 138 88 150 84 160 L76 158 C80 146 86 130 90 116 C96 98 102 82 106 70 Z" />
+        <ellipse className="sg-a" cx="80" cy="162" rx="7.5" ry="7" />
+        <ellipse className="sg-b" cx="80" cy="46" rx="11.5" ry="12.5" />
+        <path className="sg-c" d="M68 43 C68 30 92 30 92 43 Z" />
+        <path className="sg-c" d="M65 43 C72 40 88 40 95 43 C96 46 92 48 88 47 C83 45 77 45 72 47 C68 48 64 46 65 43 Z" />
+      </g>
+    </svg>
+  );
+}
+
+function GuideDownLine() {
+  return (
+    <svg className="swingcheck-guide dtl" viewBox="0 0 200 300" preserveAspectRatio="xMidYMid meet" aria-hidden>
+      <path className="sg-b" d="M118 82 C108 90 98 106 90 122 C84 134 76 142 74 154 C72 166 78 174 86 176 C92 186 95 200 95 214 C95 232 92 250 92 264 C90 270 86 274 86 278 L88 281 L124 281 C130 281 129 274 122 272 L106 266 C106 250 111 230 114 214 C116 200 113 186 111 174 C113 166 118 158 123 150 C131 138 139 122 141 108 C142 100 138 92 134 88 L140 76 L126 68 Z" />
+      <circle className="sg-b" cx="136" cy="64" r="12" />
+      <path className="sg-c" d="M124 61 C121 48 138 44 145 53 L158 62 C160 64 157 66 153 65 L142 61 C136 58 129 59 124 61 Z" />
+      <path className="sg-a" d="M124 94 C124 86 136 84 138 94 C142 118 146 142 148 160 C149 168 141 171 137 166 C134 142 129 118 124 94 Z" />
+      <line className="sg-s" x1="145" y1="166" x2="184" y2="262" />
+      <path className="sg-c" d="M180 259 L188 262 C197 264 198 271 192 272 L180 271 C176 269 176 262 180 259 Z" />
+    </svg>
+  );
 }
