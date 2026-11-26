@@ -259,17 +259,12 @@ function RoundSetup({
           </button>
         ) : (
           <div className="round-empty">
-            <svg viewBox="0 0 260 70" style={{ width: "100%", height: 62, display: "block" }} aria-hidden>
-              <line x1="6" y1="58" x2="254" y2="58" className="chart-base" />
-              <path d="M6 52 L70 44 L130 48 L190 34 L244 20" fill="none" stroke="var(--border)"
-                    strokeWidth="2.2" strokeDasharray="4 7" strokeLinecap="round" />
-              <circle cx="6" cy="52" r="5" fill="var(--green)" />
-              <circle cx="6" cy="52" r="11" fill="none" stroke="var(--green)" strokeOpacity="0.3" strokeWidth="1.5" />
-              <g transform="translate(244 20)" stroke="var(--green)" strokeWidth="2" strokeLinecap="round" fill="none">
-                <line x1="0" y1="0" x2="0" y2="-22" />
-                <path d="M0 -22 L15 -17 L0 -12 Z" fill="var(--green)" stroke="none" />
-              </g>
-            </svg>
+            {/* a blank card: nine holes waiting, the first one ready */}
+            <div className="ghost-card" aria-hidden="true">
+              {Array.from({ length: 9 }, (_, i) => (
+                <span key={i} className={"ghost-hole" + (i === 0 ? " first" : "")}>{i + 1}</span>
+              ))}
+            </div>
             <div className="round-empty-h">Your first round starts the card</div>
             <div className="round-empty-p">
               Log fairways, greens and putts hole by hole. After a couple of rounds this tab

@@ -14,8 +14,8 @@ import { useToast } from "./Toast";
 import { useConfirm } from "./Confirm";
 import { Icon } from "./Icon";
 import { Strata } from "./Strata";
+import { GhostStrata } from "./GhostStrata";
 import { Glyph } from "./Glyph";
-import { Mark } from "./Mark";
 import { localDate } from "@/lib/date";
 
 const fmtDate = (iso: string) => {
@@ -136,19 +136,13 @@ export function Trends({
           </div>
         </header>
         <div className="empty-wrap">
-          <Mark size={300} className="empty-watermark" />
           <div className="empty-card">
-            <svg viewBox="0 0 260 76" style={{ width: "100%", height: 76, display: "block" }}>
-              <line x1="6" y1="66" x2="254" y2="66" className="chart-base" />
-              <path d="M6 56 L68 44 L130 48 L192 28 L254 14" fill="none" stroke="var(--border)" strokeWidth="2.2" strokeDasharray="4 7" strokeLinecap="round" />
-              <circle cx="6" cy="56" r="5" fill="var(--green)" />
-              <circle cx="6" cy="56" r="11" fill="none" stroke="var(--green)" strokeOpacity="0.3" strokeWidth="1.5" />
-            </svg>
+            <GhostStrata />
             <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
-              <div className="empty-h">Your first line starts today</div>
+              <div className="empty-h">Your first layer starts today</div>
               <div className="empty-p">
-                Log one range session and this page fills in: solid strikes, fairways found,
-                putts made, session by session.
+                Every session you log becomes a layer here, filled in each area&apos;s colour
+                as your success rate grows. Log one and the picture starts.
               </div>
             </div>
             <button className="cta" onClick={onStart}>

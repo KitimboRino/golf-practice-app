@@ -879,6 +879,12 @@ export default function Page() {
           <Mark size={48} />
           <span className="boot-word">RangeCard</span>
         </div>
+        {/* the five areas fill in turn while local data loads */}
+        <div className="boot-bands" aria-hidden="true">
+          {["chipping", "pitching", "irons", "driving", "putting"].map((a, i) => (
+            <span key={a} className={`area-${a}`} style={{ "--i": i } as React.CSSProperties} />
+          ))}
+        </div>
         {bootStuck && (
           <div className="boot-stuck">
             <p>This is taking longer than it should.</p>
