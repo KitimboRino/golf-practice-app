@@ -129,3 +129,43 @@ export function frontBack(rounds: SavedRound[], minRounds = 2): Nines | null {
   const back = round1(pairs.reduce((n, p) => n + p[1], 0) / pairs.length);
   return { rounds: pairs.length, front, back, diff: round1(back - front) };
 }
+
+// ---- this hole, last time -------------------------------------------------------
+
+export type HoleHistory = {
+  played: number;          // earlier rounds at this course that scored this hole
+  recent: number[];        // their scores, most recent first (up to 3)
+  avgOver: number;         // average strokes over par across all of them
+  fwHit: number;           // fairway answers on this hole: hit / of
+  fwOf: number;
+  missLeft: number;
+  missRight: number;
+};
+
+const courseKey = (c: string | undefined) => (c ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+
+/** How this hole has gone on earlier rounds at the same course (matched by
+ *  name, ignoring case and spacing). `skipId` leaves out the round being
+ *  edited. Null when the course is unnamed or the hole has never been scored. */
+export function holeHistory(
+  rounds: SavedRound[], course: string, holeIndex: number, skipId?: string,
+): HoleHistory | null {
+  const key = courseKey(course);
+  if (!key) return null;
+  const past = rounds
+    .filter((r) => r.id !== skipId && courseKey(r.course) === key)
+    .sort((a, b) => (b.date === a.date ? b.createdAt - a.createdAt : b.date < a.date ? -1 : 1))
+    .map((r) => r.holeData[holeIndex])
+    .filter((h): h is RoundHole & { score: number } => !!h && h.score != null);
+  if (!past.length) return null;
+  const fw = past.filter((h) => h.par !== 3 && h.fairwayHit != null);
+  return {
+    played: past.length,
+    recent: past.slice(0, 3).map((h) => h.score),
+    avgOver: round1(past.reduce((n, h) => n + (h.score - h.par), 0) / past.length),
+    fwHit: fw.filter((h) => h.fairwayHit === true).length,
+    fwOf: fw.length,
+    missLeft: fw.filter((h) => h.fairwayMiss === "left").length,
+    missRight: fw.filter((h) => h.fairwayMiss === "right").length,
+  };
+}

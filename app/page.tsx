@@ -73,6 +73,7 @@ import { localDate } from "@/lib/date";
 import { useCountUp } from "@/lib/useCountUp";
 import { DispersionFan } from "@/components/DispersionFan";
 import { loadDemo, exitDemo } from "@/lib/demo";
+import { BackupState, backupDue, loadBackupState, saveBackup, snoozeBackup } from "@/lib/backup";
 
 type Tab = "home" | "session" | "trends" | "more" | "warmup" | "welcome" | "receipt" | "quickpick" | "firstrun" | "round";
 
@@ -450,6 +451,9 @@ export default function Page() {
   const [games, setGames] = useState<GameAttempt[]>([]);
   const toast = useToast();
   const { confirm } = useConfirm();
+  // backup reminder (lib/backup.ts): loaded once the app is up
+  const [backup, setBackup] = useState<BackupState | null>(null);
+  useEffect(() => { if (ready) loadBackupState().then(setBackup); }, [ready]);
   const pendingVenue = useRef<(keyof Strips)[] | undefined>(undefined);
   // Editing a past session points the cursor at that session's slot so the
   // log screen shows its drills; this remembers where the plan actually was,
@@ -768,6 +772,23 @@ export default function Page() {
   // "Haven't practiced in a while" nudge — dismissal is keyed to the date of
   // the session it was shown for, so it naturally reopens once that gap grows
   // again (no separate "last shown" timer to drift out of sync with reality).
+  // the home banner and Trends' Export share one path, so either one
+  // resets the reminder
+  async function doBackup() {
+    const out = await saveBackup(history.length + rounds.length);
+    if (out === "shared" || out === "downloaded") {
+      doneFx();
+      toast.show(out === "shared" ? "Backup saved" : "Backup downloaded");
+    } else if (out === "failed") {
+      toast.show("Couldn't save the backup. Try again from Trends");
+    }
+    setBackup(await loadBackupState());
+  }
+  async function snoozeBackupReminder() {
+    await snoozeBackup();
+    setBackup(await loadBackupState());
+  }
+
   async function dismissNudge(lastSessionDate: string) {
     setNudgeDismissedAt(lastSessionDate);
     await setMeta("nudgeDismissedAt", lastSessionDate);
@@ -1005,7 +1026,10 @@ export default function Page() {
                 onStart={startSession} onQuick={() => setTab("quickpick")}
                 draftLabel={isDraft ? live!.sessionLabel : null}
                 draftHere={draftHere} onResume={resumeDraft}
-                nudgeDismissedAt={nudgeDismissedAt} onDismissNudge={dismissNudge} />
+                nudgeDismissedAt={nudgeDismissedAt} onDismissNudge={dismissNudge}
+                backupDue={!demo && !!backup && backupDue(backup, history.length + rounds.length, Date.now())}
+                unsavedText={unsavedText(history.length, rounds.length)}
+                onBackup={doBackup} onSnoozeBackup={snoozeBackupReminder} />
         )}
         {tab === "quickpick" && (
           <QuickPick plannedMiss={plannedMiss} onStart={startQuick} onCancel={() => setTab("home")} />
@@ -1019,6 +1043,7 @@ export default function Page() {
           <Trends history={history} rounds={rounds} swings={swings} activePlan={activePlan} onDelete={onDelete} onEdit={editSession}
                   onBack={() => { setTab("more"); setTrendsOpenData(false); }}
                   onStart={startSession} onImported={reloadAfterImport}
+                  onExport={doBackup} lastBackupAt={backup?.lastAt ?? null}
                   openData={trendsOpenData}
                   goal={goal} onSaveGoal={saveGoal} onClearGoal={clearGoal} />
         )}
@@ -1275,11 +1300,23 @@ function LevelSettings({
   );
 }
 
+// "Your 12 sessions and 3 rounds", for the backup banner
+function unsavedText(sessions: number, rounds: number): string {
+  const part = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
+  if (!rounds) return `Your ${part(sessions, "session")}`;
+  if (!sessions) return `Your ${part(rounds, "round")}`;
+  return `Your ${part(sessions, "session")} and ${part(rounds, "round")}`;
+}
+
 function Home({
   week, cursor, setCursor, history, name, greeting, onEditName, oneThing, monthCount,
   activePlan, onStart, onQuick, draftLabel, draftHere, onResume, nudgeDismissedAt, onDismissNudge,
-  demo, onLeaveDemo,
+  demo, onLeaveDemo, backupDue, unsavedText, onBackup, onSnoozeBackup,
 }: {
+  backupDue: boolean;
+  unsavedText: string;
+  onBackup: () => void;
+  onSnoozeBackup: () => void;
   demo: boolean;
   onLeaveDemo: () => void;
   week: Week;
@@ -1370,6 +1407,19 @@ function Home({
             <b>Start</b>
           </button>
           <button className="plan-banner-x" aria-label="Dismiss reminder" onClick={() => onDismissNudge(lastSession.date)}>
+            <Icon name="close" size={18} />
+          </button>
+        </div>
+      )}
+
+      {backupDue && !showResumeBanner && !showNudge && (
+        <div className="plan-banner-row">
+          <button className="plan-banner" onClick={onBackup}>
+            <Icon name="download" size={19} />
+            <span>{unsavedText} only live on this phone</span>
+            <b>Back up</b>
+          </button>
+          <button className="plan-banner-x" aria-label="Not now, remind me next week" onClick={onSnoozeBackup}>
             <Icon name="close" size={18} />
           </button>
         </div>

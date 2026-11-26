@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { scoringByPar, blowUps, teeMissSide, fairwaysByTeeClub, frontBack } from "@/lib/roundPatterns";
+import { scoringByPar, blowUps, teeMissSide, fairwaysByTeeClub, frontBack, holeHistory } from "@/lib/roundPatterns";
 import { round, hole, session } from "./helpers";
 
 const holes = (spec: [3 | 4 | 5, number][]) => spec.map(([par, score]) => hole({ par, score }));
@@ -99,5 +99,28 @@ describe("frontBack", () => {
 
   it("ignores 9-hole rounds and needs two full rounds", () => {
     expect(frontBack([eighteen(3, 6), round(holes([[4, 5], [4, 5], [4, 5]]))])).toBeNull();
+  });
+});
+
+describe("holeHistory", () => {
+  const at = (course: string, date: string, h: Parameters<typeof hole>[0], id?: string) =>
+    round([hole({ par: 4, score: 4 }), hole(h)], { course, date, ...(id ? { id } : {}) });
+
+  it("reads this hole from earlier rounds at the same course, newest first", () => {
+    const rounds = [
+      at("Uganda Golf Club", "2026-10-01", { par: 4, score: 6, fairwayHit: false, fairwayMiss: "right" }),
+      at("  uganda golf  club ", "2026-11-01", { par: 4, score: 5, fairwayHit: true }),
+      at("Entebbe", "2026-11-05", { par: 4, score: 3, fairwayHit: true }),
+      at("Uganda Golf Club", "2026-11-10", { par: 4 }), // hole not scored: skipped
+    ];
+    expect(holeHistory(rounds, "Uganda Golf Club", 1)).toEqual({
+      played: 2, recent: [5, 6], avgOver: 1.5, fwHit: 1, fwOf: 2, missLeft: 0, missRight: 1,
+    });
+  });
+
+  it("leaves out the round being edited, and needs a course name", () => {
+    const r = at("UGC", "2026-11-01", { par: 4, score: 5 }, "edit-me");
+    expect(holeHistory([r], "UGC", 1, "edit-me")).toBeNull();
+    expect(holeHistory([r], "", 1)).toBeNull();
   });
 });

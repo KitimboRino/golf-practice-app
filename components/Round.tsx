@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { RoundHole, SavedRound, SavedSession, AreaKey } from "@/lib/db";
-import { scoringByPar, blowUps, teeMissSide, fairwaysByTeeClub, frontBack } from "@/lib/roundPatterns";
+import { scoringByPar, blowUps, teeMissSide, fairwaysByTeeClub, frontBack, holeHistory, HoleHistory } from "@/lib/roundPatterns";
 import {
   LiveRound, RoundStats, freshHoles, roundStats, roundLabel,
   leakReport, practiceNoun, LeakCategory, LEAK_BENCHMARK,
@@ -63,7 +63,7 @@ export function Round({
   const [diag, setDiag] = useState(false);
 
   if (liveRound) {
-    return <RoundPlay round={liveRound} onChange={onChange} onFinish={onFinish} onDiscard={onDiscard} />;
+    return <RoundPlay round={liveRound} rounds={rounds} onChange={onChange} onFinish={onFinish} onDiscard={onDiscard} />;
   }
   if (diag && rounds.length) {
     return <RoundDiagnostic rounds={rounds} history={history} onBack={() => setDiag(false)} onPractice={onPractice} />;
@@ -395,10 +395,30 @@ function StrategyStrip({
   );
 }
 
+// How this hole went on earlier rounds here: one quiet line, no tap needed
+function HoleHistoryStrip({ hist }: { hist: HoleHistory }) {
+  const lean = hist.missRight > hist.missLeft ? "right" : hist.missLeft > hist.missRight ? "left" : null;
+  const fw = hist.fwOf
+    ? `Fairway ${hist.fwHit} of ${hist.fwOf}${lean && hist.fwHit < hist.fwOf ? `, misses ${lean}` : ""}`
+    : null;
+  return (
+    <div className="hole-hist">
+      <Icon name="history" size={15} />
+      <span>
+        <b>Before here</b>{" "}
+        <span className="num">{hist.recent.join(", ")}</span>
+        {hist.played > 1 && <> · avg <span className="num">{fmtOver(hist.avgOver)}</span></>}
+        {fw && <> · {fw}</>}
+      </span>
+    </div>
+  );
+}
+
 function RoundPlay({
-  round, onChange, onFinish, onDiscard,
+  round, rounds, onChange, onFinish, onDiscard,
 }: {
   round: LiveRound;
+  rounds: SavedRound[];
   onChange: (r: LiveRound) => void;
   onFinish: (r: LiveRound) => void;
   onDiscard: () => void;
@@ -463,6 +483,7 @@ function RoundPlay({
     setHole({ [k]: h[k] === v ? undefined : v });
   };
   const detailCount = [h.teeClub, h.approachClub, h.approachYds].filter(Boolean).length;
+  const hist = holeHistory(rounds, round.course, i, round.id);
 
   const goTo = (n: number) => {
     const c = Math.max(0, Math.min(round.holes - 1, n));
@@ -554,6 +575,8 @@ function RoundPlay({
       <div className="screen log">
         {/* key by hole so it starts collapsed each hole, but still updates live
             as par / fairway change on the current hole */}
+        {hist && <HoleHistoryStrip hist={hist} />}
+
         <StrategyStrip
           key={i}
           par={h.par}
@@ -1235,7 +1258,7 @@ export function RoundDiagnostic({
                         approach={c.key === "approach" ? approach : null} />
             ))}
 
-            <RoundPatterns rounds={rounds} history={history} />
+            <RoundPatterns rounds={rounds} history={history} onPractice={onPractice} />
           </>
         )}
       </div>
@@ -1256,7 +1279,27 @@ const PAR_READ: Record<3 | 4 | 5, string> = {
   5: "Usually the lay-up and the wedge in, more than the drive.",
 };
 
-function RoundPatterns({ rounds, history }: { rounds: SavedRound[]; history: SavedSession[] }) {
+// which practice areas a par type points at, matching PAR_READ above
+const PAR_AREAS: Record<3 | 4 | 5, AreaKey[]> = { 3: ["irons"], 4: ["driving", "irons"], 5: ["irons", "pitching"] };
+
+// the same start-a-session button the leak cards use
+function PracticeBtn({ label, areas, title, body, onPractice }: {
+  label: string; areas: AreaKey[]; title: string; body: string;
+  onPractice: (areas: AreaKey[], focus: PracticeFocus) => void;
+}) {
+  return (
+    <button className="leak-practice" onClick={() => onPractice(areas, { title, body })}>
+      <Icon name="play_arrow" size={16} fill />
+      {label}
+    </button>
+  );
+}
+
+function RoundPatterns({ rounds, history, onPractice }: {
+  rounds: SavedRound[];
+  history: SavedSession[];
+  onPractice: (areas: AreaKey[], focus: PracticeFocus) => void;
+}) {
   const par = scoringByPar(rounds);
   const blow = blowUps(rounds);
   const miss = teeMissSide(rounds, history);
@@ -1303,6 +1346,15 @@ function RoundPatterns({ rounds, history }: { rounds: SavedRound[]; history: Sav
                 ? <>Par {par.worst}s cost you most, {worst.avgOver.toFixed(1)} over a hole on average. {PAR_READ[par.worst]}</>
                 : "No par type stands out: you drop shots about evenly across par 3s, 4s and 5s."}
             </p>
+            {worst && par.worst && (
+              <PracticeBtn
+                label={`Practise ${PAR_AREAS[par.worst].join(" and ")}`}
+                areas={PAR_AREAS[par.worst]}
+                title={`From your rounds: par ${par.worst}s`}
+                body={`Par ${par.worst}s cost you ${worst.avgOver.toFixed(1)} over a hole. ${PAR_READ[par.worst]}`}
+                onPractice={onPractice}
+              />
+            )}
           </div>
         );
       })()}
@@ -1320,6 +1372,15 @@ function RoundPatterns({ rounds, history }: { rounds: SavedRound[]; history: Sav
               ? `Turning those into bogeys would save about ${Math.round(blow.costPerRound)} shot${Math.round(blow.costPerRound) === 1 ? "" : "s"} a round, often just by taking the safe line out of trouble.`
               : "You keep big numbers rare: bogey is your worst case on most holes."}
           </p>
+          {blow.penaltiesPerRound >= 1 && (
+            <PracticeBtn
+              label="Practise driving"
+              areas={["driving"]}
+              title="From your rounds: keep it in play"
+              body={`About ${Math.round(blow.penaltiesPerRound)} penalty stroke${Math.round(blow.penaltiesPerRound) === 1 ? "" : "s"} a round. Pick a target with room on both sides and favour the swing that finds it, not the longest one.`}
+              onPractice={onPractice}
+            />
+          )}
         </div>
       )}
 
@@ -1344,6 +1405,15 @@ function RoundPatterns({ rounds, history }: { rounds: SavedRound[]; history: Sav
                   ? `The range shows the same pattern (${miss.rangeRightPct}% of misses right), so working on that miss in practice is the right focus.`
                   : `At the range ${miss.rangeRightPct}% of misses go right, so the course miss looks more like aim or pressure than the swing itself.`}
             </p>
+            {side && (
+              <PracticeBtn
+                label="Practise driving"
+                areas={["driving"]}
+                title={`From your rounds: the miss ${side}`}
+                body={`${side === "right" ? miss.rightPct : leftPct}% of your missed fairways go ${side}. Pick a target on every ball, and check your alignment before the swing.`}
+                onPractice={onPractice}
+              />
+            )}
           </div>
         );
       })()}
@@ -1368,6 +1438,15 @@ function RoundPatterns({ rounds, history }: { rounds: SavedRound[]; history: Sav
                 {best.club} finds {best.pct}% of fairways against {worst.pct}% with {worst.club}. On
                 tight holes, {best.club} is the higher-percentage play.
               </p>
+            )}
+            {best.pct - worst.pct >= 15 && (
+              <PracticeBtn
+                label={`Practise with ${best.club}`}
+                areas={["driving"]}
+                title={`From your rounds: tee off with ${best.club}`}
+                body={`${best.club} finds ${best.pct}% of fairways, ${worst.club} ${worst.pct}%. Groove ${best.club} as your go-to on tight holes.`}
+                onPractice={onPractice}
+              />
             )}
           </div>
         );

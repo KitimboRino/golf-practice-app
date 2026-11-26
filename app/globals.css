@@ -1549,6 +1549,16 @@ body:has(.swingcheck-capture) .app { padding-bottom: calc(24px + env(safe-area-i
 .course-rule p { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--muted); text-wrap: pretty; }
 
 /* in-round nudge — blue accent, collapsed by default (Round.tsx StrategyStrip) */
+/* "Before here 5, 6 · avg +1.5 · Fairway 1 of 2, misses right" on the live hole */
+.hole-hist {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 10px 13px; border-radius: 12px;
+  background: var(--inset); border: 1px solid var(--border);
+  font-size: 12.5px; line-height: 1.45; color: var(--text-2);
+}
+.hole-hist .ico, .hole-hist svg { flex: none; margin-top: 1px; color: var(--icon-muted); }
+.hole-hist b { font-weight: 800; color: var(--text); }
+
 .strat-strip {
   background: var(--blue-note-bg); border: 1px solid var(--border-recessed);
   border-left: 2px solid var(--blue); border-radius: 0 12px 12px 0; overflow: hidden;

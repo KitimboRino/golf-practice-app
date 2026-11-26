@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { SavedSession, SavedRound, SavedSwing, AreaKey, exportBackup, importBackup, isAdhoc } from "@/lib/db";
+import { SavedSession, SavedRound, SavedSwing, AreaKey, importBackup, isAdhoc } from "@/lib/db";
 import { ALL_WEEKS, Week, LEVEL_LABEL, levelOfWeek, isTestDay } from "@/lib/plan";
 import { solidPct, fairwayPct, puttPct, pitchPct, ironsByClub } from "@/lib/stats";
 import { roundStats } from "@/lib/round";
@@ -34,21 +34,20 @@ const sLabel = (l: string) => {
   return "S" + n[0] + (/test/i.test(l) ? " Test" : "");
 };
 
-function downloadText(name: string, text: string) {
-  const url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+// "12 sessions, 3 rounds · last saved 4 days ago"
+function backupNote(sessions: number, rounds: number, lastAt: number | null): string {
+  const what = `${sessions} session${sessions === 1 ? "" : "s"}` + (rounds ? `, ${rounds} round${rounds === 1 ? "" : "s"}` : "");
+  if (lastAt === null) return `${what} · never backed up`;
+  const days = Math.floor((Date.now() - lastAt) / 86_400_000);
+  return `${what} · last saved ${days === 0 ? "today" : days === 1 ? "yesterday" : `${days} days ago`}`;
 }
 
 export function Trends({
   history, rounds, swings, activePlan, onDelete, onEdit, onStart, onImported, onBack, openData,
-  goal, onSaveGoal, onClearGoal,
+  goal, onSaveGoal, onClearGoal, onExport, lastBackupAt,
 }: {
+  onExport: () => Promise<void> | void;
+  lastBackupAt: number | null;
   history: SavedSession[];
   rounds: SavedRound[];
   swings: SavedSwing[];
@@ -72,7 +71,7 @@ export function Trends({
   const { confirm } = useConfirm();
 
   async function doExport() {
-    downloadText(`rangecard-${localDate()}.json`, await exportBackup());
+    await onExport();
     setShowData(false);
   }
 
@@ -234,7 +233,7 @@ export function Trends({
           <div className="datamenu">
             <button onClick={doExport}>
               <Icon name="download" size={19} color="var(--icon-muted)" />
-              <span><b>Export backup</b><small>{history.length} sessions → .json file</small></span>
+              <span><b>Export backup</b><small>{backupNote(history.length, rounds.length, lastBackupAt)}</small></span>
             </button>
             <button onClick={() => fileRef.current?.click()}>
               <Icon name="upload" size={19} color="var(--icon-muted)" />
