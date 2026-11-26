@@ -77,7 +77,8 @@ import { BackupState, backupDue, loadBackupState, saveBackup, snoozeBackup } fro
 
 type Tab = "home" | "session" | "trends" | "more" | "warmup" | "welcome" | "receipt" | "quickpick" | "firstrun" | "round";
 
-type QuickFocus = { title: string; body: string };
+// setup pre-picks a club or distance, e.g. "Practise with 3W" from the round report
+type QuickFocus = { title: string; body: string; setup?: Partial<Record<keyof Strips, AreaSetup>> };
 
 const today = () => localDate();
 
@@ -144,7 +145,8 @@ function emptyLive(weekId: string, sessionLabel: string): Live {
 }
 
 function emptyQuickLive(areas: (keyof Strips)[], focus?: QuickFocus): Live {
-  return { ...emptyLive(ADHOC, "Quick session"), areas, focus };
+  const { setup, ...rest } = focus ?? {};
+  return { ...emptyLive(ADHOC, "Quick session"), areas, focus: focus && (rest as QuickFocus), setup };
 }
 
 // rebuild strips from tallies when editing a pre-v3 session (tap order is lost)
@@ -769,9 +771,6 @@ export default function Page() {
     openLog();
   }
 
-  // "Haven't practiced in a while" nudge — dismissal is keyed to the date of
-  // the session it was shown for, so it naturally reopens once that gap grows
-  // again (no separate "last shown" timer to drift out of sync with reality).
   // the home banner and Trends' Export share one path, so either one
   // resets the reminder
   async function doBackup() {
@@ -789,6 +788,9 @@ export default function Page() {
     setBackup(await loadBackupState());
   }
 
+  // "Haven't practiced in a while" nudge — dismissal is keyed to the date of
+  // the session it was shown for, so it naturally reopens once that gap grows
+  // again (no separate "last shown" timer to drift out of sync with reality).
   async function dismissNudge(lastSessionDate: string) {
     setNudgeDismissedAt(lastSessionDate);
     await setMeta("nudgeDismissedAt", lastSessionDate);

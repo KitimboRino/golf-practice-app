@@ -11,7 +11,7 @@
  *
  * Bump VERSION to force a clean cache wipe on the next deploy.
  */
-const VERSION = "rc-v5";
+const VERSION = "rc-v6";
 const NAV_CACHE = VERSION + "-nav";
 const ASSET_CACHE = VERSION + "-assets";
 const KEEP = [NAV_CACHE, ASSET_CACHE];

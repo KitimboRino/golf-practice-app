@@ -7,6 +7,16 @@ import { useConfirm } from "./Confirm";
 import { Icon } from "./Icon";
 import { Mark } from "./Mark";
 
+// what a player would notice since 1.2, newest first; keep it short
+const WHATS_NEW: { t: string; d: string }[] = [
+  { t: "Patterns from your rounds", d: "Scoring by par, big numbers, which way tee shots miss, fairways by tee club and front nine against back. Most come with a button to practise the fix." },
+  { t: "This hole, last time", d: "At a course you've played before, each hole shows how it went: recent scores, average and the fairway miss." },
+  { t: "Backup reminder", d: "A nudge when your history isn't backed up, saving straight to Files or iCloud Drive." },
+  { t: "Swing check outlines", d: "A golfer outline for face-on or down the line, whichever way you film." },
+  { t: "Distances that fit", d: "Pitching targets from 40 to 100 yards, and target distances for chipping." },
+  { t: "A new look", d: "Colour bands for each area, a strata chart in Trends, the driving fan, poster share cards and an icon set of its own." },
+];
+
 export function About({ onBack }: { onBack: () => void }) {
   const { confirm } = useConfirm();
   const [standalone, setStandalone] = useState(false);
@@ -77,6 +87,16 @@ export function About({ onBack }: { onBack: () => void }) {
         </p>
 
         <div className="prep-card">
+          <div className="prep-sub" style={{ marginTop: 8 }}>New in {APP_VERSION.split(".").slice(0, 2).join(".")}</div>
+          {WHATS_NEW.map((n) => (
+            <div className="pitem" key={n.t}>
+              <b>{n.t}</b>
+              <span>{n.d}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="prep-card">
           <div className="prep-sub" style={{ marginTop: 8 }}>Your data</div>
           <div className="pitem">
             <b>Stays on this device</b>
@@ -88,7 +108,7 @@ export function About({ onBack }: { onBack: () => void }) {
           </div>
           <div className="pitem">
             <b>Back it up</b>
-            <span>More → Trends → the tune icon → Export backup writes a .json file (sessions, rounds and games) you can re-import on any device.</span>
+            <span>The home screen reminds you when there&apos;s history that isn&apos;t backed up. Tap Back up to save a .json file (sessions, rounds and games) to Files, iCloud Drive or anywhere else, and re-import it on any device. It&apos;s also under More → Trends → the tune icon.</span>
           </div>
         </div>
 

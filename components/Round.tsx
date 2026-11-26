@@ -22,7 +22,7 @@ import { GreenDistance } from "./GreenDistance";
 import { PhotoHeader } from "./PhotoHeader";
 import { localDate } from "@/lib/date";
 
-type PracticeFocus = { title: string; body: string };
+type PracticeFocus = { title: string; body: string; setup?: Partial<Record<AreaKey, { club?: string; dist?: number }>> };
 
 const today = () => localDate();
 const fmtDate = (iso: string) => {
@@ -1283,12 +1283,12 @@ const PAR_READ: Record<3 | 4 | 5, string> = {
 const PAR_AREAS: Record<3 | 4 | 5, AreaKey[]> = { 3: ["irons"], 4: ["driving", "irons"], 5: ["irons", "pitching"] };
 
 // the same start-a-session button the leak cards use
-function PracticeBtn({ label, areas, title, body, onPractice }: {
-  label: string; areas: AreaKey[]; title: string; body: string;
+function PracticeBtn({ label, areas, title, body, setup, onPractice }: {
+  label: string; areas: AreaKey[]; title: string; body: string; setup?: PracticeFocus["setup"];
   onPractice: (areas: AreaKey[], focus: PracticeFocus) => void;
 }) {
   return (
-    <button className="leak-practice" onClick={() => onPractice(areas, { title, body })}>
+    <button className="leak-practice" onClick={() => onPractice(areas, { title, body, setup })}>
       <Icon name="play_arrow" size={16} fill />
       {label}
     </button>
@@ -1445,6 +1445,7 @@ function RoundPatterns({ rounds, history, onPractice }: {
                 areas={["driving"]}
                 title={`From your rounds: tee off with ${best.club}`}
                 body={`${best.club} finds ${best.pct}% of fairways, ${worst.club} ${worst.pct}%. Groove ${best.club} as your go-to on tight holes.`}
+                setup={{ driving: { club: best.club } }}
                 onPractice={onPractice}
               />
             )}
