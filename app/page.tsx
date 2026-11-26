@@ -305,7 +305,7 @@ function QuickPick({
           </button>
           <div style={{ flex: 1 }}>
             <div className="hdr-eyebrow">Quick session</div>
-            <div className="hdr-title">What are you working on?</div>
+            <h1 className="hdr-title">What are you working on?</h1>
             <div className="hdr-sub">Pick an area, or a fix or drill to hone in on.</div>
           </div>
         </div>
@@ -945,6 +945,7 @@ export default function Page() {
 
   if (tab === "firstrun" && onb) {
     return (
+      <main id="main" className="screen-main">
       <FirstRun
         stage={onb.stage}
         onSetStage={onbStage}
@@ -953,18 +954,22 @@ export default function Page() {
         onComplete={completeOnboarding}
         onDemo={startDemo}
       />
+      </main>
     );
   }
 
   if (tab === "welcome") {
     // post-onboarding only — the greeting taps here to edit the name
     return (
+      <main id="main" className="screen-main">
       <Welcome isEdit name={name} onDone={(n) => saveName(n)} onCancel={() => setTab("home")} />
+      </main>
     );
   }
 
   if (tab === "round" && roundView) {
     return (
+      <main id="main" className="screen-main">
       <RoundSummary
         round={roundView.round}
         fresh={roundView.fresh}
@@ -972,11 +977,13 @@ export default function Page() {
         onDone={() => { setRoundView(null); if (roundView.fresh) setTab("home"); }}
         onEdit={() => editRound(roundView.round)}
       />
+      </main>
     );
   }
 
   if (tab === "receipt" && receipt) {
     return (
+      <main id="main" className="screen-main">
       <SessionReceipt
         session={receipt.session}
         history={receipt.history}
@@ -993,6 +1000,7 @@ export default function Page() {
           else startSession();
         }}
       />
+      </main>
     );
   }
 
@@ -1136,7 +1144,7 @@ function More({
       <header className="hdr">
         <div className="hdr-row">
           <div>
-            <div className="hdr-title">More</div>
+            <h1 className="hdr-title">More</h1>
             <div className="hdr-sub">Everything outside the plan</div>
           </div>
         </div>
@@ -1250,7 +1258,7 @@ function LevelSettings({
             <Icon name="arrow_back" size={22} />
           </button>
           <div style={{ flex: 1 }}>
-            <div className="hdr-title">Training level</div>
+            <h1 className="hdr-title">Training level</h1>
             <div className="hdr-sub">Change anytime — your session history is kept</div>
           </div>
         </div>
@@ -1337,7 +1345,7 @@ function Home({
     <div className="plan-screen">
       <div className="plan-top">
         {!firstRun ? (
-          <button className="plan-greet" onClick={onEditName} aria-label="Edit your name">
+          <button className="plan-greet" onClick={onEditName} aria-label={`${greeting}. Edit your name`}>
             <span>{greeting}</span><Icon name="edit" size={13} />
           </button>
         ) : <span />}
@@ -1401,10 +1409,11 @@ function Home({
               <button key={f.id + f.si}
                       className={"plan-slot" + (isDone ? " done" : "") + (isCur ? " cur" : "")}
                       aria-pressed={isCur}
-                      aria-label={`Week ${f.wi + 1}, ${f.test ? "test day" : `session ${f.si + 1}`}${isDone ? ", logged" : ""}`}
                       onClick={() => setCursor({ week: f.wi, session: f.si })}>
-                <span>W{f.wi + 1}</span>
-                <span>{f.test ? "Test" : `S${f.si + 1}`}</span>
+                {/* the tile shows shorthand; screen readers get it spelled out */}
+                <span aria-hidden>W{f.wi + 1}</span>
+                <span aria-hidden>{f.test ? "Test" : `S${f.si + 1}`}</span>
+                <span className="sr-only">Week {f.wi + 1}, {f.test ? "test day" : `session ${f.si + 1}`}{isDone ? ", logged" : ""}</span>
               </button>
             );
           })}
@@ -1790,7 +1799,7 @@ function SessionScreen({
                   <div className="grp-lbl">Best club today</div>
                   <div className="field">
                     <Icon name="sports_golf" size={19} color="var(--icon-muted)" />
-                    <input value={live.bestClub} maxLength={40}
+                    <input value={live.bestClub} maxLength={40} aria-label="Best club today"
                            onChange={(e) => set({ bestClub: e.target.value })}
                            placeholder="e.g. 54° wedge" />
                   </div>
@@ -1862,11 +1871,11 @@ function SessionScreen({
 
         <div className="grp session-finish" style={{ paddingTop: 8 }}>
           <div className="label-row"><Icon name="event" size={16} />Session date</div>
-          <input className="datefield num" type="date" value={live.date}
+          <input className="datefield num" type="date" value={live.date} aria-label="Session date"
                  min="2000-01-01" max={today()}
                  onChange={(e) => set({ date: e.target.value || today() })} />
           <div className="label-row" style={{ marginTop: 4 }}><Icon name="edit_note" size={16} />Session notes</div>
-          <textarea className="notes" value={live.notes} maxLength={2000}
+          <textarea className="notes" value={live.notes} maxLength={2000} aria-label="Session notes"
                     onChange={(e) => set({ notes: e.target.value })}
                     placeholder="Conditions, feels, what clicked…" />
           <button className="cta" onClick={onFinish} disabled={!canFinish}>

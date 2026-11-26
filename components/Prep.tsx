@@ -27,7 +27,7 @@ export function Prep({ onBack }: { onBack?: () => void }) {
             </button>
           )}
           <div style={{ flex: 1 }}>
-            <div className="hdr-title">Prep</div>
+            <h1 className="hdr-title">Prep</h1>
           </div>
         </div>
         <div className="seg" role="tablist" aria-label="Prep stage">

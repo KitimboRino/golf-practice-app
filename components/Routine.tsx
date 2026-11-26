@@ -55,7 +55,7 @@ export function Routine({ onBack }: { onBack: () => void }) {
               <Icon name="arrow_back" size={22} />
             </button>
             <div style={{ flex: 1 }}>
-              <div className="hdr-title">Pre-shot routine</div>
+              <h1 className="hdr-title">Pre-shot routine</h1>
               <div className="hdr-sub">Same steps, every shot</div>
             </div>
           </div>
@@ -106,6 +106,7 @@ export function Routine({ onBack }: { onBack: () => void }) {
           </button>
           <div style={{ flex: 1 }}>
             <div className="hdr-eyebrow">{done ? "Done" : "Rehearsing"}</div>
+            <h1 className="sr-only">Rehearse your pre-shot routine</h1>
           </div>
         </div>
         <div className="routine-dots" aria-hidden>

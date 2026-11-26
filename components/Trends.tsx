@@ -130,7 +130,7 @@ export function Trends({
               <Icon name="arrow_back" size={22} />
             </button>
             <div style={{ flex: 1 }}>
-              <div className="hdr-title">Trends</div>
+              <h1 className="hdr-title">Trends</h1>
               <div className="hdr-sub">No sessions yet</div>
             </div>
           </div>
@@ -214,7 +214,7 @@ export function Trends({
             <Icon name="arrow_back" size={22} />
           </button>
           <div style={{ flex: 1 }}>
-            <div className="hdr-title">Trends</div>
+            <h1 className="hdr-title">Trends</h1>
             <div className="hdr-sub">
               {history.length} {history.length === 1 ? "session" : "sessions"} · weeks 1-4
             </div>
@@ -288,7 +288,7 @@ export function Trends({
         <div className="grp" style={{ paddingTop: 8 }}>
           <div className="sec-head">
             <span className="icon-tile sm"><Icon name="history" size={15} /></span>
-            <h3>Session history</h3>
+            <h2>Session history</h2>
             <span className="count-pill">{histRows.length}</span>
           </div>
           {weeks.length > 1 && (
@@ -299,7 +299,7 @@ export function Trends({
                 <button key={w.id}
                         className={"chip-btn" + (wkFilter === w.id ? " on" : "")}
                         onClick={() => { setWkFilter(w.id); setShowAll(true); }}
-                        aria-label={`${LEVEL_LABEL[levelOfWeek(w.id) ?? "intermediate"]} week ${wkNum(w.id)}`}>
+                        aria-label={`${weekChipLabel(w.id)}: ${LEVEL_LABEL[levelOfWeek(w.id) ?? "intermediate"]} week ${wkNum(w.id)}`}>
                   {weekChipLabel(w.id)}
                 </button>
               ))}
@@ -440,7 +440,7 @@ function GoalCard({
       <div className="chart goalcard">
         <div className="sec-head">
           <span className="icon-tile sm"><Icon name="flag" size={15} /></span>
-          <h3>{goal ? "Edit goal" : "Set a goal"}</h3>
+          <h2>{goal ? "Edit goal" : "Set a goal"}</h2>
         </div>
         <div className="goal-area-row">
           <div className="rgrp-lbl">Area</div>
@@ -465,7 +465,7 @@ function GoalCard({
         </div>
         <div className="setup-row">
           <div className="rgrp-lbl">By (optional)</div>
-          <input className="datefield" type="date" value={byDate}
+          <input className="datefield" type="date" value={byDate} aria-label="Reach it by (optional)"
                  min={localDate()}
                  onChange={(e) => setByDate(e.target.value)} />
         </div>
@@ -499,7 +499,7 @@ function GoalCard({
     <div className={"chart goalcard" + (prog.met ? " met" : "")}>
       <div className="sec-head">
         <span className="icon-tile sm"><AreaIcon area={goal.area} size={15} /></span>
-        <h3>{def.label} goal</h3>
+        <h2>{def.label} goal</h2>
         <button className="goal-edit" onClick={startEdit} aria-label="Edit goal"><Icon name="edit" size={16} /></button>
       </div>
       {prog.met ? (
@@ -576,7 +576,7 @@ function PracticeToRound({ history, rounds }: { history: SavedSession[]; rounds:
     <div className="chart p2r">
       <div className="sec-head">
         <span className="icon-tile sm"><Icon name="trending_flat" size={15} /></span>
-        <h3>Is it showing up on the course?</h3>
+        <h2>Is it showing up on the course?</h2>
       </div>
       {pairs.map((p) => {
         const practiceDelta = p.practice.recent - p.practice.early;
@@ -632,7 +632,7 @@ function IronsByClub({ history }: { history: SavedSession[] }) {
     <div className="chart">
       <div className="sec-head">
         <span className="icon-tile sm"><AreaIcon area="irons" size={15} /></span>
-        <h3>Irons by club</h3>
+        <h2>Irons by club</h2>
       </div>
       {rows.map((r) => (
         <div className="iron-club-row" key={r.club}>
@@ -658,7 +658,7 @@ function MissPatterns({ history }: { history: SavedSession[] }) {
     <div className="chart">
       <div className="sec-head" style={{ marginBottom: 2 }}>
         <span className="icon-tile sm"><Icon name="explore" size={15} /></span>
-        <h3>Miss patterns</h3>
+        <h2>Miss patterns</h2>
         <span className="count-pill">Bias</span>
       </div>
       {drove && (

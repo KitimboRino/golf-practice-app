@@ -59,12 +59,12 @@ export function Outcome({
         onInc(e.currentTarget);
       }}
       onContextMenu={(e) => { e.preventDefault(); bumpFx(); onDec(); }}
-      aria-label={`${label}: ${count}. Tap to add, hold or right-click to subtract.`}
     >
       {/* key forces the pop animation to replay each time the tally changes */}
       <span className="outcome-count num" key={count}>{count}</span>
       <span className="outcome-label"><Icon name={icon} size={15} />{label}</span>
       {hint && <span className="outcome-hint">{hint}</span>}
+      <span className="sr-only">. Tap to add, hold or right-click to subtract.</span>
     </button>
   );
 }

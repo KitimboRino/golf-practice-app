@@ -221,7 +221,7 @@ export function Fixes({
             <div className="grp" key={g.area}>
               <div className="sec-head">
                 <span className="icon-tile sm"><AreaIcon area={g.area} size={15} /></span>
-                <h3>{g.label}</h3>
+                <h2>{g.label}</h2>
                 <span className="count-pill">{rows.length}</span>
               </div>
               <div className="hist">

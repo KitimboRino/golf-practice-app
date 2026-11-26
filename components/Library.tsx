@@ -109,7 +109,7 @@ export function Library({
           )}
           <div style={{ flex: 1 }}>
             <div className="hdr-eyebrow">Bench · {total} drills</div>
-            <div className="hdr-title">Drill library</div>
+            <h1 className="hdr-title">Drill library</h1>
             <div className="hdr-sub">Swap any into today&apos;s session</div>
           </div>
           <div className="hdr-actions">
@@ -131,7 +131,7 @@ export function Library({
 
         <div className="field">
           <Icon name="search" size={19} color="var(--icon-muted)" />
-          <input value={q} onChange={(e) => setQ(e.target.value)}
+          <input value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search drills"
                  placeholder="Search drills, cues, focus points…" />
         </div>
 
@@ -164,7 +164,7 @@ export function Library({
             <div className="grp" key={group.area}>
               <div className="sec-head">
                 <span className="icon-tile sm"><AreaIcon area={areaKeyFor(group.area) ?? "driving"} size={15} /></span>
-                <h3>{name}{sub && <span className="lib-sub">{sub}</span>}</h3>
+                <h2>{name}{sub && <span className="lib-sub">{sub}</span>}</h2>
                 <span className="count-pill">{group.drills.length}</span>
               </div>
               {group.drills.map((d) => {

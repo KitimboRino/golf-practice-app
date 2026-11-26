@@ -55,7 +55,7 @@ export function About({ onBack }: { onBack: () => void }) {
             <Icon name="arrow_back" size={22} />
           </button>
           <div style={{ flex: 1 }}>
-            <div className="hdr-title">About RangeCard</div>
+            <h1 className="hdr-title">About RangeCard</h1>
           </div>
         </div>
       </header>

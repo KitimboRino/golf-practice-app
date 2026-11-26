@@ -316,7 +316,7 @@ export function SwingCheck({ onBack }: { onBack: () => void }) {
             <Icon name="arrow_back" size={22} />
           </button>
           <div style={{ flex: 1 }}>
-            <div className="hdr-title">Swing check</div>
+            <h1 className="hdr-title">Swing check</h1>
             <div className="hdr-sub">Record a swing, see your measured positions</div>
           </div>
         </div>

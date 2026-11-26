@@ -3921,3 +3921,10 @@ html:has(.notfound), html:has(.notfound) body::before { background: #0F1321; }
 .fan-tee { fill: var(--on-band); }
 @keyframes fan-draw { from { stroke-dashoffset: 1; } }
 @media (prefers-reduced-motion: reduce) { .fan-shot.new path, .fan-shot.new circle { animation: none; } }
+
+/* ---------- accessibility pass ---------- */
+/* screen titles are the page's h1 now; keep the old div's box */
+h1.hdr-title, h1.fr-head-title, h1.coach-head { margin: 0; }
+/* landmark around full-screen views (onboarding, receipt, round summary)
+   that render outside the tab <main>; adds no box of its own */
+.screen-main { display: contents; }

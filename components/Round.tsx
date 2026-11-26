@@ -279,7 +279,7 @@ function RoundSetup({
           <div className="grp" style={{ paddingTop: 6 }}>
             <div className="sec-head">
               <span className="icon-tile sm"><Icon name="history" size={15} /></span>
-              <h3>Recent rounds</h3>
+              <h2>Recent rounds</h2>
               <span className="count-pill">{rounds.length}</span>
             </div>
             <div className="hist">
@@ -488,6 +488,7 @@ function RoundPlay({
   return (
     <>
       <header className="hole-hdr">
+        <h1 className="sr-only">Round in progress</h1>
         <div className="hole-hdr-top">
           <span className="kicker hole-course">{editing ? "Editing · " : ""}{round.course || "Round"}</span>
           <div className="hdr-actions">
@@ -497,13 +498,14 @@ function RoundPlay({
         </div>
         <div className="hole-hdr-main">
           <button className="hole-big" onClick={() => { tapFx(); setShowGrid((v) => !v); }}
-                  aria-expanded={showGrid} aria-label={`Hole ${i + 1} of ${round.holes} — tap to jump to another hole`}>
+                  aria-expanded={showGrid}>
             <span className="hole-big-lbl">Hole</span>
             <span className="hole-big-num num">{i + 1}</span>
             <span className="hole-big-of">
               of {round.holes}
               <Icon name="expand_more" size={18} className={"rot-chev" + (showGrid ? " open" : "")} />
             </span>
+            <span className="sr-only">. Tap to jump to another hole</span>
           </button>
           <div className="hole-running">
             {st.scoredHoles > 0 ? (
@@ -705,6 +707,7 @@ function RoundPlay({
             <div className="rgrp-lbl">Round note <span style={{ color: "var(--hint)", fontWeight: 600 }}>(optional)</span></div>
             <textarea
               className="notes"
+              aria-label="Round note (optional)"
               rows={2}
               maxLength={500}
               value={round.note ?? ""}
@@ -793,7 +796,7 @@ function ScoreCard({ holeData, holes }: { holeData: RoundHole[]; holes: 9 | 18 }
     <div className="scorecard">
       <div className="sec-head">
         <span className="icon-tile sm"><Icon name="grid_view" size={15} /></span>
-        <h3>Scorecard</h3>
+        <h2>Scorecard</h2>
       </div>
       <div className="scorecard-scroll">
         <ScoreCardBlock holes={front} startIndex={0} sumLabel="OUT" />
@@ -1197,7 +1200,7 @@ export function RoundDiagnostic({
             <Icon name="arrow_back" size={22} />
           </button>
           <div style={{ flex: 1 }}>
-            <div className="hdr-title sm">Where you&apos;re losing shots</div>
+            <h1 className="hdr-title sm">Where you&apos;re losing shots</h1>
             {report && (
               <div className="hdr-sub sm">
                 From your last {report.rounds} round{report.rounds === 1 ? "" : "s"} · {report.holes} holes

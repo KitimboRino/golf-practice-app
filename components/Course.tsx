@@ -28,7 +28,7 @@ export function Course({ onBack }: { onBack: () => void }) {
             <Icon name="arrow_back" size={22} />
           </button>
           <div style={{ flex: 1 }}>
-            <div className="hdr-title">Course management</div>
+            <h1 className="hdr-title">Course management</h1>
             <div className="hdr-sub">Strategy, situation by situation</div>
           </div>
         </div>
@@ -47,7 +47,7 @@ export function Course({ onBack }: { onBack: () => void }) {
           <div className="grp" key={g.group}>
             <div className="sec-head">
               <span className="icon-tile sm"><Icon name={GROUP_ICON[g.group] ?? "flag"} size={15} /></span>
-              <h3>{groupTitle(g.group)}</h3>
+              <h2>{groupTitle(g.group)}</h2>
               <span className="count-pill">{g.rules.length}</span>
             </div>
             <div className="course-rules">

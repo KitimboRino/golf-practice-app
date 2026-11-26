@@ -22,7 +22,7 @@ export function Warmup({ onSkip, onReady }: { onSkip: () => void; onReady: () =>
       <header className="hdr">
         <div className="hdr-row">
           <div>
-            <div className="hdr-title">Warm up</div>
+            <h1 className="hdr-title">Warm up</h1>
           </div>
           <button className="link-btn" onClick={onSkip}>Skip</button>
         </div>

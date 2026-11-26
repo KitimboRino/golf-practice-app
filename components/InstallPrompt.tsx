@@ -59,7 +59,7 @@ export function InstallPrompt() {
   // iOS has no install API — guide the manual Share → Add to Home Screen flow
   if (ios && !deferred) {
     return (
-      <div className="install">
+      <aside className="install" aria-label="Install RangeCard">
         <div className="install-ios">
           <button className="install-x" onClick={close} aria-label="Dismiss">
             <Icon name="close" size={18} />
@@ -74,14 +74,14 @@ export function InstallPrompt() {
           </ol>
           <p className="install-ios-note">Opens full-screen, works offline. No App Store needed.</p>
         </div>
-      </div>
+      </aside>
     );
   }
 
   // Android / Chromium — one-tap once the browser offers it
   if (!deferred) return null;
   return (
-    <div className="install">
+    <aside className="install" aria-label="Install RangeCard">
       <div className="install-card">
         <Icon name="install_mobile" size={19} color="var(--green)" />
         <span className="install-txt">Install RangeCard for offline, full-screen use</span>
@@ -90,6 +90,6 @@ export function InstallPrompt() {
           <Icon name="close" size={18} />
         </button>
       </div>
-    </div>
+    </aside>
   );
 }

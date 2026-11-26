@@ -50,7 +50,7 @@ export function Games({
             <Icon name="arrow_back" size={22} />
           </button>
           <div style={{ flex: 1 }}>
-            <div className="hdr-title">Practice games</div>
+            <h1 className="hdr-title">Practice games</h1>
             <div className="hdr-sub">Practise with a number on the line</div>
           </div>
           <div className="hdr-actions">
@@ -143,7 +143,7 @@ function GameDetail({
           </button>
           <div style={{ flex: 1 }}>
             <div className="hdr-eyebrow">{meta.label} game</div>
-            <div className="hdr-title sm">{game.name}</div>
+            <h1 className="hdr-title sm">{game.name}</h1>
           </div>
         </div>
       </header>
@@ -207,7 +207,7 @@ function GameDetail({
           <div className="grp" style={{ paddingTop: 6 }}>
             <div className="sec-head">
               <span className="icon-tile sm"><Icon name="history" size={15} /></span>
-              <h3>Recent runs</h3>
+              <h2>Recent runs</h2>
               <span className="count-pill">{attempts.length}</span>
             </div>
             <div className="hist">

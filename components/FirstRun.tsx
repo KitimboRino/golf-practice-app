@@ -109,7 +109,7 @@ function LevelPicker({ onPick }: { onPick: (level: Level) => void }) {
       <div className="fr">
         <header className="fr-head bare">
           <div>
-            <div className="fr-head-title">One more thing — what's your level?</div>
+            <h1 className="fr-head-title">One more thing — what's your level?</h1>
             <div className="fr-head-sub">Decides which drills you'll see. Change it anytime in Settings.</div>
           </div>
         </header>
@@ -246,7 +246,6 @@ function LogButtons({
       <button
         className={"logbtn" + dim("fairway") + spot("fairway")}
         onClick={() => onLog("fairway")}
-        aria-label={`On my line. Logged ${counts.fairway}.`}
       >
         <span className="logbtn-main">
           <Icon name="check_circle" size={26} fill color="var(--green)" />
@@ -261,18 +260,16 @@ function LogButtons({
         <button
           className={"logbtn side left" + dim("lr") + spot("lr")}
           onClick={() => onLog("left")}
-          aria-label={`Missed left. Logged ${counts.left}.`}
         >
           <span className="logbtn-n num">{counts.left}</span>
-          <span className="logbtn-txt"><b><Icon name="west" size={19} />Left</b></span>
+          <span className="logbtn-txt"><b><Icon name="west" size={19} />Left</b><span className="sr-only">, missed left</span></span>
         </button>
         <button
           className={"logbtn side right" + dim("lr") + spot("lr")}
           onClick={() => onLog("right")}
-          aria-label={`Missed right. Logged ${counts.right}.`}
         >
           <span className="logbtn-n num">{counts.right}</span>
-          <span className="logbtn-txt"><b><Icon name="east" size={19} />Right</b></span>
+          <span className="logbtn-txt"><b><Icon name="east" size={19} />Right</b><span className="sr-only">, missed right</span></span>
         </button>
       </div>
     </>
@@ -327,7 +324,7 @@ function PracticeRun({ onDone, onSkip }: { onDone: () => void; onSkip: () => voi
             {[0, 1, 2].map((i) => <span key={i} className={i <= step ? "on" : ""} />)}
           </span>
         </div>
-        <div className="coach-head">{COACH[step].head}</div>
+        <h1 className="coach-head">{COACH[step].head}</h1>
         <div className="coach-body">{COACH[step].body}</div>
       </div>
 
@@ -405,7 +402,7 @@ function TheRead({
     <div className="fr-wrap read">
       <header className="fr-head">
         <div>
-          <div className="fr-head-title">The read · your first ten</div>
+          <h1 className="fr-head-title">The read · your first ten</h1>
           <div className="fr-head-sub">Ball {Math.min(READ_TARGET, shots.length + 1)} of {READ_TARGET} · any club you like</div>
         </div>
       </header>
@@ -516,7 +513,7 @@ function MissList({
             <Icon name="arrow_back" size={22} />
           </button>
           <div>
-            <div className="fr-head-title">Where does your bad one go?</div>
+            <h1 className="fr-head-title">Where does your bad one go?</h1>
             <div className="fr-head-sub">
               {prefill ? "We read it as below. Change it if that's not you." : "One tap and your four weeks are built around it."}
             </div>
