@@ -20,6 +20,8 @@ jobs:
       - run: npm ci
       # Next 16: generate route types first (next-env.d.ts references them)
       - run: npm run typecheck
+      # ESLint: Next core-web-vitals + TypeScript rules (eslint.config.mjs)
+      - run: npm run lint
       # unit tests: scoring, reads, verdicts, backup import/merge
       - run: npm test
       - run: npx next build

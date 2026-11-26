@@ -143,7 +143,7 @@ class RangeCardDB extends Dexie {
   games!: Table<GameAttempt, string>;
   swings!: Table<SavedSwing, string>;
   // meta uses out-of-line keys (Dexie spec ""), matching the original idb store
-  meta!: Table<any, string>;
+  meta!: Table<unknown, string>;
 
   constructor() {
     super("scorecard"); // keep the original IndexedDB name so existing data carries over
@@ -154,7 +154,7 @@ class RangeCardDB extends Dexie {
       })
       .upgrade(async (tx) => {
         const now = Date.now();
-        await tx.table("sessions").toCollection().modify((s: any) => {
+        await tx.table("sessions").toCollection().modify((s: Record<string, unknown>) => {
           if (s.updatedAt == null) s.updatedAt = s.createdAt ?? now;
           if (s.deleted == null) s.deleted = false;
         });
@@ -168,7 +168,7 @@ class RangeCardDB extends Dexie {
         meta: "",
       })
       .upgrade(async (tx) => {
-        await tx.table("sessions").toCollection().modify((s: any) => {
+        await tx.table("sessions").toCollection().modify((s: Record<string, unknown>) => {
           if (!s.pitching) s.pitching = { close: 0, short: 0, long: 0 };
         });
       });
@@ -311,11 +311,11 @@ export async function wipeAll() {
   });
 }
 
-export async function getMeta<T = any>(key: string): Promise<T | undefined> {
-  return db.meta.get(key);
+export async function getMeta<T = unknown>(key: string): Promise<T | undefined> {
+  return db.meta.get(key) as Promise<T | undefined>;
 }
 
-export async function setMeta(key: string, value: any) {
+export async function setMeta(key: string, value: unknown) {
   await db.meta.put(value, key);
 }
 
@@ -363,6 +363,11 @@ export type ImportResult = {
 
 // Accepts a full backup object or a bare array of sessions. Malformed fields are
 // coerced; unusable rows are skipped. Returns how many were written vs skipped.
+// A row parsed from a backup file someone handed us. Nothing about its shape is
+// trusted: every field is read through a type check or a clamp below.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- see above
+type Untrusted = Record<string, any>;
+
 export async function importBackup(text: string): Promise<ImportResult> {
   if (text.length > 12_000_000) throw new Error("That file is too large to import.");
   let data: unknown;
@@ -404,7 +409,7 @@ export async function importBackup(text: string): Promise<ImportResult> {
   const recs: SavedSession[] = [];
   let skipped = 0;
   for (const raw of rows) {
-    const r = raw as Record<string, any>;
+    const r = raw as Untrusted;
     if (!r || typeof r !== "object" || typeof r.id !== "string" || !r.id) { skipped++; continue; }
     recs.push({
       id: r.id,
@@ -447,7 +452,7 @@ export async function importBackup(text: string): Promise<ImportResult> {
   const par = (v: unknown): 3 | 4 | 5 => (v === 3 || v === 5 ? v : 4);
   const roundRecs: SavedRound[] = [];
   for (const raw of roundRows.slice(0, 2000)) {
-    const r = raw as Record<string, any>;
+    const r = raw as Untrusted;
     if (!r || typeof r !== "object" || typeof r.id !== "string" || !r.id) { skipped++; continue; }
     const holes = r.holes === 9 ? 9 : 18;
     const src = Array.isArray(r.holeData) ? r.holeData : [];
@@ -455,7 +460,7 @@ export async function importBackup(text: string): Promise<ImportResult> {
     const optBool = (v: unknown): boolean | undefined =>
       v === true || v === false ? v : undefined;
     const holeData: RoundHole[] = Array.from({ length: holes }).map((_, i) => {
-      const h = (src[i] ?? {}) as Record<string, any>;
+      const h = (src[i] ?? {}) as Untrusted;
       const p = par(h.par);
       const fh = p === 3 ? null : optBool(h.fairwayHit);
       return {
@@ -490,7 +495,7 @@ export async function importBackup(text: string): Promise<ImportResult> {
     : [];
   const gameRecs: GameAttempt[] = [];
   for (const raw of gameRows.slice(0, 5000)) {
-    const r = raw as Record<string, any>;
+    const r = raw as Untrusted;
     if (!r || typeof r !== "object" || typeof r.id !== "string" || !r.id) { skipped++; continue; }
     if (typeof r.gameId !== "string" || !r.gameId) { skipped++; continue; }
     gameRecs.push({
@@ -512,7 +517,7 @@ export async function importBackup(text: string): Promise<ImportResult> {
     typeof v === "number" && isFinite(v) ? Math.max(-360, Math.min(360, v)) : null;
   const swingRecs: SavedSwing[] = [];
   for (const raw of swingRows.slice(0, 2000)) {
-    const r = raw as Record<string, any>;
+    const r = raw as Untrusted;
     if (!r || typeof r !== "object" || typeof r.id !== "string" || !r.id) { skipped++; continue; }
     const m = r.measurements;
     if (!m || typeof m !== "object") { skipped++; continue; }
@@ -543,7 +548,7 @@ export async function importBackup(text: string): Promise<ImportResult> {
   const rawSettings = (data as { settings?: unknown })?.settings;
   const settings: [BackupMetaKey, unknown][] = [];
   if (rawSettings && typeof rawSettings === "object" && !Array.isArray(rawSettings)) {
-    const st = rawSettings as Record<string, any>;
+    const st = rawSettings as Untrusted;
     if (typeof st.name === "string") settings.push(["name", st.name.slice(0, 24)]);
     if (typeof st.plannedMiss === "string") settings.push(["plannedMiss", st.plannedMiss.slice(0, 40)]);
     if (st.planLevel === "beginner" || st.planLevel === "intermediate" || st.planLevel === "professional") {

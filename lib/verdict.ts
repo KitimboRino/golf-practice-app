@@ -1,5 +1,5 @@
 import { SavedSession, SavedRound, countIn } from "./db";
-import { solidPct, fairwayPct, puttPct, pitchPct } from "./stats";
+import { solidPct } from "./stats";
 import { detectFaults } from "./faults";
 import { leakReport } from "./round";
 

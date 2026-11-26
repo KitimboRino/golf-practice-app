@@ -15,9 +15,7 @@ import { useToast } from "./Toast";
 import { tapFx, bumpFx } from "@/lib/haptics";
 import { Icon } from "./Icon";
 import { AreaIcon } from "./AreaIcon";
-import { Glyph } from "./Glyph";
 import { GlareToggle } from "./GlareToggle";
-import { Burst } from "./Burst";
 import { CourseDiagram, COURSE_DIAGRAM } from "./CourseDiagram";
 import { GreenDistance } from "./GreenDistance";
 import { PhotoHeader } from "./PhotoHeader";
@@ -234,7 +232,7 @@ function RoundSetup({
           {preset && (
             <div className="course-preset-note">
               <Icon name="info" size={14} />
-              Par pre-filled from public scorecards, not the club's own card — worth checking hole by hole as you play.
+              Par pre-filled from public scorecards, not the club&apos;s own card — worth checking hole by hole as you play.
             </div>
           )}
         </div>

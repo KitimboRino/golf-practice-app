@@ -101,6 +101,7 @@ export function SwingCheck({ onBack }: { onBack: () => void }) {
     if (countdown === null) return;
     if (countdown === 0) {
       setCountdown(null);
+      // eslint-disable-next-line react-hooks/immutability -- effects run after render, by which point record is defined
       record();
       return;
     }

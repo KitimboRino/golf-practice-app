@@ -20,6 +20,9 @@ export function PhotoHeader({
 }) {
   return (
     <header className="photo-hdr" style={{ height }}>
+      {/* Plain img on purpose: the photos ship sized in /public and the service worker
+          caches them by URL for offline use; next/image would vary the URL by width. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
         alt={alt}

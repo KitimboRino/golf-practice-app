@@ -57,7 +57,7 @@ export function Warmup({ onSkip, onReady }: { onSkip: () => void; onReady: () =>
           <div className="warm-now" style={{ textAlign: "center" }}>
             <span className="icon-tile lg glow" style={{ margin: "0 auto" }}><Glyph name="check" size={24} /></span>
             <div className="warm-now-name" style={{ textAlign: "center" }}>Warmed up</div>
-            <div className="warm-now-how" style={{ textAlign: "center" }}>All seven movements done. Your body's ready.</div>
+            <div className="warm-now-how" style={{ textAlign: "center" }}>All seven movements done. Your body&apos;s ready.</div>
           </div>
         )}
 

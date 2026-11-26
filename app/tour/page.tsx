@@ -1,3 +1,6 @@
+/* eslint-disable @next/next/no-html-link-for-pages -- the landing page hands over to the app
+   with a full page load, so the app boots fresh from IndexedDB and the service
+   worker serves the navigation (it works offline). */
 import type { Metadata } from "next";
 
 // The public face of RangeCard: a scroll-through story of what the app does,

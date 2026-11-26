@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { SavedSession, SavedRound, SavedSwing, SwingPhase, AreaKey, exportBackup, importBackup, isAdhoc } from "@/lib/db";
+import { SavedSession, SavedRound, SavedSwing, AreaKey, exportBackup, importBackup, isAdhoc } from "@/lib/db";
 import { ALL_WEEKS, Week, LEVEL_LABEL, levelOfWeek, isTestDay } from "@/lib/plan";
 import { solidPct, fairwayPct, puttPct, pitchPct, ironsByClub } from "@/lib/stats";
 import { roundStats } from "@/lib/round";
@@ -15,7 +15,6 @@ import { useConfirm } from "./Confirm";
 import { Icon } from "./Icon";
 import { Strata } from "./Strata";
 import { GhostStrata } from "./GhostStrata";
-import { Glyph } from "./Glyph";
 import { localDate } from "@/lib/date";
 
 const fmtDate = (iso: string) => {

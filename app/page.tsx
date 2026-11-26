@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import {
-  PLANS, ALL_WEEKS, planSlotKey, planSlotKeysFor, Level, DEFAULT_LEVEL, LEVEL_LABEL, Week, Session,
+  PLANS, planSlotKey, planSlotKeysFor, Level, DEFAULT_LEVEL, LEVEL_LABEL, Week, Session,
 } from "@/lib/plan";
 import { SESSION_FLOW } from "@/lib/prep";
 import { PITCH_FOCUS_BY_LEVEL, PITCHING_DRILL, LIBRARY } from "@/lib/library";
@@ -12,7 +12,6 @@ import { Outcome } from "@/components/Outcome";
 import { VoiceLogButton } from "@/components/VoiceLog";
 import { Goal } from "@/lib/goal";
 import { Icon } from "@/components/Icon";
-import { AreaIcon } from "@/components/AreaIcon";
 import { Warmup } from "@/components/Warmup";
 import { Welcome } from "@/components/Welcome";
 import { FirstRun } from "@/components/FirstRun";
@@ -52,7 +51,6 @@ const SwingCheck = dynamic(() => SCREENS.swing().then((m) => m.SwingCheck));
 import { LiveRound } from "@/lib/round";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { GlareToggle } from "@/components/GlareToggle";
-import { PhotoHeader } from "@/components/PhotoHeader";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/Confirm";
 import {
@@ -232,11 +230,6 @@ function clampCursor(plan: Week[], c: { week: number; session: number }): { week
   return { week, session };
 }
 
-const AREAS = [
-  ["Chipping", "swipe_up"], ["Pitching", "arrow_outward"], ["Irons", "golf_course"],
-  ["Driving", "sports_golf"], ["Putting", "adjust"],
-] as const;
-
 const QUICK_AREAS: { key: keyof Strips; name: string; icon: string }[] = [
   { key: "chipping", name: "Chipping", icon: "swipe_up" },
   { key: "pitching", name: "Pitching", icon: "arrow_outward" },
@@ -281,7 +274,7 @@ function QuickPick({
 
   const toggle = (k: keyof Strips) => {
     const next = new Set(picked);
-    next.has(k) ? next.delete(k) : next.add(k);
+    if (next.has(k)) next.delete(k); else next.add(k);
     setPicked(next);
   };
   const chooseFocus = (f: QuickFocus & { area: keyof Strips }) => {
@@ -437,7 +430,6 @@ export default function Page() {
   const [editOrig, setEditOrig] = useState<SavedSession | null>(null);
   const [ready, setReady] = useState(false);
   const [name, setName] = useState("");
-  const [onboardedAt, setOnboardedAt] = useState<string | null>(null);
   const [onb, setOnb] = useState<Onboarding | null>(null);
   const [readShots, setReadShots] = useState<Shot[]>([]);
   const [plannedMiss, setPlannedMiss] = useState<string>("");
@@ -511,7 +503,6 @@ export default function Page() {
           window.location.replace("/");
           return;
         }
-        setOnboardedAt(ob);
         if (!ob) {
           setOnb((await getMeta<Onboarding>("onboarding")) ?? FRESH_ONB);
           setReadShots((await getMeta<ReadSession>("readSession"))?.shots ?? []);
@@ -582,7 +573,6 @@ export default function Page() {
     const now = new Date().toISOString();
     setPlannedMiss(miss);
     setLevel(chosenLevel);
-    setOnboardedAt(now);
     setOnb(null);
     setReadShots([]);
     setCursor({ week: 0, session: 0 });
@@ -1334,7 +1324,8 @@ function Home({
   // per-day) once dismissed so it doesn't nag again until that gap reopens.
   const lastSession = history.length ? history[history.length - 1] : null;
   const daysSinceLast = lastSession
-    ? Math.floor((Date.now() - new Date(lastSession.date + "T00:00:00").getTime()) / 86_400_000)
+    ? // eslint-disable-next-line react-hooks/purity -- a day count; a stale "now" for one render is harmless
+      Math.floor((Date.now() - new Date(lastSession.date + "T00:00:00").getTime()) / 86_400_000)
     : null;
   const showResumeBanner = !!draftLabel && !draftHere;
   const showNudge =

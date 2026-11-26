@@ -109,8 +109,8 @@ function LevelPicker({ onPick }: { onPick: (level: Level) => void }) {
       <div className="fr">
         <header className="fr-head bare">
           <div>
-            <h1 className="fr-head-title">One more thing — what's your level?</h1>
-            <div className="fr-head-sub">Decides which drills you'll see. Change it anytime in Settings.</div>
+            <h1 className="fr-head-title">One more thing — what&apos;s your level?</h1>
+            <div className="fr-head-sub">Decides which drills you&apos;ll see. Change it anytime in Settings.</div>
           </div>
         </header>
 
