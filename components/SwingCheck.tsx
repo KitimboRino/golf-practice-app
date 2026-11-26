@@ -360,11 +360,28 @@ export function SwingCheck({ onBack }: { onBack: () => void }) {
             <div className="swingcheck-preview">
               <video ref={videoRef} playsInline muted className="swingcheck-video" />
               <svg className="swingcheck-guide" viewBox="0 0 160 300" preserveAspectRatio="xMidYMid meet" aria-hidden>
-                <g transform="rotate(4 80 100)">
-                  <circle cx="80" cy="28" r="15" />
-                  <rect x="56" y="50" width="48" height="82" rx="22" />
-                  <rect x="50" y="120" width="22" height="145" rx="11" />
-                  <rect x="88" y="120" width="22" height="145" rx="11" />
+                {/* a golfer at address, face-on: the pose the analysis expects */}
+                <g className="sg-body">
+                  <path d="M56 128 L104 128 L106 150 L114 206 L118 264 L101 266 L93 207 L81 156 L79 156 L67 207 L59 266 L42 264 L46 206 L54 150 Z" />
+                  <ellipse cx="49" cy="268" rx="14" ry="5.5" transform="rotate(-6 49 268)" />
+                  <ellipse cx="111" cy="268" rx="14" ry="5.5" transform="rotate(6 111 268)" />
+                </g>
+                <g className="sg-club">
+                  <line x1="89" y1="170" x2="79" y2="262" />
+                  <path d="M68 262 Q68 258 74 258 L85 259 Q90 260 89 265 Q88 269 82 269 L73 269 Q68 268 68 262 Z" />
+                  <circle cx="95" cy="266" r="4" />
+                </g>
+                {/* upper body tilted away from the target: trail shoulder lower, head behind the ball */}
+                <g transform="rotate(-5 80 130)">
+                  <path className="sg-body" d="M46 74 Q44 63 56 61 L104 59 Q116 60 114 72 L108 140 Q104 146 80 146 Q56 146 52 140 Z" />
+                  <g className="sg-arms">
+                    <path d="M48 70 Q50 63 57 65 L90 160 L80 168 Z" />
+                    <path d="M112 68 Q112 61 104 63 L80 160 L92 168 Z" />
+                    <circle cx="86" cy="168" r="7.5" />
+                  </g>
+                  <circle className="sg-body" cx="80" cy="44" r="12.5" />
+                  <path className="sg-cap" d="M67 41 Q67 27 80 27 Q93 27 93 41 Z" />
+                  <path className="sg-brim" d="M65 40.5 Q80 47 95 40.5 Q80 43.5 65 40.5 Z" />
                 </g>
               </svg>
               {stage === "recording" && (
