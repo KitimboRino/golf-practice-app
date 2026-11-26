@@ -51,6 +51,7 @@ import { APP_VERSION } from "@/lib/version";
 import { doneFx, tapFx } from "@/lib/haptics";
 import { localDate } from "@/lib/date";
 import { useCountUp } from "@/lib/useCountUp";
+import { DispersionFan } from "@/components/DispersionFan";
 import { loadDemo, exitDemo } from "@/lib/demo";
 
 type Tab = "home" | "session" | "trends" | "more" | "warmup" | "welcome" | "receipt" | "quickpick" | "firstrun" | "round";
@@ -1775,6 +1776,8 @@ function SessionScreen({
                   );
                 })}
               </div>
+
+              {step.area === "driving" && <DispersionFan strip={strip} />}
 
               <div className="outcomes">
                 {step.outcomes.map((o) => (

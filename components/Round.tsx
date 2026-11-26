@@ -904,7 +904,13 @@ export function RoundSummary({
         big: s.scoredHoles ? `${s.strokes}` : "—",
         bigCap: s.scoredHoles ? toParLabel(s.toPar) + " to par" : "not logged",
         bigSub: isBest ? "your best round yet" : breakdown || "",
-        rows: rows.map((r) => ({ label: r.label, value: r.value, sub: r.sub })),
+        // the score is already the card's headline number, so it isn't repeated as a band
+        rows: rows.filter((r) => r.label !== "Score").map((r) => ({
+          label: r.label, value: r.value, sub: r.sub,
+          // each round stat takes the colour of the practice area it points to
+          area: ({ "Fairways hit": "driving", "Greens in regulation": "irons", "Total putts": "putting",
+                   "Scrambling": "chipping", "Three-putts": "putting", "Penalty strokes": "pitching" } as const)[r.label as "Scrambling"],
+        })),
         note: round.note?.trim() || undefined,
         filename: `rangecard-${roundLabel(round).toLowerCase().replace(/\s+/g, "-")}.png`,
       },

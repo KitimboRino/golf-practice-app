@@ -3914,3 +3914,18 @@ html:has(.notfound), html:has(.notfound) body::before { background: #0F1321; }
   .boot-bands span::after { transform: scaleX(1); }
 }
 .notfound { align-items: flex-start; text-align: left; max-width: 430px; }
+
+/* =========================================================================
+   Driving dispersion fan (components/DispersionFan.tsx), on the driving band
+   ========================================================================= */
+.fan { width: 100%; height: auto; display: block; overflow: visible; }
+.fan-fairway { fill: rgba(var(--on-band-rgb), 0.1); }
+.fan-lbl { fill: rgba(var(--on-band-rgb), 0.92); font-size: 12.5px; font-weight: 800; font-family: var(--font-sans), system-ui, sans-serif; }
+.fan-shot path { fill: none; stroke: var(--on-band); stroke-width: 1.6; stroke-linecap: round; opacity: 0.35; }
+.fan-shot circle { fill: var(--on-band); }
+.fan-shot.miss circle { fill: none; stroke: var(--on-band); stroke-width: 2; }
+.fan-shot.new path { opacity: 0.95; stroke-width: 2.2; stroke-dasharray: 1; stroke-dashoffset: 0; animation: fan-draw 520ms var(--settle) backwards; }
+.fan-shot.new circle { animation: dot-land 380ms var(--spring) 420ms backwards; transform-box: fill-box; transform-origin: center; }
+.fan-tee { fill: var(--on-band); }
+@keyframes fan-draw { from { stroke-dashoffset: 1; } }
+@media (prefers-reduced-motion: reduce) { .fan-shot.new path, .fan-shot.new circle { animation: none; } }

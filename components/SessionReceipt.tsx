@@ -87,7 +87,7 @@ export function SessionReceipt({
         big: delta === null ? `${solidNow}%` : `${delta >= 0 ? "+" : ""}${delta}`,
         bigCap: delta === null ? headCap : "points of solid rate",
         bigSub: best ? "your best session yet" : delta !== null && delta >= 0 ? "moving the right way" : delta !== null ? "off your recent best" : "logged",
-        rows: rows.map((r) => ({ label: r.label, value: `${r.made} of ${r.of}`, sub: r.note })),
+        rows: rows.map((r) => ({ label: r.name, value: `${r.made}/${r.of}`, sub: [r.label.split(" · ")[1], r.note].filter(Boolean).join(" · "), area: r.area })),
         note: session.notes.trim() || undefined,
         filename: `rangecard-session-${sNum(session.sessionLabel)}.png`,
       },
