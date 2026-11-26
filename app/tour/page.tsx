@@ -15,7 +15,13 @@ export const metadata: Metadata = {
     title: "RangeCard: Hit ten. We'll read your miss.",
     description: "A four-week range plan built around your one miss, and a number you watch move.",
     type: "website",
-    images: [{ url: "/og.png", width: 1024, height: 1024, alt: "RangeCard" }],
+    images: [{ url: "/og-wide.png", width: 1200, height: 630, alt: "RangeCard: Hit ten. We'll read your miss." }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "RangeCard: Hit ten. We'll read your miss.",
+    description: "A four-week range plan built around your one miss, and a number you watch move.",
+    images: ["/og-wide.png"],
   },
 };
 

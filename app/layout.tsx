@@ -29,13 +29,13 @@ export const metadata: Metadata = {
     title: "RangeCard",
     description: "Log range sessions from the 4-week plan and track your progress. Works offline.",
     type: "website",
-    images: [{ url: "/og.png", width: 1024, height: 1024, alt: "RangeCard" }],
+    images: [{ url: "/og-wide.png", width: 1200, height: 630, alt: "RangeCard: Hit ten. We'll read your miss." }],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "RangeCard",
     description: "Log range sessions from the 4-week plan and track your progress. Works offline.",
-    images: ["/og.png"],
+    images: ["/og-wide.png"],
   },
   icons: {
     icon: [
