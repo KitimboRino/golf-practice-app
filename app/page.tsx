@@ -459,6 +459,14 @@ export default function Page() {
         setGoalState((await getMeta<Goal>("goal")) ?? null);
         setOverrides((await getMeta<DrillOverrides>("drillOverrides")) ?? {});
         const ob = (await getMeta<string>("onboardedAt")) ?? null;
+        // "/?demo=1" (the landing page's "Look around first") on a fresh
+        // install loads the sample history. Never touches real data: it only
+        // fires when nothing has been set up yet.
+        if (!ob && new URLSearchParams(window.location.search).get("demo") === "1") {
+          await loadDemo();
+          window.location.replace("/");
+          return;
+        }
         setOnboardedAt(ob);
         if (!ob) {
           setOnb((await getMeta<Onboarding>("onboarding")) ?? FRESH_ONB);

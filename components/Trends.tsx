@@ -13,6 +13,7 @@ import { useCountUp } from "@/lib/useCountUp";
 import { useToast } from "./Toast";
 import { useConfirm } from "./Confirm";
 import { Icon } from "./Icon";
+import { Strata } from "./Strata";
 import { Glyph } from "./Glyph";
 import { Mark } from "./Mark";
 import { localDate } from "@/lib/date";
@@ -251,6 +252,8 @@ export function Trends({
         {fileInput}
 
         <VerdictCard history={history} />
+
+        <Strata history={history} />
 
         <GoalCard history={history} goal={goal} onSave={onSaveGoal} onClear={onClearGoal} />
 
