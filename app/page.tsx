@@ -1033,6 +1033,7 @@ export default function Page() {
             onFinish={finishRound}
             onDiscard={discardRound}
             rounds={rounds}
+            history={history}
             onViewRound={(r) => setRoundView({ round: r, fresh: false })}
             onDeleteRound={removeRound}
             onPractice={(areas, focus) => startQuick(areas, focus)}
@@ -1496,13 +1497,17 @@ type StepDef = {
 const STEPS: StepDef[] = [
   { id: "chip", area: "chipping", name: "Chipping", icon: "swipe_up", drillIcon: "crop_square", target: 10,
     metric: "on the towel", short: "on",
+    // a chip from just off the green to a pin across it: 10 yd is a short
+    // bump, 40 yd is a long running chip
+    distUnit: "yd", dists: [10, 20, 30, 40],
     outcomes: [
       { key: "on", tone: "good", icon: "check", label: "On towel", hint: "landed on it" },
       { key: "off", tone: "clay", icon: "close", label: "Off towel", hint: "missed the mark" },
     ] },
   { id: "pitch", area: "pitching", name: "Pitching", icon: "arrow_outward", drillIcon: "flag", target: 10,
     metric: "finished close", short: "close",
-    distUnit: "yd", dists: [35, 45, 55, 65], clubs: ["54°", "56°", "58°", "60°"],
+    // the short-game scoring range the drill library describes (40–120 yd)
+    distUnit: "yd", dists: [40, 60, 80, 100], clubs: ["54°", "56°", "58°", "60°"],
     outcomes: [
       { key: "close", tone: "good", icon: "check", label: "Close", hint: "inside ~3 steps" },
       { key: "short", tone: "sand", icon: "arrow_downward", label: "Short", hint: "front edge" },

@@ -454,6 +454,6 @@ export const PITCH_FOCUS_BY_LEVEL: Record<Level, Focus[]> = {
 };
 
 // New scored area to add to the logger, matching the others:
-//   Pitching — 10 balls to a ~35–65 yd target, tally CLOSE / SHORT / LONG.
+//   Pitching — 10 balls to a ~40–100 yd target, tally CLOSE / SHORT / LONG.
 export const PITCHING_DRILL =
-  "Target Pitch — 10 balls to a chosen target ~35–65 yds. Tally CLOSE (within ~3 steps), SHORT, or LONG.";
+  "Target Pitch — 10 balls to a chosen target ~40–100 yds. Tally CLOSE (within ~3 steps), SHORT, or LONG.";

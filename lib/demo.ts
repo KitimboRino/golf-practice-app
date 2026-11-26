@@ -73,6 +73,33 @@ export async function loadDemo(): Promise<void> {
   });
   await saveRound({ id: uuid(), date: daysAgo(6), course: "Uganda Golf Club", holes: 9, holeData, createdAt: Date.now() - 6 * DAY });
 
+  // two 18-hole rounds, so the report's patterns have something to read:
+  // par 3s and the back nine cost most, the driver finds fewer fairways than
+  // the 3-wood, and missed fairways lean right like the range misses
+  const pars18: (3 | 4 | 5)[] = [4, 4, 3, 5, 4, 4, 3, 4, 5, 4, 3, 4, 5, 4, 4, 3, 4, 5];
+  const eighteen = (scores: number[]): RoundHole[] => pars18.map((par, i) => {
+    const over = scores[i] - par;
+    const teeClub = par === 3 ? undefined : i % 4 === 1 ? "3W" : "Driver";
+    const fairwayHit = par === 3 ? null : teeClub === "3W" ? i % 3 !== 0 : i % 5 === 0 || i % 5 === 3;
+    const gir = over <= 0;
+    return {
+      par, score: scores[i], fairwayHit,
+      fairwayMiss: fairwayHit === false ? (i % 4 === 2 ? "left" : "right") : undefined,
+      gir, putts: over >= 2 && i % 3 === 0 ? 3 : 2,
+      upAndDown: gir ? null : over === 1 && i % 2 === 0,
+      penalties: over >= 2 && i % 2 === 1 ? 1 : 0,
+      teeClub,
+    };
+  });
+  await saveRound({
+    id: uuid(), date: daysAgo(13), course: "Uganda Golf Club", holes: 18, createdAt: Date.now() - 13 * DAY,
+    holeData: eighteen([5, 4, 4, 5, 5, 4, 4, 5, 6, 5, 3, 5, 6, 5, 4, 4, 5, 6]),
+  });
+  await saveRound({
+    id: uuid(), date: daysAgo(3), course: "Uganda Golf Club", holes: 18, createdAt: Date.now() - 3 * DAY,
+    holeData: eighteen([4, 5, 4, 6, 4, 5, 3, 5, 5, 5, 4, 5, 6, 5, 4, 4, 6, 6]),
+  });
+
   await saveGameAttempt({ id: uuid(), gameId: "par-18", date: daysAgo(8), score: 5, createdAt: Date.now() - 8 * DAY });
 
   await setMeta("onboardedAt", new Date().toISOString());

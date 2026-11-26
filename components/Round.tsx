@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { RoundHole, SavedRound, AreaKey } from "@/lib/db";
+import { RoundHole, SavedRound, SavedSession, AreaKey } from "@/lib/db";
+import { scoringByPar, blowUps, teeMissSide, fairwaysByTeeClub, frontBack } from "@/lib/roundPatterns";
 import {
   LiveRound, RoundStats, freshHoles, roundStats, roundLabel,
   leakReport, practiceNoun, LeakCategory, LEAK_BENCHMARK,
@@ -46,7 +47,7 @@ const toParLabel = (n: number) => (n === 0 ? "E" : n > 0 ? `+${n}` : `−${Math.
 // ---------------------------------------------------------------------------
 
 export function Round({
-  liveRound, onChange, onStart, onFinish, onDiscard, rounds, onViewRound, onDeleteRound, onPractice,
+  liveRound, onChange, onStart, onFinish, onDiscard, rounds, history, onViewRound, onDeleteRound, onPractice,
 }: {
   liveRound: LiveRound | null;
   onChange: (r: LiveRound) => void;
@@ -54,6 +55,7 @@ export function Round({
   onFinish: (r: LiveRound) => void;
   onDiscard: () => void;
   rounds: SavedRound[];
+  history: SavedSession[]; // range sessions, for the tee-miss comparison
   onViewRound: (r: SavedRound) => void;
   onDeleteRound: (id: string) => void;
   onPractice: (areas: AreaKey[], focus: PracticeFocus) => void;
@@ -64,7 +66,7 @@ export function Round({
     return <RoundPlay round={liveRound} onChange={onChange} onFinish={onFinish} onDiscard={onDiscard} />;
   }
   if (diag && rounds.length) {
-    return <RoundDiagnostic rounds={rounds} onBack={() => setDiag(false)} onPractice={onPractice} />;
+    return <RoundDiagnostic rounds={rounds} history={history} onBack={() => setDiag(false)} onPractice={onPractice} />;
   }
   return (
     <RoundSetup
@@ -1180,9 +1182,10 @@ function LeakCard({
 }
 
 export function RoundDiagnostic({
-  rounds, onBack, onPractice,
+  rounds, history, onBack, onPractice,
 }: {
   rounds: SavedRound[];
+  history: SavedSession[];
   onBack: () => void;
   onPractice: (areas: AreaKey[], focus: PracticeFocus) => void;
 }) {
@@ -1231,9 +1234,162 @@ export function RoundDiagnostic({
               <LeakCard key={c.key} cat={c} rank={i} onPractice={onPractice}
                         approach={c.key === "approach" ? approach : null} />
             ))}
+
+            <RoundPatterns rounds={rounds} history={history} />
           </>
         )}
       </div>
     </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Patterns — where on the card the shots go (par type, blow-up holes, the
+// back nine) and what the habit looks like (miss side, tee club). Each card
+// only shows once lib/roundPatterns has enough holes to back it.
+
+const fmtOver = (n: number) => (n === 0 ? "E" : n > 0 ? `+${n.toFixed(1)}` : `−${Math.abs(n).toFixed(1)}`);
+
+const PAR_READ: Record<3 | 4 | 5, string> = {
+  3: "That's the tee shot into the green, so it's an irons job.",
+  4: "Drive-and-approach holes: the tee shot and the iron in.",
+  5: "Usually the lay-up and the wedge in, more than the drive.",
+};
+
+function RoundPatterns({ rounds, history }: { rounds: SavedRound[]; history: SavedSession[] }) {
+  const par = scoringByPar(rounds);
+  const blow = blowUps(rounds);
+  const miss = teeMissSide(rounds, history);
+  const clubs = fairwaysByTeeClub(rounds);
+  const nines = frontBack(rounds);
+  const any = par || blow || miss || clubs || nines;
+
+  return (
+    <section className="pat-sec" aria-labelledby="pat-h">
+      <div className="sec-head">
+        <span className="icon-tile sm"><Icon name="insights" size={15} /></span>
+        <h2 id="pat-h">Patterns</h2>
+      </div>
+
+      {!any && (
+        <div className="fault-note">
+          <span className="icon-tile sm dim"><Icon name="info" size={15} /></span>
+          <span>
+            Patterns show up as you log more holes: scoring by par, big numbers, which way tee
+            shots miss, and front nine against back.
+          </span>
+        </div>
+      )}
+
+      {par && (() => {
+        const worst = par.rows.find((r) => r.par === par.worst);
+        const max = Math.max(1, ...par.rows.map((r) => r.avgOver));
+        return (
+          <div className="pat">
+            <h3 className="pat-t">Scoring by par</h3>
+            {par.rows.map((r) => (
+              <div className="pat-row" key={r.par}>
+                <span className="pat-lbl">Par {r.par}</span>
+                <span className="pat-track">
+                  <span className={"pat-fill" + (r.par === par.worst && r.avgOver > 0 ? " weak" : "")}
+                        style={{ width: `${Math.max(3, (Math.max(0, r.avgOver) / max) * 100)}%` }} />
+                </span>
+                <span className="pat-val num">{fmtOver(r.avgOver)}</span>
+                <span className="pat-of num">{r.holes} holes</span>
+              </div>
+            ))}
+            <p className="pat-read">
+              {worst && par.worst
+                ? <>Par {par.worst}s cost you most, {worst.avgOver.toFixed(1)} over a hole on average. {PAR_READ[par.worst]}</>
+                : "No par type stands out: you drop shots about evenly across par 3s, 4s and 5s."}
+            </p>
+          </div>
+        );
+      })()}
+
+      {blow && (
+        <div className="pat">
+          <div className="pat-th"><h3 className="pat-t">Big numbers</h3><span className="pat-sub">per 18 holes</span></div>
+          <div className="pat-stats">
+            <div><b className="num">{blow.doublesPerRound}</b><span>doubles or worse a round</span></div>
+            <div><b className="num">{blow.costPerRound}</b><span>shots beyond bogey</span></div>
+            <div><b className="num">{blow.penaltiesPerRound}</b><span>penalty strokes</span></div>
+          </div>
+          <p className="pat-read">
+            {blow.costPerRound >= 1.5
+              ? `Turning those into bogeys would save about ${Math.round(blow.costPerRound)} shot${Math.round(blow.costPerRound) === 1 ? "" : "s"} a round, often just by taking the safe line out of trouble.`
+              : "You keep big numbers rare: bogey is your worst case on most holes."}
+          </p>
+        </div>
+      )}
+
+      {miss && (() => {
+        const leftPct = 100 - miss.rightPct;
+        const side = miss.rightPct >= 60 ? "right" : miss.rightPct <= 40 ? "left" : null;
+        return (
+          <div className="pat">
+            <h3 className="pat-t">Tee-shot misses</h3>
+            <div className="pat-split" role="img" aria-label={`${leftPct}% of missed fairways went left, ${miss.rightPct}% right`}>
+              <span className="pat-split-l" style={{ flexBasis: `${leftPct}%` }} />
+              <span className="pat-split-r" style={{ flexBasis: `${miss.rightPct}%` }} />
+            </div>
+            <div className="pat-split-lbls num" aria-hidden="true">
+              <span>Left {miss.left}</span><span>Right {miss.right}</span>
+            </div>
+            <p className="pat-read">
+              {side ? `Most missed fairways go ${side} (${side === "right" ? miss.rightPct : leftPct}%).` : "Missed fairways split both ways."}{" "}
+              {miss.rangeRightPct === null
+                ? "Log a few range sessions with driving to compare this with your practice misses."
+                : miss.same
+                  ? `The range shows the same pattern (${miss.rangeRightPct}% of misses right), so working on that miss in practice is the right focus.`
+                  : `At the range ${miss.rangeRightPct}% of misses go right, so the course miss looks more like aim or pressure than the swing itself.`}
+            </p>
+          </div>
+        );
+      })()}
+
+      {clubs && (() => {
+        const best = clubs[0], worst = clubs[clubs.length - 1];
+        return (
+          <div className="pat">
+            <h3 className="pat-t">Fairways by tee club</h3>
+            {clubs.map((c) => (
+              <div className="pat-row" key={c.club}>
+                <span className="pat-lbl">{c.club}</span>
+                <span className="pat-track">
+                  <span className={"pat-fill good" + (c === worst && best.pct - worst.pct >= 15 ? " weak" : "")} style={{ width: `${Math.max(3, c.pct)}%` }} />
+                </span>
+                <span className="pat-val num">{c.pct}%</span>
+                <span className="pat-of num">{c.made}/{c.of}</span>
+              </div>
+            ))}
+            {best.pct - worst.pct >= 15 && (
+              <p className="pat-read">
+                {best.club} finds {best.pct}% of fairways against {worst.pct}% with {worst.club}. On
+                tight holes, {best.club} is the higher-percentage play.
+              </p>
+            )}
+          </div>
+        );
+      })()}
+
+      {nines && (
+        <div className="pat">
+          <h3 className="pat-t">Front nine vs back nine</h3>
+          <div className="pat-stats two">
+            <div><b className="num">{fmtOver(nines.front)}</b><span>front nine</span></div>
+            <div><b className="num">{fmtOver(nines.back)}</b><span>back nine</span></div>
+          </div>
+          <p className="pat-read">
+            {nines.diff >= 1.5
+              ? `The back nine costs about ${nines.diff.toFixed(1)} more shots. That's often energy and focus: eat something and reset at the turn.`
+              : nines.diff <= -1.5
+                ? `You start slow: the front nine costs about ${Math.abs(nines.diff).toFixed(1)} more. A proper warm-up before the first tee would help.`
+                : "Steady across both nines."}
+            {" "}From {nines.rounds} rounds of 18 holes.
+          </p>
+        </div>
+      )}
+    </section>
   );
 }
