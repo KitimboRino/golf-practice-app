@@ -3980,16 +3980,19 @@ button.home-menu-row:active { background: var(--inset); }
 }
 .home-coach small { font-size: 12px; font-weight: 600; color: var(--muted); }
 .home-coach.open .home-coach-body { -webkit-line-clamp: unset; display: block; }
-@media (max-height: 700px) { .home-coach-body { -webkit-line-clamp: 2; } }
+/* short phones: the headline only, tap for the advice */
+@media (max-height: 700px) { .home-coach:not(.open) .home-coach-body { display: none; } }
 
 .home-bands { display: flex; flex-direction: column; padding: 0 12px; }
 .home-band {
   display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
   background: var(--band); color: var(--on-band);
-  border-radius: 24px 24px 0 0; padding: 14px 20px 26px;
+  border-radius: 24px 24px 0 0; padding: 14px 20px 38px;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
-.home-band + .home-band { margin-top: -12px; }
+/* overlap the band above by the full corner radius, so behind each rounded
+   top corner sits the band above's colour, never the page */
+.home-band + .home-band { margin-top: -24px; }
 .home-band.last { border-radius: 24px; padding-bottom: 16px; }
 .home-band b { font-family: var(--font-display); font-stretch: 118%; font-weight: 800; font-size: 18px; flex: none; }
 .home-band span {
@@ -4051,8 +4054,7 @@ button.home-menu-row:active { background: var(--inset); }
   /* short phones: the bands and timeline stay above the pinned buttons */
   .home-hero { padding-top: 12px; gap: 7px; }
   .home-lede, .home-stats { display: none; }
-  .home-band { padding: 11px 18px 22px; }
-  .home-band + .home-band { margin-top: -11px; }
+  .home-band { padding: 11px 18px 35px; }
   .home-band.last { padding-bottom: 13px; }
   .home-card { display: none; }
 }

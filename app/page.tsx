@@ -1346,11 +1346,12 @@ function unsavedText(sessions: number, rounds: number): string {
 // most one contextual card (resume, a lapse, what to bring, backup, a round
 // insight, install) use the space between. Everything the old home did is
 // still here: the session/venue pickers live behind the timeline's Change.
+// same order as a session (STEPS): short game first, putting last
 const HOME_BANDS: { area: AreaKey; name: string }[] = [
-  { area: "driving", name: "Driving" },
-  { area: "irons", name: "Irons" },
   { area: "chipping", name: "Chipping" },
   { area: "pitching", name: "Pitching" },
+  { area: "irons", name: "Irons" },
+  { area: "driving", name: "Driving" },
   { area: "putting", name: "Putting" },
 ];
 
