@@ -4,6 +4,7 @@
 // LIBRARY as a level-agnostic swap-in bench of alternates for any area.
 
 import type { Level } from "@/lib/plan";
+import { attachVideos } from "./drillVideos";
 
 // video is optional and unset by default — a YouTube link, opened in the
 // system browser rather than embedded (the app stays usable with no
@@ -457,3 +458,7 @@ export const PITCH_FOCUS_BY_LEVEL: Record<Level, Focus[]> = {
 //   Pitching — 10 balls to a ~40–100 yd target, tally CLOSE / SHORT / LONG.
 export const PITCHING_DRILL =
   "Target Pitch — 10 balls to a chosen target ~40–100 yds. Tally CLOSE (within ~3 steps), SHORT, or LONG.";
+
+// how-to videos, matched to drills by name (lib/drillVideos.ts)
+attachVideos(LIBRARY);
+attachVideos(PITCH_FOCUS_BY_LEVEL);

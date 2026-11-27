@@ -3,6 +3,8 @@
 // video is optional and unset by default — a YouTube link, opened in the
 // system browser rather than embedded (the app stays usable with no
 // connection; video playback can't be).
+import { attachVideos } from "./drillVideos";
+
 export type Focus = { name: string; how: string; sticks: string | null; video?: string };
 export type PuttDrill = { name: string; how: string; sticks: string | null; video?: string };
 export type Session = { label: string; drive: Focus; iron: Focus; chip: Focus; putts: PuttDrill[]; };
@@ -780,11 +782,11 @@ export const PLAN_PROFESSIONAL: Week[] = [
   }
 ];
 
-export const PLANS: Record<Level, Week[]> = {
+export const PLANS: Record<Level, Week[]> = attachVideos({
   beginner: PLAN_BEGINNER,
   intermediate: PLAN_INTERMEDIATE,
   professional: PLAN_PROFESSIONAL,
-};
+});
 
 // combined lookup for HISTORICAL week ids — a session logged under a level
 // the golfer has since switched away from must still resolve its real title
