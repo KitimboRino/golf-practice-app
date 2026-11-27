@@ -1237,7 +1237,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 /* ---------- focus drill inset ---------- */
 .drill { background: var(--inset); border: 1px solid var(--border); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 9px; }
 .drill-t { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
-.drill-b { font-size: 14px; line-height: 1.55; color: var(--text-2); text-wrap: pretty; }
+.drill-b { font-size: 14px; line-height: 1.55; color: var(--text-2); }
 /* opens the system browser, never embedded — see lib/plan.ts's video field comment */
 .drill-video {
   align-self: flex-start; display: inline-flex; align-items: center; gap: 6px;
@@ -3474,7 +3474,12 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
    buttons that are dimmed until their coach step */
 .warm-now .eyebrow { color: #CDEEF4; }
 .fr-wrap.read .slot.fairway, .fr-wrap.practice .slot.fairway { color: var(--area-driving); }
-.fr-wrap.practice .logbtn.inert, .fr-wrap.practice .undo-btn.inert { opacity: 0.5; }
+.fr-wrap.practice .logbtn.inert, .fr-wrap.practice .undo-btn.inert { opacity: 0.5; pointer-events: auto; }
+/* a wrong tap in the practice run: the coach card shakes once and says what to tap */
+.fr-wrap.practice .coach-card.nudged { animation: coach-nudge 360ms ease; }
+.fr-wrap.practice .coach-card.nudged .coach-body { color: var(--clay-label); font-weight: 700; }
+@keyframes coach-nudge { 20% { transform: translateX(-6px); } 45% { transform: translateX(5px); } 70% { transform: translateX(-3px); } }
+@media (prefers-reduced-motion: reduce) { .fr-wrap.practice .coach-card.nudged { animation: none; } }
 
 /* 4. the greeting wraps to two lines instead of being cut off */
 

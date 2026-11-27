@@ -292,6 +292,10 @@ function PracticeRun({ onDone, onSkip }: { onDone: () => void; onSkip: () => voi
   const [step, setStep] = useState(0); // 0,1,2
   const [counts, setCounts] = useState({ fairway: 0, left: 0, right: 0 });
   const [logged, setLogged] = useState<Shot[]>([]);
+  // a tap on a button this step isn't asking for: a nudge with what to tap
+  // (the greyed buttons used to swallow taps with no response at all)
+  const [nudge, setNudge] = useState<{ text: string; n: number } | null>(null);
+  const wrong = (text: string) => { bumpFx(); setNudge((p) => ({ text, n: (p?.n ?? 0) + 1 })); };
 
   const advance = () => {
     if (step < 2) setStep(step + 1);
@@ -299,16 +303,18 @@ function PracticeRun({ onDone, onSkip }: { onDone: () => void; onSkip: () => voi
   };
 
   const log = (s: Shot) => {
-    if (step === 0 && s !== "fairway") { bumpFx(); return; }
-    if (step === 1 && s === "fairway") { bumpFx(); return; }
-    if (step === 2) return;
+    if (step === 0 && s !== "fairway") { wrong("Not that one yet. Tap On my line first."); return; }
+    if (step === 1 && s === "fairway") { wrong("This one missed. Tap Left or Right."); return; }
+    if (step === 2) { wrong("Last step: tap Undo last ball."); return; }
+    setNudge(null);
     tapFx();
     setCounts((c) => ({ ...c, [s]: c[s] + 1 }));
     setLogged((l) => [...l, s]);
     advance();
   };
   const undo = () => {
-    if (step !== 2 || !logged.length) { if (step !== 2) bumpFx(); return; }
+    if (step !== 2 || !logged.length) { if (step !== 2) wrong(step === 0 ? "Log a ball first: tap On my line." : "Log this one first: tap Left or Right."); return; }
+    setNudge(null);
     tapFx();
     const last = logged[logged.length - 1];
     setCounts((c) => ({ ...c, [last]: Math.max(0, c[last] - 1) }));
@@ -320,7 +326,7 @@ function PracticeRun({ onDone, onSkip }: { onDone: () => void; onSkip: () => voi
 
   return (
     <div className="fr-wrap practice">
-      <div className="coach-card">
+      <div className={"coach-card" + (nudge ? " nudged" : "")} key={nudge?.n ?? 0}>
         <div className="coach-top">
           <span className="coach-step">Step {step + 1} of 3</span>
           <span className="coach-pips">
@@ -328,7 +334,7 @@ function PracticeRun({ onDone, onSkip }: { onDone: () => void; onSkip: () => voi
           </span>
         </div>
         <h1 className="coach-head">{COACH[step].head}</h1>
-        <div className="coach-body">{COACH[step].body}</div>
+        <div className="coach-body" aria-live="polite">{nudge ? nudge.text : COACH[step].body}</div>
       </div>
 
       <div className="fr-logscreen">

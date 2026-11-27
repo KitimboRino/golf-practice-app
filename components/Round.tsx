@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { RoundHole, SavedRound, SavedSession, AreaKey } from "@/lib/db";
 import { scoringByPar, blowUps, teeMissSide, fairwaysByTeeClub, frontBack, holeHistory, HoleHistory } from "@/lib/roundPatterns";
 import {
@@ -62,6 +62,7 @@ export function Round({
   onPractice: (areas: AreaKey[], focus: PracticeFocus) => void;
 }) {
   const [diag, setDiag] = useState(initialDiag);
+  useEffect(() => { window.scrollTo(0, 0); }, [diag]);
 
   if (liveRound) {
     return <RoundPlay round={liveRound} rounds={rounds} onChange={onChange} onFinish={onFinish} onDiscard={onDiscard} />;

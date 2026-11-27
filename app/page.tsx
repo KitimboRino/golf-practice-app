@@ -443,6 +443,7 @@ export default function Page() {
   const [games, setGames] = useState<GameAttempt[]>([]);
   const toast = useToast();
   const { confirm } = useConfirm();
+  useEffect(() => { window.scrollTo(0, 0); }, [tab, roundView]);
   // the home card's round insight opens the Round tab straight on its report
   const [roundDiag, setRoundDiag] = useState(false);
   // end-of-plan report: which level it's about, and where Back returns to
@@ -1165,6 +1166,7 @@ function More({
   onResumeRound: () => void;
 }) {
   const [view, setView] = useState<"menu" | "prep" | "routine" | "course" | "library" | "fixes" | "games" | "swing" | "level" | "about">("menu");
+  useEffect(() => { window.scrollTo(0, 0); }, [view]);
   const [libFocus, setLibFocus] = useState<import("@/lib/faults").Fault | null>(null);
   if (view === "level")
     return <LevelSettings current={level} onPick={(l) => { onChangeLevel(l); setView("menu"); }} onBack={() => setView("menu")} />;
@@ -1450,7 +1452,6 @@ function Home({
   const card: Card | null =
     showResumeBanner ? { key: "resume", icon: "pending_actions", tone: "warn", title: `Unfinished · ${draftLabel}`, sub: "Pick up where you left off", action: onResume, actionLabel: "Resume" }
     : showNudge && lastSession ? { key: "nudge", icon: "event_busy", title: `${daysSinceLast} days since your last session`, sub: "Today's session is ready below", dismiss: () => onDismissNudge(lastSession.date), dismissLabel: "Dismiss reminder" }
-    : firstRun && !demo ? { key: "bring", icon: "check_circle", title: "Bring ~50 balls, a towel, 2 tees", sub: "The towel marks your chipping landing spot" }
     : backupDue ? { key: "backup", icon: "download", tone: "warn", title: `${unsavedText} only live on this phone`, sub: "Save a backup to Files or iCloud", action: onBackup, actionLabel: "Back up", dismiss: onSnoozeBackup, dismissLabel: "Not now, remind me next week" }
     : leakTop ? { key: "leak", icon: "insights", tone: "info", title: `${leakTop.label} is your biggest leak`, sub: `From your ${leak!.rounds === 1 ? "round" : `last ${leak!.rounds} rounds`} · see why`, action: onOpenRoundReport }
     : null;
@@ -1483,11 +1484,12 @@ function Home({
 
       <section className="home-hero" aria-labelledby="home-title">
         <span className="home-kicker">
-          {firstRun ? "Your baseline · " : ""}Week {cursor.week + 1} · Session {sessionNo} of {flat.length} · ~{bands.length * 10} balls
+          {/* the timeline below names the week, so a first visit trades it for "your baseline" to stay on one line */}
+          {firstRun ? "Your baseline" : `Week ${cursor.week + 1}`} · Session {sessionNo} of {flat.length} · ~{bands.length * 10} balls
         </span>
         <h1 id="home-title" className={"home-title" + (title.length > 11 ? " long" : "")}>{title}</h1>
         {firstRun ? (
-          <p className="home-lede">Ten honest balls in each area. Everything after today is measured against it.</p>
+          <p className="home-lede">Ten honest balls in each area. Bring ~50 balls, a towel (it marks your chipping spot) and 2 tees.</p>
         ) : (
           <div className="home-stats">
             {lastSolid !== null && <div><b className="num">{lastSolid}%</b><span>ball-striking</span></div>}
