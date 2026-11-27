@@ -53,9 +53,6 @@ export function Games({
             <h1 className="hdr-title">Practice games</h1>
             <div className="hdr-sub">Practise with a number on the line</div>
           </div>
-          <div className="hdr-actions">
-            <GlareToggle />
-          </div>
         </div>
       </header>
 
@@ -144,6 +141,9 @@ function GameDetail({
           <div style={{ flex: 1 }}>
             <div className="hdr-eyebrow">{meta.label} game</div>
             <h1 className="hdr-title sm">{game.name}</h1>
+          </div>
+          <div className="hdr-actions">
+            <GlareToggle />
           </div>
         </div>
       </header>

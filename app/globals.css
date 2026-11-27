@@ -3071,7 +3071,7 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
 /* ---------- app-wide: headers ---------- */
 .hdr { border-bottom-color: transparent; }
 .hdr-eyebrow {
-  color: var(--muted); font-size: 11px; letter-spacing: 0.1em; margin-bottom: 8px;
+  color: var(--green-label); font-size: 11px; letter-spacing: 0.1em; margin-bottom: 8px;
 }
 .hdr-eyebrow::before { display: none; }
 .hdr-title {
@@ -3385,9 +3385,10 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
 .stick, .coach, .hist-note, .strat-strip, .reassure, .fault-note {
   border-left: 0; border: 0; border-radius: 18px;
 }
-.prep-safety { background: var(--band); color: var(--on-band); padding: 16px 18px; }
-.prep-safety .stick-b, .prep-safety .stick-b b { color: var(--on-band); }
-.prep-safety .msr { color: var(--on-band) !important; }
+/* safety: a tinted note like every other note, clay for "take care" */
+.prep-safety { background: var(--clay-face); padding: 14px 16px; }
+.prep-safety .stick-b { color: var(--text-2); }
+.prep-safety .stick-b b { color: var(--clay-label); }
 
 /* ---------- fixes: the likely fault takes its area's colour ---------- */
 .fault-hero { border: 0; border-radius: 30px; background: var(--band); color: var(--on-band); }
@@ -3527,7 +3528,7 @@ h1, h2, h3, .display-xl, .hdr-title, .deal-h, .reveal-verdict, .coach-head, .ver
 .hole-big-num { font-size: clamp(82px, 28.7vw, 112px); }
 .fr.deal .deal-h { font-size: clamp(30px, 9.2vw, 36px); }
 .fr-wrap.reveal .reveal-verdict { font-size: clamp(36px, 12.3vw, 48px); }
-.trends-screen .verdict-h { font-size: clamp(38px, 12.8vw, 50px); }
+.trends-screen .verdict-h { font-size: clamp(28px, 8.4vw, 34px); line-height: 1.02; }
 .warm-now-name { font-size: clamp(34px, 11.3vw, 44px); }
 .routine-stage-title { font-size: clamp(27px, 8.7vw, 34px); }
 .fault-hero-pat { font-size: clamp(27px, 8.7vw, 34px); }
@@ -3651,10 +3652,7 @@ html:has(.fr-wrap.practice), html:has(.fr-wrap.practice) body::before { backgrou
    ========================================================================= */
 .strata { background: var(--card); border-radius: 28px; padding: 20px 16px 16px; display: flex; flex-direction: column; gap: 14px; }
 .strata-head { display: flex; flex-direction: column; gap: 6px; padding: 0 4px; }
-.strata-title {
-  margin: 0; font-family: var(--font-display); font-stretch: 118%; font-weight: 900;
-  font-size: clamp(24px, 7.2vw, 28px); line-height: 1; letter-spacing: -0.025em;
-}
+.strata-title { margin: 0; font-size: 16px; font-weight: 800; letter-spacing: -0.02em; }
 .strata-sub { margin: 0; font-size: 13.5px; font-weight: 600; line-height: 1.4; color: var(--muted); }
 .strata-key, .strata-layer { display: grid; grid-template-columns: 34px repeat(5, minmax(0, 1fr)); gap: 4px; align-items: center; }
 .strata-key-i { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 800; color: var(--muted); min-width: 0; }

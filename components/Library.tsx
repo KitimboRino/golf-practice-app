@@ -6,7 +6,6 @@ import { DrillOverrides, DrillOverride } from "@/lib/db";
 import { Fault } from "@/lib/faults";
 import { Icon } from "./Icon";
 import { WatchButton } from "./VideoSheet";
-import { GlareToggle } from "./GlareToggle";
 import { AreaIcon } from "./AreaIcon";
 
 // which session area a LIBRARY group maps to (for the "use in session" swap,
@@ -110,12 +109,8 @@ export function Library({
             </button>
           )}
           <div style={{ flex: 1 }}>
-            <div className="hdr-eyebrow">Bench · {total} drills</div>
             <h1 className="hdr-title">Drill library</h1>
-            <div className="hdr-sub">Swap any into today&apos;s session</div>
-          </div>
-          <div className="hdr-actions">
-            <GlareToggle />
+            <div className="hdr-sub">{total} drills · swap any into today&apos;s session</div>
           </div>
         </div>
       </header>
