@@ -12,12 +12,13 @@ const wkNum = (id: string) => id.replace(/[^0-9]/g, "") || "0";
 const sNum = (l: string) => l.replace(/[^0-9]/g, "") || "?";
 
 export function SessionReceipt({
-  session, history, quick = false, planComplete = false, planBalls = 0, levelLabel, nextWeek, nextSession, onDone, onNext,
+  session, history, quick = false, planComplete = false, planBalls = 0, levelLabel, nextWeek, nextSession, onDone, onNext, onReport,
 }: {
   session: SavedSession;
   history: SavedSession[];
   quick?: boolean;
   planComplete?: boolean;
+  onReport?: () => void; // the end-of-plan report, offered when planComplete
   planBalls?: number;
   levelLabel?: string;
   nextWeek: Week;
@@ -162,7 +163,13 @@ export function SessionReceipt({
       )}
 
       <div className="receipt-actions">
-        <button className="receipt-next" onClick={onNext}>
+        {planComplete && onReport && (
+          <button className="receipt-next" onClick={onReport}>
+            <span>See your plan report</span>
+            <small>All five areas</small>
+          </button>
+        )}
+        <button className={planComplete && onReport ? "receipt-ghost receipt-wide" : "receipt-next"} onClick={onNext}>
           <span>{planComplete ? "Keep practising" : quick ? "Back to your plan" : "Next session"}</span>
           <small>{nextWeek.short} · {nextSession.label.replace(/ —.*/, "")}</small>
         </button>

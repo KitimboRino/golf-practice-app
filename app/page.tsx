@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import {
-  PLANS, planSlotKey, planSlotKeysFor, Level, DEFAULT_LEVEL, LEVEL_LABEL, Week, Session,
+  PLANS, planSlotKey, planSlotKeysFor, isTestDay, levelOfWeek, Level, DEFAULT_LEVEL, LEVEL_LABEL, Week, Session,
 } from "@/lib/plan";
 import { SESSION_FLOW } from "@/lib/prep";
 import { PITCH_FOCUS_BY_LEVEL, PITCHING_DRILL, LIBRARY } from "@/lib/library";
@@ -32,6 +32,7 @@ const SCREENS = {
   routine: () => import("@/components/Routine"),
   course: () => import("@/components/Course"),
   swing: () => import("@/components/SwingCheck"),
+  report: () => import("@/components/PlanReport"),
   // TensorFlow + the pose model code (~1.7 MB), which SwingCheck itself only
   // imports when a clip is analysed; warming it here gets it into the service
   // worker's cache so swing check works offline. App route only, so the
@@ -48,6 +49,7 @@ const Games = dynamic(() => SCREENS.games().then((m) => m.Games));
 const Routine = dynamic(() => SCREENS.routine().then((m) => m.Routine));
 const Course = dynamic(() => SCREENS.course().then((m) => m.Course));
 const SwingCheck = dynamic(() => SCREENS.swing().then((m) => m.SwingCheck));
+const PlanReport = dynamic(() => SCREENS.report().then((m) => m.PlanReport));
 import { LiveRound } from "@/lib/round";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { GlareToggle } from "@/components/GlareToggle";
@@ -75,7 +77,7 @@ import { DispersionFan } from "@/components/DispersionFan";
 import { loadDemo, exitDemo } from "@/lib/demo";
 import { BackupState, backupDue, loadBackupState, saveBackup, snoozeBackup } from "@/lib/backup";
 
-type Tab = "home" | "session" | "trends" | "more" | "warmup" | "welcome" | "receipt" | "quickpick" | "firstrun" | "round";
+type Tab = "home" | "session" | "trends" | "more" | "warmup" | "welcome" | "receipt" | "quickpick" | "firstrun" | "round" | "planreport";
 
 // setup pre-picks a club or distance, e.g. "Practise with 3W" from the round report
 type QuickFocus = { title: string; body: string; setup?: Partial<Record<keyof Strips, AreaSetup>> };
@@ -453,6 +455,8 @@ export default function Page() {
   const [games, setGames] = useState<GameAttempt[]>([]);
   const toast = useToast();
   const { confirm } = useConfirm();
+  // end-of-plan report: which level it's about, and where Back returns to
+  const [report, setReport] = useState<{ level: Level; from: Tab } | null>(null);
   // backup reminder (lib/backup.ts): loaded once the app is up
   const [backup, setBackup] = useState<BackupState | null>(null);
   useEffect(() => { if (ready) loadBackupState().then(setBackup); }, [ready]);
@@ -805,23 +809,45 @@ export default function Page() {
     await delMeta("goal");
   }
 
-  async function changeLevel(newLevel: Level) {
-    if (newLevel === level) return;
+  async function changeLevel(newLevel: Level): Promise<boolean> {
+    if (newLevel === level) return false;
     if (isDraft) {
       toast.show("Finish or discard your current session first");
-      return;
+      return false;
     }
     const ok = await confirm({
       title: `Switch to ${LEVEL_LABEL[newLevel]}?`,
       body: `Your session history is kept, but your plan cursor resets to ${LEVEL_LABEL[newLevel]} · Week 1 · Session 1.`,
       confirmLabel: `Switch to ${LEVEL_LABEL[newLevel]}`,
     });
-    if (!ok) return;
+    if (!ok) return false;
     setLevel(newLevel);
     setCursor({ week: 0, session: 0 });
     await setMeta("planLevel", newLevel);
     await setMeta("cursor", { week: 0, session: 0 });
     toast.show(`Switched to ${LEVEL_LABEL[newLevel]}`);
+    return true;
+  }
+
+  // the report covers the plan of the latest logged test day, or the current
+  // plan if no test day has been logged
+  function openReport(from: Tab, lvl?: Level) {
+    const test = [...history].reverse().find((s) => isTestDay(s.weekId, s.sessionLabel));
+    setReport({ level: lvl ?? (test && levelOfWeek(test.weekId)) ?? level, from });
+    setTab("planreport");
+  }
+  async function restartPlan() {
+    if (isDraft) { toast.show("Finish or discard your current session first"); return; }
+    const ok = await confirm({
+      title: `Start the ${LEVEL_LABEL[level]} plan again?`,
+      body: "Your history is kept. The plan goes back to Week 1 · Session 1.",
+      confirmLabel: "Start again",
+    });
+    if (!ok) return;
+    setCursor({ week: 0, session: 0 });
+    await setMeta("cursor", { week: 0, session: 0 });
+    toast.show("Back to Week 1 · Session 1");
+    setTab("home");
   }
 
   function resumeDraft() {
@@ -1002,6 +1028,7 @@ export default function Page() {
         history={receipt.history}
         quick={receipt.session.weekId === ADHOC}
         planComplete={receipt.planComplete}
+        onReport={() => { const lvl = receipt.level; setReceipt(null); openReport("home", lvl); }}
         planBalls={receipt.planBalls}
         levelLabel={LEVEL_LABEL[receipt.level]}
         nextWeek={PLANS[receipt.level][receipt.nextCursor.week]}
@@ -1046,8 +1073,18 @@ export default function Page() {
                   onBack={() => { setTab("more"); setTrendsOpenData(false); }}
                   onStart={startSession} onImported={reloadAfterImport}
                   onExport={doBackup} lastBackupAt={backup?.lastAt ?? null}
+                  onOpenReport={() => openReport("trends")}
                   openData={trendsOpenData}
                   goal={goal} onSaveGoal={saveGoal} onClearGoal={clearGoal} />
+        )}
+        {tab === "planreport" && report && (
+          <PlanReport
+            history={history} level={report.level} currentLevel={level}
+            onBack={() => setTab(report.from)}
+            onMoveUp={async (to) => { if (await changeLevel(to)) setTab("home"); }}
+            onRestart={restartPlan}
+            onPractice={(area, focus) => startQuick([area], focus)}
+          />
         )}
         {tab === "warmup" && (
           <Warmup onSkip={dismissWarmup} onReady={dismissWarmup} />
@@ -1103,7 +1140,7 @@ export default function Page() {
           </span>
           <span className="nav-lbl">Round</span>
         </button>
-        <button className="nav-item" aria-current={tab === "more" || tab === "trends" ? "page" : undefined}
+        <button className="nav-item" aria-current={tab === "more" || tab === "trends" || tab === "planreport" ? "page" : undefined}
                 onClick={() => setTab("more")}>
           <Icon name="more_horiz" size={22} fill={tab === "more" || tab === "trends"} /><span className="nav-lbl">More</span>
         </button>

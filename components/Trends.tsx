@@ -5,6 +5,7 @@ import { SavedSession, SavedRound, SavedSwing, AreaKey, importBackup, isAdhoc } 
 import { ALL_WEEKS, Week, LEVEL_LABEL, levelOfWeek, isTestDay } from "@/lib/plan";
 import { solidPct, fairwayPct, puttPct, pitchPct, ironsByClub } from "@/lib/stats";
 import { roundStats } from "@/lib/round";
+import { areaByDistance } from "@/lib/planReport";
 import { detectFaults } from "@/lib/faults";
 import { verdict, areaMoves, AREA_RATES } from "@/lib/verdict";
 import { Goal, goalProgress } from "@/lib/goal";
@@ -44,8 +45,9 @@ function backupNote(sessions: number, rounds: number, lastAt: number | null): st
 
 export function Trends({
   history, rounds, swings, activePlan, onDelete, onEdit, onStart, onImported, onBack, openData,
-  goal, onSaveGoal, onClearGoal, onExport, lastBackupAt,
+  goal, onSaveGoal, onClearGoal, onExport, lastBackupAt, onOpenReport,
 }: {
+  onOpenReport: () => void;
   onExport: () => Promise<void> | void;
   lastBackupAt: number | null;
   history: SavedSession[];
@@ -265,7 +267,7 @@ export function Trends({
         ))}
 
         {showCompare && (
-          <Compare baseline={baseline} target={target} isTest={testIdx >= 0} />
+          <Compare baseline={baseline} target={target} isTest={testIdx >= 0} onReport={testIdx >= 0 ? onOpenReport : undefined} />
         )}
 
         <ChartCard title="Solid strike %" icon="sports_golf" data={solid} band="irons" />
@@ -280,6 +282,9 @@ export function Trends({
         )}
 
         <IronsByClub history={history} />
+        <ByDistance history={history} area="putting" />
+        <ByDistance history={history} area="pitching" />
+        <ByDistance history={history} area="chipping" />
 
         <MissPatterns history={history} />
 
@@ -712,11 +717,12 @@ function MissBar({
 }
 
 function Compare({
-  baseline, target, isTest,
+  baseline, target, isTest, onReport,
 }: {
   baseline: SavedSession;
   target: SavedSession;
   isTest: boolean;
+  onReport?: () => void;
 }) {
   // `has` says whether a session logged that area at all — an unlogged area
   // is "–", not 0%, and gets no delta (otherwise a chipping-only session
@@ -761,6 +767,12 @@ function Compare({
           </div>
         );
       })}
+      {onReport && (
+        <button className="leak-practice" onClick={onReport}>
+          <Icon name="insights" size={16} />
+          Full plan report, all five areas
+        </button>
+      )}
     </div>
   );
 }
@@ -815,6 +827,45 @@ function ChartCard({
         <circle cx={X(n - 1)} cy={Y(last)} r="4.5" className="chart-marker" />
       </svg>
       <div className="chart-ax"><span>{axPrefix}1</span><span>{axPrefix}{n}</span></div>
+    </div>
+  );
+}
+
+// Make rate per target distance, read back from the distance chips picked
+// while logging (putting, pitching, chipping). Only shows once two distances
+// each have enough balls behind them; sessions with no distance aren't guessed.
+type DistRead = (a: string, b: string) => string; // a/b: "90% from 3 ft"
+const DIST_META: Partial<Record<AreaKey, { title: string; unit: string; read: DistRead }>> = {
+  putting: { title: "Putts by distance", unit: "ft", read: (a, b) => `You hole ${a} and ${b}.` },
+  pitching: { title: "Pitches by distance", unit: "yd", read: (a, b) => `${a[0].toUpperCase() + a.slice(1)} finish close, against ${b}.` },
+  chipping: { title: "Chips by distance", unit: "yd", read: (a, b) => `${a[0].toUpperCase() + a.slice(1)} land on the towel, against ${b}.` },
+};
+
+function ByDistance({ history, area }: { history: SavedSession[]; area: AreaKey }) {
+  const rows = areaByDistance(history, area);
+  const meta = DIST_META[area];
+  if (!rows || !meta) return null;
+  const first = rows[0], last = rows[rows.length - 1];
+  const sorted = [...rows].sort((a, b) => a.pct - b.pct);
+  const low = sorted[0], high = sorted[sorted.length - 1];
+  return (
+    <div className="chart">
+      <div className="sec-head">
+        <span className="icon-tile sm"><AreaIcon area={area} size={15} /></span>
+        <h2>{meta.title}</h2>
+      </div>
+      {rows.map((r) => (
+        <div className="iron-club-row dist-row" key={r.dist}>
+          <span className="iron-club-lbl num">{r.dist} {meta.unit}</span>
+          <div className="goal-track"><div className={"goal-fill" + (r === low && high.pct - low.pct >= 15 ? " weak" : "")} style={{ width: `${Math.max(2, r.pct)}%` }} /></div>
+          <span className="iron-club-pct num">{r.pct}<small>%</small></span>
+          <span className="iron-club-n num">{r.made}/{r.of}</span>
+        </div>
+      ))}
+      <p className="pat-read">
+        {meta.read(`${first.pct}% from ${first.dist} ${meta.unit}`, `${last.pct}% from ${last.dist} ${meta.unit}`)}
+        {high.pct - low.pct >= 15 && low !== first && ` ${low.dist} ${meta.unit} is the distance to work on.`}
+      </p>
     </div>
   );
 }

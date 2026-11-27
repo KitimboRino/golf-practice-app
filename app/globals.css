@@ -1732,6 +1732,27 @@ body:has(.swingcheck-capture) .app { padding-bottom: calc(24px + env(safe-area-i
 .compare-label { flex: 1; font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
 .compare-nums { flex: none; display: flex; align-items: center; gap: 6px; }
 .compare-nums .from { font-size: 14px; color: var(--muted); }
+
+/* ---------- end-of-plan report (components/PlanReport.tsx) ---------- */
+.rep-hero { display: flex; flex-direction: column; gap: 8px; padding: 4px 2px; }
+.rep-head { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; text-wrap: balance; }
+.rep-head b { color: var(--green); }
+.rep-sub { margin: 0; font-size: 14px; line-height: 1.5; color: var(--text-2); text-wrap: pretty; }
+.rep-rows { padding-top: 4px; }
+.rep-rows .compare-row { height: 56px; }
+.rep-area { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.rep-area > span:last-child { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+.rep-area small { font-size: 11.5px; font-weight: 600; color: var(--hint); }
+.rep-next {
+  display: flex; flex-direction: column; gap: 10px;
+  background: var(--glass); border: 1px solid var(--edge); border-radius: 20px;
+  padding: 18px 16px; box-shadow: var(--card-shadow);
+}
+.rep-next-h { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
+.rep-next .cta { margin-top: 4px; }
+/* the receipt's "Keep practising" when the report button takes the lead */
+.receipt-ghost.receipt-wide { flex-direction: column; gap: 2px; padding: 8px 16px; }
+.receipt-ghost.receipt-wide small { font-size: 12px; font-weight: 600; color: var(--muted); }
 .compare-nums .to { font-size: 15px; font-weight: 700; color: var(--text); }
 .compare-delta { flex: none; min-width: 42px; text-align: center; font-size: 13px; font-weight: 700; padding: 3px 8px; border-radius: 8px; font-variant-numeric: tabular-nums; }
 .compare-delta.up { color: var(--green); background: var(--chip-bg); }
@@ -1809,6 +1830,10 @@ body:has(.swingcheck-capture) .app { padding-bottom: calc(24px + env(safe-area-i
 .iron-club-pct { width: 40px; flex: none; text-align: right; font-size: 14px; font-weight: 800; }
 .iron-club-pct small { font-size: 11px; font-weight: 700; }
 .iron-club-n { width: 28px; flex: none; text-align: right; font-size: 11px; color: var(--hint); }
+/* distance labels ("100 yd") are wider than club labels ("7i") */
+.dist-row .iron-club-lbl { width: 52px; }
+.dist-row .iron-club-n { width: 40px; }
+.goal-fill.weak { background: var(--clay); }
 
 /* ---------- practice-to-round correlation (Trends) ---------- */
 .p2r-row { display: flex; flex-direction: column; gap: 8px; }
