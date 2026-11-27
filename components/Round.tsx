@@ -47,8 +47,9 @@ const toParLabel = (n: number) => (n === 0 ? "E" : n > 0 ? `+${n}` : `−${Math.
 // ---------------------------------------------------------------------------
 
 export function Round({
-  liveRound, onChange, onStart, onFinish, onDiscard, rounds, history, onViewRound, onDeleteRound, onPractice,
+  liveRound, onChange, onStart, onFinish, onDiscard, rounds, history, onViewRound, onDeleteRound, onPractice, initialDiag = false,
 }: {
+  initialDiag?: boolean; // open on "Where you're losing shots" (from the home card)
   liveRound: LiveRound | null;
   onChange: (r: LiveRound) => void;
   onStart: (r: LiveRound) => void;
@@ -60,7 +61,7 @@ export function Round({
   onDeleteRound: (id: string) => void;
   onPractice: (areas: AreaKey[], focus: PracticeFocus) => void;
 }) {
-  const [diag, setDiag] = useState(false);
+  const [diag, setDiag] = useState(initialDiag);
 
   if (liveRound) {
     return <RoundPlay round={liveRound} rounds={rounds} onChange={onChange} onFinish={onFinish} onDiscard={onDiscard} />;

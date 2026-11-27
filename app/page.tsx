@@ -50,7 +50,8 @@ const Routine = dynamic(() => SCREENS.routine().then((m) => m.Routine));
 const Course = dynamic(() => SCREENS.course().then((m) => m.Course));
 const SwingCheck = dynamic(() => SCREENS.swing().then((m) => m.SwingCheck));
 const PlanReport = dynamic(() => SCREENS.report().then((m) => m.PlanReport));
-import { LiveRound } from "@/lib/round";
+import { LiveRound, leakReport } from "@/lib/round";
+import { InstallPrompt } from "@/components/InstallPrompt";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { GlareToggle } from "@/components/GlareToggle";
 import { useToast } from "@/components/Toast";
@@ -103,23 +104,6 @@ async function recoverBoot() {
     /* best effort */
   }
   location.reload();
-}
-
-function greeting(name: string, history: SavedSession[]): string {
-  const who = name ? `, ${name}` : "";
-  if (history.length === 0) return `Welcome${who}. Let's get your baseline down`;
-
-  const dayMs = 86400000;
-  const since = (d: string) => Math.floor((Date.now() - new Date(d + "T00:00:00").getTime()) / dayMs);
-  const gap = since(history[history.length - 1].date);
-  if (gap >= 10) return `Welcome back${who}. Pick up where you left off`;
-
-  const thisWeek = history.filter((s) => since(s.date) < 7).length;
-  if (thisWeek >= 2) return `${thisWeek} sessions this week${who}. Nice`;
-
-  const h = new Date().getHours();
-  const tod = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
-  return name ? `${tod}, ${name}` : tod;
 }
 
 // the session in progress (new session or an edit). Per-ball taps live in `strips`;
@@ -459,6 +443,8 @@ export default function Page() {
   const [games, setGames] = useState<GameAttempt[]>([]);
   const toast = useToast();
   const { confirm } = useConfirm();
+  // the home card's round insight opens the Round tab straight on its report
+  const [roundDiag, setRoundDiag] = useState(false);
   // end-of-plan report: which level it's about, and where Back returns to
   const [report, setReport] = useState<{ level: Level; from: Tab } | null>(null);
   // backup reminder (lib/backup.ts): loaded once the app is up
@@ -1054,7 +1040,7 @@ export default function Page() {
         {tab === "home" && (
           <Home week={week} cursor={safe} setCursor={setCursor} history={history} name={name}
                 activePlan={activePlan} demo={demo} onLeaveDemo={leaveDemo}
-                greeting={greeting(name, history)} onEditName={() => setTab("welcome")}
+                onEditName={() => setTab("welcome")}
                 oneThing={todaysOneThing(history, rounds, plannedMiss)} monthCount={sessionsThisMonth(history)}
                 onStart={startSession} onQuick={() => setTab("quickpick")}
                 draftLabel={isDraft ? live!.sessionLabel : null}
@@ -1062,7 +1048,9 @@ export default function Page() {
                 nudgeDismissedAt={nudgeDismissedAt} onDismissNudge={dismissNudge}
                 backupDue={!demo && !!backup && backupDue(backup, history.length + rounds.length, Date.now())}
                 unsavedText={unsavedText(history.length, rounds.length)}
-                onBackup={doBackup} onSnoozeBackup={snoozeBackupReminder} />
+                onBackup={doBackup} onSnoozeBackup={snoozeBackupReminder}
+                rounds={rounds} pitchName={pitchFocus.name} overrides={overrides}
+                onOpenRoundReport={() => { setRoundDiag(true); setTab("round"); }} />
         )}
         {tab === "quickpick" && (
           <QuickPick plannedMiss={plannedMiss} onStart={startQuick} onCancel={() => setTab("home")} />
@@ -1105,6 +1093,7 @@ export default function Page() {
             onViewRound={(r) => setRoundView({ round: r, fresh: false })}
             onDeleteRound={removeRound}
             onPractice={(areas, focus) => startQuick(areas, focus)}
+            initialDiag={roundDiag}
           />
         )}
         {tab === "more" && (
@@ -1137,7 +1126,7 @@ export default function Page() {
           </span>
           <span className="nav-lbl">Log</span>
         </button>
-        <button className="nav-item" aria-current={tab === "round" ? "page" : undefined} onClick={() => setTab("round")}>
+        <button className="nav-item" aria-current={tab === "round" ? "page" : undefined} onClick={() => { setRoundDiag(false); setTab("round"); }}>
           <span className="nav-glyph">
             <Icon name="golf_course" size={22} fill={tab === "round"} />
             {round && <span className="nav-dot" />}
@@ -1351,10 +1340,24 @@ function unsavedText(sessions: number, rounds: number): string {
   return `Your ${part(sessions, "session")} and ${part(rounds, "round")}`;
 }
 
+// Home: today's session as the app's colour bands, the way the log screen
+// will show it, under a big session title and one coaching line. Start is
+// pinned above the tab bar so it's always in reach; the plan timeline and at
+// most one contextual card (resume, a lapse, what to bring, backup, a round
+// insight, install) use the space between. Everything the old home did is
+// still here: the session/venue pickers live behind the timeline's Change.
+const HOME_BANDS: { area: AreaKey; name: string }[] = [
+  { area: "driving", name: "Driving" },
+  { area: "irons", name: "Irons" },
+  { area: "chipping", name: "Chipping" },
+  { area: "pitching", name: "Pitching" },
+  { area: "putting", name: "Putting" },
+];
+
 function Home({
-  week, cursor, setCursor, history, name, greeting, onEditName, oneThing, monthCount,
+  week, cursor, setCursor, history, rounds, name, onEditName, oneThing, monthCount,
   activePlan, onStart, onQuick, draftLabel, draftHere, onResume, nudgeDismissedAt, onDismissNudge,
-  demo, onLeaveDemo, backupDue, unsavedText, onBackup, onSnoozeBackup,
+  demo, onLeaveDemo, backupDue, unsavedText, onBackup, onSnoozeBackup, pitchName, overrides, onOpenRoundReport,
 }: {
   backupDue: boolean;
   unsavedText: string;
@@ -1366,8 +1369,8 @@ function Home({
   cursor: { week: number; session: number };
   setCursor: (c: { week: number; session: number }) => void;
   history: SavedSession[];
+  rounds: SavedRound[];
   name: string;
-  greeting: string;
   onEditName: () => void;
   oneThing: import("@/lib/verdict").OneThing | null;
   monthCount: number;
@@ -1379,6 +1382,9 @@ function Home({
   onResume: () => void;
   nudgeDismissedAt: string | null;
   onDismissNudge: (lastSessionDate: string) => void;
+  pitchName: string;           // today's pitching focus (it isn't on the session itself)
+  overrides: DrillOverrides;   // drills swapped in from the library
+  onOpenRoundReport: () => void;
 }) {
   const flat = activePlan.flatMap((w, wi) =>
     w.sessions.map((s, si) => ({ wi, si, id: w.id, label: s.label, test: /test/i.test(s.label) }))
@@ -1386,23 +1392,32 @@ function Home({
   const curIdx = flat.findIndex((f) => f.wi === cursor.week && f.si === cursor.session);
   const loggedSlots = new Set(history.map((s) => `${s.weekId}|${s.sessionLabel}`));
   const loggedCount = flat.filter((f) => loggedSlots.has(`${f.id}|${f.label}`)).length;
-  const done = history.length;
-  // solid-rate tile ignores quick sessions that logged no tee/iron shots
+  const firstRun = history.length === 0;
+  // ball-striking reads only sessions that logged tee or iron shots
   const strikeHist = history.filter(
     (s) => s.driving.fairway + s.driving.left + s.driving.right + s.irons.solid + s.irons.fat + s.irons.thin > 0,
   );
   const lastSolid = strikeHist.length ? solidPct(strikeHist[strikeHist.length - 1]) : null;
-  const solidDelta = strikeHist.length >= 2
-    ? solidPct(strikeHist[strikeHist.length - 1]) - solidPct(strikeHist[strikeHist.length - 2])
-    : null;
-  const donePct = Math.min(100, Math.round((loggedCount / flat.length) * 100));
-  const firstRun = done === 0;
+  const lastRound = [...rounds].reverse().find((r) => r.holeData.some((h) => h.score != null)) ?? null;
+  const lastRoundScore = lastRound ? lastRound.holeData.reduce((n, h) => n + (h.score ?? 0), 0) : null;
   const [venue, setVenue] = useState("full");
+  const [picking, setPicking] = useState(false);
+  const [coachOpen, setCoachOpen] = useState(false); // the coaching line shows 3 lines until tapped
+  // the settings menu is a <details>: close it on a tap outside or Escape
+  const menuRef = useRef<HTMLDetailsElement | null>(null);
+  useEffect(() => {
+    const close = (e: Event) => {
+      const m = menuRef.current;
+      if (!m?.open) return;
+      if (e instanceof KeyboardEvent ? e.key === "Escape" : !m.contains(e.target as Node)) m.open = false;
+    };
+    document.addEventListener("pointerdown", close);
+    document.addEventListener("keydown", close);
+    return () => { document.removeEventListener("pointerdown", close); document.removeEventListener("keydown", close); };
+  }, []);
   const v = venueByKey(venue);
 
-  // "Haven't practiced in a while" nudge — only once there's a real gap, never
-  // stacked with the unfinished-session banner, and silenced per-gap (not
-  // per-day) once dismissed so it doesn't nag again until that gap reopens.
+  // "Haven't practiced in a while": only after a real gap, silenced per gap
   const lastSession = history.length ? history[history.length - 1] : null;
   const daysSinceLast = lastSession
     ? // eslint-disable-next-line react-hooks/purity -- a day count; a stale "now" for one render is harmless
@@ -1412,20 +1427,50 @@ function Home({
   const showNudge =
     !firstRun && !demo && !showResumeBanner && !!lastSession &&
     daysSinceLast !== null && daysSinceLast >= 5 && nudgeDismissedAt !== lastSession.date;
+  const leak = rounds.length ? leakReport(rounds) : null;
+  const leakTop = leak?.worstKey ? leak.categories.find((c) => c.key === leak.worstKey) ?? null : null;
+
+  // today's bands: the session's drills, any library swaps, only the venue's areas
+  const s = week.sessions[cursor.session];
+  const planned: Record<AreaKey, string> = {
+    driving: s.drive.name, irons: s.iron.name, chipping: s.chip.name,
+    pitching: pitchName, putting: s.putts[0]?.name ?? "",
+  };
+  const bands = HOME_BANDS
+    .filter((b) => !v.areas.length || v.areas.includes(b.area as keyof Strips))
+    .map((b) => ({ ...b, drill: overrides[b.area]?.name ?? planned[b.area] }));
+
+  const title = firstRun ? "Baseline." : `${week.title}.`;
+  const sessionNo = curIdx + 1;
+
+  // the one contextual card, most urgent first
+  type Card = { key: string; icon: string; tone?: "warn" | "info"; title: string; sub: string; action?: () => void; actionLabel?: string; dismiss?: () => void; dismissLabel?: string };
+  const card: Card | null =
+    showResumeBanner ? { key: "resume", icon: "pending_actions", tone: "warn", title: `Unfinished · ${draftLabel}`, sub: "Pick up where you left off", action: onResume, actionLabel: "Resume" }
+    : showNudge && lastSession ? { key: "nudge", icon: "event_busy", title: `${daysSinceLast} days since your last session`, sub: "Today's session is ready below", dismiss: () => onDismissNudge(lastSession.date), dismissLabel: "Dismiss reminder" }
+    : firstRun && !demo ? { key: "bring", icon: "check_circle", title: "Bring ~50 balls, a towel, 2 tees", sub: "The towel marks your chipping landing spot" }
+    : backupDue ? { key: "backup", icon: "download", tone: "warn", title: `${unsavedText} only live on this phone`, sub: "Save a backup to Files or iCloud", action: onBackup, actionLabel: "Back up", dismiss: onSnoozeBackup, dismissLabel: "Not now, remind me next week" }
+    : leakTop ? { key: "leak", icon: "insights", tone: "info", title: `${leakTop.label} is your biggest leak`, sub: `From your ${leak!.rounds === 1 ? "round" : `last ${leak!.rounds} rounds`} · see why`, action: onOpenRoundReport }
+    : null;
 
   return (
-    <div className="plan-screen">
-      <div className="plan-top">
-        {!firstRun ? (
-          <button className="plan-greet" onClick={onEditName} aria-label={`${greeting}. Edit your name`}>
-            <span>{greeting}</span><Icon name="edit" size={13} />
-          </button>
-        ) : <span />}
-        <div className="plan-top-actions">
-          <GlareToggle />
-          <ThemeToggle />
-        </div>
-      </div>
+    <div className="home">
+      <header className="home-top">
+        <span className="home-word">RangeCard</span>
+        <span className="home-date">{new Date().toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" })}</span>
+        <details className="home-menu" ref={menuRef}>
+          <summary aria-label="Settings"><Icon name="tune" size={19} /></summary>
+          <div className="home-menu-pop">
+            {!firstRun && (
+              <button className="home-menu-row" onClick={onEditName}>
+                <Icon name="edit" size={17} /><span>{name ? `Name: ${name}` : "Add your name"}</span>
+              </button>
+            )}
+            <div className="home-menu-row"><ThemeToggle /><span>Light or dark</span></div>
+            <div className="home-menu-row"><GlareToggle /><span>Bright-sun mode</span></div>
+          </div>
+        </details>
+      </header>
 
       {demo && (
         <div className="plan-demo" role="status">
@@ -1434,144 +1479,123 @@ function Home({
         </div>
       )}
 
-      {showResumeBanner && (
-        <button className="plan-banner" onClick={onResume}>
-          <Icon name="pending_actions" size={19} />
-          <span>Unfinished · {draftLabel}</span>
-          <b>Resume</b>
-        </button>
-      )}
-
-      {showNudge && lastSession && (
-        <div className="plan-banner-row">
-          <button className="plan-banner" onClick={() => onStart()}>
-            <Icon name="event_busy" size={19} />
-            <span>{daysSinceLast} days since your last session</span>
-            <b>Start</b>
+      <section className="home-hero" aria-labelledby="home-title">
+        <span className="home-kicker">
+          Week {cursor.week + 1} · Session {sessionNo} of {flat.length} · ~{bands.length * 10} balls
+        </span>
+        <h1 id="home-title" className={"home-title" + (title.length > 11 ? " long" : "")}>{title}</h1>
+        {firstRun ? (
+          <p className="home-lede">Ten honest balls in each area. Everything after today is measured against it.</p>
+        ) : (
+          <div className="home-stats">
+            {lastSolid !== null && <div><b className="num">{lastSolid}%</b><span>ball-striking</span></div>}
+            {monthCount > 0 && <div><b className="num">{monthCount}</b><span>{monthCount === 1 ? "session" : "sessions"} this month</span></div>}
+            {lastRoundScore !== null && <div><b className="num">{lastRoundScore}</b><span>{lastRound!.holes === 9 ? "last 9 holes" : "last round"}</span></div>}
+          </div>
+        )}
+        {oneThing && (
+          <button className={"home-coach" + (coachOpen ? " open" : "")} aria-expanded={coachOpen}
+                  onClick={() => setCoachOpen((o) => !o)}>
+            <Icon name="my_location" size={16} />
+            <span className="home-coach-txt">
+              <b>{oneThing.title}</b>
+              <span className="home-coach-body">{oneThing.body}</span>
+              <small>{oneThing.source}{coachOpen ? "" : " · tap for the full fix"}</small>
+            </span>
           </button>
-          <button className="plan-banner-x" aria-label="Dismiss reminder" onClick={() => onDismissNudge(lastSession.date)}>
-            <Icon name="close" size={18} />
-          </button>
-        </div>
-      )}
-
-      {backupDue && !showResumeBanner && !showNudge && (
-        <div className="plan-banner-row">
-          <button className="plan-banner" onClick={onBackup}>
-            <Icon name="download" size={19} />
-            <span>{unsavedText} only live on this phone</span>
-            <b>Back up</b>
-          </button>
-          <button className="plan-banner-x" aria-label="Not now, remind me next week" onClick={onSnoozeBackup}>
-            <Icon name="close" size={18} />
-          </button>
-        </div>
-      )}
-
-      <section className="plan-hero" aria-label="Your next session">
-        <div className="plan-hero-text">
-          <span className="kicker plan-hero-kicker">
-            {firstRun
-              ? "Session one · your baseline"
-              : `Week ${cursor.week + 1} · Session ${cursor.session + 1} of ${week.sessions.length}`}
-          </span>
-          <h1 className="display-xl plan-hero-title">
-            {firstRun ? (name ? `Welcome, ${name}.` : "Welcome.") : week.title}
-          </h1>
-          <p className="plan-hero-p">
-            {firstRun
-              ? "One honest pass through all five areas, about ten balls each. No targets today, just where your game is."
-              : week.focus}
-          </p>
-        </div>
-
-        {/* the whole plan as one strip; each slot jumps the cursor there */}
-        <div className="plan-slots" role="group" aria-label={`Plan: ${loggedCount} of ${flat.length} sessions logged`}>
-          {flat.map((f, i) => {
-            const isDone = loggedSlots.has(`${f.id}|${f.label}`);
-            const isCur = i === curIdx;
-            return (
-              <button key={f.id + f.si}
-                      className={"plan-slot" + (isDone ? " done" : "") + (isCur ? " cur" : "")}
-                      aria-pressed={isCur}
-                      onClick={() => setCursor({ week: f.wi, session: f.si })}>
-                {/* the tile shows shorthand; screen readers get it spelled out */}
-                <span aria-hidden>W{f.wi + 1}</span>
-                <span aria-hidden>{f.test ? "Test" : `S${f.si + 1}`}</span>
-                <span className="sr-only">Week {f.wi + 1}, {f.test ? "test day" : `session ${f.si + 1}`}{isDone ? ", logged" : ""}</span>
-              </button>
-            );
-          })}
-        </div>
-        <div className="plan-slots-foot">
-          <span>{loggedCount} of {flat.length} logged</span>
-          <span>{donePct}%</span>
-        </div>
-
-        <div className="plan-start-row">
-          <button className="plan-start" onClick={() => onStart(v.areas)}>
-            <Icon name="play_arrow" size={22} fill />
-            {draftHere ? "Resume session" : venue === "full" ? "Start session" : `Start · ${v.label}`}
-          </button>
-          <button className="plan-quick" onClick={onQuick} aria-label="Quick session, just a few balls">
-            <Icon name="bolt" size={22} />
-          </button>
-        </div>
-
-        {!draftHere && (
-          <details className="venue plan-venue">
-            <summary>
-              <Icon name="place" size={16} />
-              {venue === "full" ? "Somewhere smaller today?" : v.label}
-              <Icon name="expand_more" size={18} className="venue-chev" />
-            </summary>
-            <div className="venue-opts">
-              {VENUES.map((opt) => (
-                <button
-                  key={opt.key}
-                  className={"venue-opt" + (opt.key === venue ? " on" : "")}
-                  aria-pressed={opt.key === venue}
-                  onClick={() => setVenue(opt.key)}
-                >
-                  <Icon name={opt.icon} size={17} />
-                  <span>{opt.label}</span>
-                  <small>{opt.areas.length ? `${opt.areas.length} area${opt.areas.length === 1 ? "" : "s"}` : "all 5"}</small>
-                </button>
-              ))}
-            </div>
-          </details>
         )}
       </section>
 
-      {oneThing && (
-        <section className="plan-onething area-putting" aria-label="Your one thing today">
-          <span className="kicker">Your one thing today</span>
-          <p className="plan-onething-title">{oneThing.title}</p>
-          <p className="plan-onething-body">{oneThing.body}</p>
-          <span className="plan-onething-src">{oneThing.source}</span>
-        </section>
-      )}
+      <section className="home-bands" aria-label="Today's areas">
+        {bands.map((b, i) => (
+          <div key={b.area} className={`home-band area-${b.area}` + (i === bands.length - 1 ? " last" : "")}>
+            <b>{b.name}</b>
+            <span>{b.drill}</span>
+          </div>
+        ))}
+      </section>
 
-      {!firstRun && (
-        <div className="plan-stats">
-          <div className="plan-stat">
-            <span className="plan-stat-val num">
-              {lastSolid === null ? "–" : <>{lastSolid}<small>%</small></>}
-            </span>
-            <span className="plan-stat-lbl">
-              solid strike{solidDelta ? `, ${solidDelta > 0 ? "up" : "down"} ${Math.abs(solidDelta)}` : ""}
-            </span>
+      <section className="home-plan" aria-label="Your plan">
+        <button className="home-plan-head" onClick={() => setPicking((p) => !p)} aria-expanded={picking}>
+          <span className="home-plan-t">Week {cursor.week + 1} of {activePlan.length} · {week.title}</span>
+          <span className="home-plan-n">{firstRun ? "Starts today" : `${loggedCount} of ${flat.length} done`}</span>
+          <span className="home-plan-change">Change<Icon name="expand_more" size={16} className={"rot-chev" + (picking ? " open" : "")} /></span>
+        </button>
+        <div className="home-track" aria-hidden="true"
+             style={{ gridTemplateColumns: `repeat(${activePlan.length}, minmax(0, 1fr))` }}>
+          {activePlan.map((w, wi) => {
+            const slots = flat.filter((f) => f.wi === wi);
+            const doneN = slots.filter((f) => loggedSlots.has(`${f.id}|${f.label}`)).length;
+            const pct = Math.round((doneN / slots.length) * 100);
+            return <i key={w.id} className={wi === cursor.week ? "cur" : ""} style={{ ["--fill" as string]: `${pct}%` }} />;
+          })}
+        </div>
+        {picking && (
+          <div className="home-pick">
+            <div className="plan-slots" role="group" aria-label={`Plan: ${loggedCount} of ${flat.length} sessions logged`}>
+              {flat.map((f, i) => {
+                const isDone = loggedSlots.has(`${f.id}|${f.label}`);
+                const isCur = i === curIdx;
+                return (
+                  <button key={f.id + f.si}
+                          className={"plan-slot" + (isDone ? " done" : "") + (isCur ? " cur" : "")}
+                          aria-pressed={isCur}
+                          onClick={() => { setCursor({ week: f.wi, session: f.si }); setPicking(false); }}>
+                    <span aria-hidden>W{f.wi + 1}</span>
+                    <span aria-hidden>{f.test ? "Test" : `S${f.si + 1}`}</span>
+                    <span className="sr-only">Week {f.wi + 1}, {f.test ? "test day" : `session ${f.si + 1}`}{isDone ? ", logged" : ""}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {!draftHere && (
+              <div className="venue-opts" role="group" aria-label="Where are you practising?">
+                {VENUES.map((opt) => (
+                  <button key={opt.key} className={"venue-opt" + (opt.key === venue ? " on" : "")}
+                          aria-pressed={opt.key === venue} onClick={() => setVenue(opt.key)}>
+                    <Icon name={opt.icon} size={17} />
+                    <span>{opt.label}</span>
+                    <small>{opt.areas.length ? `${opt.areas.length} area${opt.areas.length === 1 ? "" : "s"}` : "all 5"}</small>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-          <div className="plan-stat">
-            <span className="plan-stat-val num">{loggedCount}<small>/{flat.length}</small></span>
-            <span className="plan-stat-lbl">plan sessions logged</span>
-          </div>
-          <div className="plan-stat">
-            <span className="plan-stat-val num">{monthCount}</span>
-            <span className="plan-stat-lbl">{monthCount === 1 ? "session" : "sessions"} this month</span>
-          </div>
+        )}
+      </section>
+
+      {card && (
+        <div className={"home-card" + (card.tone ? ` ${card.tone}` : "")}>
+          {card.action ? (
+            <button className="home-card-main" onClick={card.action}>
+              <span className="home-card-ic"><Icon name={card.icon} size={17} /></span>
+              <span className="home-card-txt"><b>{card.title}</b><small>{card.sub}</small></span>
+              {card.actionLabel ? <span className="home-card-go">{card.actionLabel}</span> : <Icon name="chevron_right" size={18} />}
+            </button>
+          ) : (
+            <div className="home-card-main">
+              <span className="home-card-ic"><Icon name={card.icon} size={17} /></span>
+              <span className="home-card-txt"><b>{card.title}</b><small>{card.sub}</small></span>
+            </div>
+          )}
+          {card.dismiss && (
+            <button className="home-card-x" onClick={card.dismiss} aria-label={card.dismissLabel ?? "Dismiss"}>
+              <Icon name="close" size={17} />
+            </button>
+          )}
         </div>
       )}
+      {!card && !firstRun && <InstallPrompt inline />}
+
+      <div className="home-go">
+        <button className="home-start" onClick={() => onStart(v.areas)}>
+          <Icon name="play_arrow" size={20} fill />
+          {draftHere ? "Continue session" : venue === "full" ? "Start session" : `Start · ${v.label}`}
+        </button>
+        <button className="home-quick" onClick={onQuick}>
+          <Icon name="bolt" size={16} />Quick
+        </button>
+      </div>
     </div>
   );
 }

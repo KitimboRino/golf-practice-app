@@ -8,7 +8,10 @@ type BIPEvent = Event & {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
 
-export function InstallPrompt() {
+// inline: rendered in the home screen's card slot instead of floating over
+// the tab bar (the floating one is hidden on home, see globals.css)
+export function InstallPrompt({ inline = false }: { inline?: boolean }) {
+  const cls = "install" + (inline ? " inline" : "");
   const [deferred, setDeferred] = useState<BIPEvent | null>(null);
   const [ios, setIos] = useState(false);
   const [dismissed, setDismissed] = useState(true);
@@ -59,7 +62,7 @@ export function InstallPrompt() {
   // iOS has no install API — guide the manual Share → Add to Home Screen flow
   if (ios && !deferred) {
     return (
-      <aside className="install" aria-label="Install RangeCard">
+      <aside className={cls} aria-label="Install RangeCard">
         <div className="install-ios">
           <button className="install-x" onClick={close} aria-label="Dismiss">
             <Icon name="close" size={18} />
@@ -81,7 +84,7 @@ export function InstallPrompt() {
   // Android / Chromium — one-tap once the browser offers it
   if (!deferred) return null;
   return (
-    <aside className="install" aria-label="Install RangeCard">
+    <aside className={cls} aria-label="Install RangeCard">
       <div className="install-card">
         <Icon name="install_mobile" size={19} color="var(--green)" />
         <span className="install-txt">Install RangeCard for offline, full-screen use</span>

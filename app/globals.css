@@ -4044,3 +4044,135 @@ h1.hdr-title, h1.fr-head-title, h1.coach-head { margin: 0; }
 /* landmark around full-screen views (onboarding, receipt, round summary)
    that render outside the tab <main>; adds no box of its own */
 .screen-main { display: contents; }
+
+/* =========================================================================
+   Home (app/page.tsx Home): today's session as colour bands under a big
+   title, one coaching line, the plan timeline, one contextual card, and
+   Start pinned above the tab bar. Light page so it reads in sun; bands and
+   buttons carry the colour. Tokens only, so dark mode follows.
+   ========================================================================= */
+.home { display: flex; flex-direction: column; padding: calc(14px + env(safe-area-inset-top)) 0 0; }
+body:has(.home) .app { padding-bottom: calc(184px + env(safe-area-inset-bottom)); }
+/* the floating install banner would sit on the pinned buttons: home shows
+   it as a card in its slot instead */
+body:has(.home) .install:not(.inline) { display: none; }
+
+.home-top { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 20px; }
+.home-word { flex: 1; font-family: var(--font-display); font-stretch: 118%; font-weight: 800; font-size: 17px; letter-spacing: -0.02em; }
+.home-date { font-size: 12.5px; font-weight: 700; color: var(--muted); }
+.home-menu { position: relative; }
+.home-menu > summary {
+  list-style: none; width: 44px; height: 44px; border-radius: 14px; cursor: pointer;
+  background: var(--card); color: var(--text-2); display: flex; align-items: center; justify-content: center;
+}
+.home-menu > summary::-webkit-details-marker { display: none; }
+.home-menu-pop {
+  position: absolute; right: 0; top: 52px; z-index: 30; min-width: 220px;
+  background: var(--card); border: 1px solid var(--edge); border-radius: 18px; padding: 6px;
+  box-shadow: 0 12px 32px -12px rgba(15, 19, 33, 0.35); display: flex; flex-direction: column;
+}
+.home-menu-row {
+  display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 8px; border-radius: 12px;
+  font-size: 14px; font-weight: 700; color: var(--text); text-align: left;
+}
+button.home-menu-row:active { background: var(--inset); }
+.home .plan-demo { margin: 10px 16px 0; }
+
+.home-hero { display: flex; flex-direction: column; gap: 10px; padding: 20px 22px 16px; }
+.home-kicker { font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--green-label); }
+.home-title {
+  margin: 0; font-family: var(--font-display); font-stretch: 125%; font-weight: 900;
+  font-size: clamp(44px, 14vw, 56px); line-height: 0.95; letter-spacing: -0.04em; text-wrap: balance;
+}
+.home-title.long { font-size: clamp(32px, 9.4vw, 40px); line-height: 1; }
+.home-lede { margin: 0; font-size: 14.5px; line-height: 1.5; color: var(--text-2); text-wrap: pretty; }
+.home-stats { display: flex; gap: 20px; flex-wrap: wrap; }
+.home-stats > div { display: flex; flex-direction: column; }
+.home-stats b { font-size: 21px; font-weight: 800; letter-spacing: -0.03em; }
+.home-stats span { font-size: 11.5px; font-weight: 600; color: var(--muted); }
+.home-coach { margin: 2px 0 0; display: flex; gap: 8px; align-items: flex-start; font-size: 13.5px; line-height: 1.45; color: var(--green-label); text-align: left; }
+.home-coach > .ico { flex: none; margin-top: 1px; }
+.home-coach b { font-weight: 800; }
+.home-coach-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.home-coach-body {
+  font-weight: 600; color: var(--text-2);
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.home-coach small { font-size: 12px; font-weight: 600; color: var(--muted); }
+.home-coach.open .home-coach-body { -webkit-line-clamp: unset; display: block; }
+@media (max-height: 700px) { .home-coach-body { -webkit-line-clamp: 2; } }
+
+.home-bands { display: flex; flex-direction: column; padding: 0 12px; }
+.home-band {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  background: var(--band); color: var(--on-band);
+  border-radius: 24px 24px 0 0; padding: 14px 20px 26px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+.home-band + .home-band { margin-top: -12px; }
+.home-band.last { border-radius: 24px; padding-bottom: 16px; }
+.home-band b { font-family: var(--font-display); font-stretch: 118%; font-weight: 800; font-size: 18px; flex: none; }
+.home-band span {
+  font-size: 12.5px; font-weight: 600; color: rgba(var(--on-band-rgb), 0.86);
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.home-plan { display: flex; flex-direction: column; gap: 8px; padding: 18px 22px 0; }
+.home-plan-head { display: flex; align-items: baseline; gap: 10px; text-align: left; min-height: 32px; color: var(--text); }
+.home-plan-t { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.home-plan-n { font-size: 12px; font-weight: 700; color: var(--muted); }
+.home-plan-change { display: inline-flex; align-items: center; gap: 2px; font-size: 12.5px; font-weight: 800; color: var(--green-label); }
+.home-track { display: grid; gap: 5px; }
+.home-track > i {
+  height: 6px; border-radius: 3px; background: var(--track);
+  background-image: linear-gradient(90deg, var(--green) 0 var(--fill), transparent var(--fill));
+}
+.home-track > i.cur { background-image: linear-gradient(90deg, var(--text) 0 max(var(--fill), 8%), transparent max(var(--fill), 8%)); }
+.home-pick { display: flex; flex-direction: column; gap: 10px; padding: 8px 0 2px; }
+.home-pick .plan-slot { background: var(--card); color: var(--text); }
+.home-pick .plan-slot.done { background: var(--blue-note-bg); }
+.home-pick .plan-slot.cur { box-shadow: inset 0 0 0 2px var(--text); }
+
+.home-card {
+  margin: 12px 16px 0; display: flex; align-items: center; gap: 4px;
+  background: var(--card); border-radius: 18px; box-shadow: var(--card-shadow);
+}
+.home-card-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 11px 6px 11px 14px; text-align: left; color: var(--text); }
+.home-card-ic {
+  width: 32px; height: 32px; border-radius: 10px; flex: none;
+  background: var(--inset); color: var(--green-label); display: flex; align-items: center; justify-content: center;
+}
+.home-card.warn .home-card-ic { background: var(--sand-face); color: var(--sand-label); }
+.home-card.info .home-card-ic { background: var(--blue-note-bg); color: var(--blue-icon); }
+.home-card-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.home-card-txt b { font-size: 13.5px; font-weight: 800; }
+.home-card-txt small { font-size: 12px; color: var(--muted); }
+.home-card-go { font-size: 13px; font-weight: 800; color: var(--green-label); padding-right: 4px; }
+.home-card-x { width: 44px; height: 44px; flex: none; color: var(--muted); display: flex; align-items: center; justify-content: center; }
+.install.inline { position: static; margin: 12px 16px 0; padding: 0; max-width: none; }
+
+.home-go {
+  position: fixed; z-index: 20; left: 50%; transform: translateX(-50%);
+  bottom: calc(100px + env(safe-area-inset-bottom)); width: min(430px, 100%);
+  box-sizing: border-box; padding: 0 16px; display: flex; gap: 8px;
+}
+.home-start {
+  flex: 1; height: 56px; border-radius: 999px; background: var(--ink); color: var(--on-ink);
+  font-size: 16px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 10px;
+  box-shadow: 0 10px 24px -12px rgba(15, 19, 33, 0.6);
+}
+.home-quick {
+  height: 56px; padding: 0 16px; border-radius: 999px; background: var(--card); color: var(--text);
+  font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 7px;
+  box-shadow: 0 10px 24px -14px rgba(15, 19, 33, 0.4);
+}
+.home-start:active, .home-quick:active { transform: scale(0.98); }
+@media (max-height: 700px) {
+  /* short phones: the bands and timeline stay above the pinned buttons */
+  .home-hero { padding-top: 12px; gap: 7px; }
+  .home-lede, .home-stats { display: none; }
+  .home-band { padding: 11px 18px 22px; }
+  .home-band + .home-band { margin-top: -11px; }
+  .home-band.last { padding-bottom: 13px; }
+  .home-card { display: none; }
+}
