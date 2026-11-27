@@ -5,6 +5,7 @@ import { CATALOG, Area, Fault, detectFaults } from "@/lib/faults";
 import { SavedSession, SavedSwing } from "@/lib/db";
 import { SWING_BASELINE, statusFor } from "@/lib/swingBaseline";
 import { Icon } from "./Icon";
+import { faultVideo } from "@/lib/drillVideos";
 import { AreaIcon } from "./AreaIcon";
 import { PhotoHeader } from "./PhotoHeader";
 
@@ -195,6 +196,11 @@ export function Fixes({
                 <Icon name="videocam" size={14} />
                 {heroSwingEvidence}
               </div>
+            )}
+            {faultVideo(hero.id) && (
+              <a className="fault-hero-watch" href={faultVideo(hero.id)} target="_blank" rel="noopener noreferrer">
+                <Icon name="smart_display" size={16} />Watch how the fix is done
+              </a>
             )}
             <div className="fault-hero-actions">
               {onPractice && (

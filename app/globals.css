@@ -3476,6 +3476,12 @@ body:has(.plan-screen):has(.install-card) .app { padding-bottom: calc(176px + en
 .fault-hero .msr { color: inherit !important; }
 .fault-hero-go { background: var(--on-band); color: var(--band); box-shadow: none; }
 .fault-hero-alt { border: 0; background: rgba(var(--on-band-rgb), 0.14); color: var(--on-band); }
+/* the fix, shown: a quiet link above the two actions, not a third button */
+.fault-hero-watch {
+  display: inline-flex; align-items: center; gap: 7px; align-self: flex-start; min-height: 32px;
+  font-size: 13.5px; font-weight: 700; color: var(--on-band);
+  text-decoration: underline; text-underline-offset: 3px;
+}
 .fault-hero .flight-target { stroke: rgba(var(--on-band-rgb), 0.6); }
 .fault-hero .flight-line { stroke: #E9A28E; }
 .fault-hero .flight-ball { fill: var(--on-band); }

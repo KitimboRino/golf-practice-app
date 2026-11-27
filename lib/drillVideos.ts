@@ -112,6 +112,20 @@ export function videoKeyFor(drillName: string): VideoKey | null {
   return null;
 }
 
+// Faults whose fix one of the videos above teaches directly. The rest (hook,
+// push, shank, ...) have no video here rather than a loosely related one.
+const FAULT_VIDEO: Partial<Record<string, VideoKey>> = {
+  slice: "pathGate",          // alignment-stick path drill, out-to-in fix
+  "fat-iron": "ballFirst",    // ball-first contact
+  "heavy-chip": "brushGrass", // find the low point
+  "pitch-dig": "softChip",    // open-face pitch that uses the bounce
+};
+
+export function faultVideo(faultId: string): string | undefined {
+  const k = FAULT_VIDEO[faultId];
+  return k ? VIDEOS[k].url : undefined;
+}
+
 /** Sets `video` on every { name, how } drill under `data` that doesn't
  *  already have one. Mutates in place; returns the same object. */
 export function attachVideos<T>(data: T): T {

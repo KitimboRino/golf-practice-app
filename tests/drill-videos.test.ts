@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { VIDEOS, videoKeyFor } from "@/lib/drillVideos";
+import { VIDEOS, videoKeyFor, faultVideo } from "@/lib/drillVideos";
+import { CATALOG } from "@/lib/faults";
 import { PLANS } from "@/lib/plan";
 import { LIBRARY } from "@/lib/library";
 
@@ -24,6 +25,14 @@ describe("drill videos", () => {
   it("leaves a drill with no good match empty rather than guessing", () => {
     expect(videoKeyFor("Three trajectories to one target")).toBeNull();
     expect(videoKeyFor("Play the hole in your head, one tee shot")).toBeNull();
+  });
+
+  it("gives a fault a video only where one teaches that fix", () => {
+    expect(faultVideo("slice")).toBe(VIDEOS.pathGate.url);
+    expect(faultVideo("fat-iron")).toBe(VIDEOS.ballFirst.url);
+    expect(faultVideo("hook")).toBeUndefined();
+    // every fault id it knows is a real one
+    for (const id of ["slice", "fat-iron", "heavy-chip", "pitch-dig"]) expect(CATALOG.some((f) => f.id === id)).toBe(true);
   });
 
   it("attaches links to the plans and the library", () => {

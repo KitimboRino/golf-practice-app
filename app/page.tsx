@@ -75,12 +75,13 @@ import { localDate } from "@/lib/date";
 import { useCountUp } from "@/lib/useCountUp";
 import { DispersionFan } from "@/components/DispersionFan";
 import { loadDemo, exitDemo } from "@/lib/demo";
+import { faultVideo } from "@/lib/drillVideos";
 import { BackupState, backupDue, loadBackupState, saveBackup, snoozeBackup } from "@/lib/backup";
 
 type Tab = "home" | "session" | "trends" | "more" | "warmup" | "welcome" | "receipt" | "quickpick" | "firstrun" | "round" | "planreport";
 
 // setup pre-picks a club or distance, e.g. "Practise with 3W" from the round report
-type QuickFocus = { title: string; body: string; setup?: Partial<Record<keyof Strips, AreaSetup>> };
+type QuickFocus = { title: string; body: string; video?: string; setup?: Partial<Record<keyof Strips, AreaSetup>> };
 
 const today = () => localDate();
 
@@ -345,6 +346,7 @@ function QuickPick({
                         area: f.area as keyof Strips,
                         title: `Fix: ${f.name}`,
                         body: f.fix,
+                        video: faultVideo(f.id),
                       })}>
                 <b>{f.pattern}{f.id === mineFaultId && <span className="focus-tag">your miss</span>}</b>
                 <small>{f.name} · {QUICK_AREAS.find((q) => q.key === f.area)?.name}</small>
@@ -361,7 +363,8 @@ function QuickPick({
                         onClick={() => chooseFocus({
                           area: libAreaKey(g.area),
                           title: d.name,
-                          body: d.why || d.how,
+                          body: d.how,
+                          video: d.video,
                         })}>
                   <b>{d.name}</b>
                   <small>{QUICK_AREAS.find((q) => q.key === libAreaKey(g.area))?.name} · {d.how}</small>
@@ -388,7 +391,7 @@ function QuickPick({
 
         <div className="grp" style={{ paddingTop: 4 }}>
           <button className="cta" disabled={!list.length}
-                  onClick={() => onStart(list, focus ? { title: focus.title, body: focus.body } : undefined)}>
+                  onClick={() => onStart(list, focus ? { title: focus.title, body: focus.body, video: focus.video } : undefined)}>
             <Icon name="play_arrow" size={22} fill />
             {list.length ? `Start · ${list.length} area${list.length === 1 ? "" : "s"}` : "Pick an area"}
           </button>
@@ -1115,7 +1118,7 @@ export default function Page() {
                 onResumeRound={() => setTab("round")}
                 onPracticeFix={(f) => startQuick(
                   [f.area],
-                  { title: `Working on: ${f.name}`, body: f.fix },
+                  { title: `Working on: ${f.name}`, body: f.fix, video: faultVideo(f.id) },
                 )} />
         )}
       </main>
@@ -1795,6 +1798,11 @@ function SessionScreen({
             <span>
               <b>{live.focus.title}</b>
               <small>{live.focus.body}</small>
+              {live.focus.video && (
+                <a className="drill-video" href={live.focus.video} target="_blank" rel="noopener noreferrer">
+                  <Icon name="smart_display" size={15} />Watch on YouTube
+                </a>
+              )}
             </span>
           </div>
         )}
