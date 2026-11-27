@@ -262,7 +262,7 @@ const libAreaKey = (raw: string): keyof Strips => {
   const a = raw.toLowerCase();
   if (a.startsWith("driv")) return "driving";
   if (a.startsWith("iron")) return "irons";
-  if (a.startsWith("chip")) return "chipping";
+  if (a.startsWith("chip") || a.startsWith("bunk")) return "chipping"; // bunker shots log as chips
   if (a.startsWith("pitch")) return "pitching";
   return "putting";
 };
@@ -1585,17 +1585,20 @@ type StepDef = {
   metric: string; short: string;
   outcomes: { key: string; tone: Tone; icon: string; label: string; hint: string }[];
   distUnit?: "yd" | "ft"; dists?: number[]; clubs?: string[];
+  scoring?: string; // one line on how a ball is judged, when the outcome names don't say
 };
 
 const STEPS: StepDef[] = [
   { id: "chip", area: "chipping", name: "Chipping", icon: "swipe_up", drillIcon: "crop_square", target: 10,
-    metric: "on the towel", short: "on",
+    metric: "on the spot", short: "on",
+    // the towel the old copy named was only ever a way to mark this spot
+    scoring: "Pick a landing spot (a towel or a tee works) and log where each chip first bounces.",
     // a chip from just off the green to a pin across it: 10 yd is a short
     // bump, 40 yd is a long running chip
     distUnit: "yd", dists: [10, 20, 30, 40],
     outcomes: [
-      { key: "on", tone: "good", icon: "check", label: "On towel", hint: "landed on it" },
-      { key: "off", tone: "clay", icon: "close", label: "Off towel", hint: "missed the mark" },
+      { key: "on", tone: "good", icon: "check", label: "On the spot", hint: "first bounce on it" },
+      { key: "off", tone: "clay", icon: "close", label: "Missed it", hint: "first bounce off it" },
     ] },
   { id: "pitch", area: "pitching", name: "Pitching", icon: "arrow_outward", drillIcon: "flag", target: 10,
     metric: "finished close", short: "close",
@@ -1652,7 +1655,7 @@ function liveNote(area: AreaKey, strip: string[]): string {
   }
   if (area === "chipping") {
     if (goodRate >= 0.6) return "Landing zone dialled. Trust it.";
-    return "Short of the towel? Commit to a firmer, shorter stroke.";
+    return "Missing your spot? Commit to a firmer, shorter stroke.";
   }
   if (area === "pitching") {
     if (c("short") >= c("long") + 2) return "Coming up short. Take one more club-length of backswing.";
@@ -1925,6 +1928,7 @@ function SessionScreen({
 
               {step.area === "driving" && <DispersionFan strip={strip} />}
 
+              {step.scoring && <p className="band-scoring">{step.scoring}</p>}
               <div className="outcomes">
                 {step.outcomes.map((o) => (
                   <Outcome key={o.key} tone={o.tone} icon={o.icon} label={o.label} hint={o.hint}

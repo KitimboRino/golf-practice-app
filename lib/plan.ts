@@ -4,6 +4,7 @@
 // and played in-app (components/VideoSheet.tsx); everything else stays usable
 // offline, video playback can't.
 import { attachVideos } from "./drillVideos";
+import { GRIEVE, GRIEVE_BUNKER, asFocus } from "./grieve";
 
 export type Focus = { name: string; how: string; sticks: string | null; video?: string };
 export type PuttDrill = { name: string; how: string; sticks: string | null; video?: string };
@@ -71,11 +72,7 @@ export const PLAN_BEGINNER: Week[] = [
           "how": "Swing back only to about hip-to-shoulder height and through to the same height on the other side. Shorter swings are far easier to control and still produce solid contact — you're trading a little distance for a lot more consistency while the fundamentals are still new.",
           "sticks": null
         },
-        "chip": {
-          "name": "Brush the grass before you add a ball",
-          "how": "On short grass, make several practice chipping swings with no ball, and watch exactly where the clubhead brushes the turf. That spot — not a guess — is where the ball goes. Put a ball there and the club will catch it slightly on the downswing, the way a clean chip should feel.",
-          "sticks": null
-        },
+        "chip": asFocus(GRIEVE.trailFootBack),
         "putts": [
           {
             "name": "Two-footer, same line every time",
@@ -167,11 +164,7 @@ export const PLAN_BEGINNER: Week[] = [
           "how": "Hit one shot swinging as slowly as you comfortably can, then one as fast as you can while staying balanced, then split the difference. That middle tempo, not the fastest one, is usually your most solid and most consistent swing.",
           "sticks": null
         },
-        "chip": {
-          "name": "Low-and-running vs high-and-soft",
-          "how": "Chip one ball trying to keep it low and rolling like a putt, then one trying to fly it high and stop it quickly. Feeling both extremes makes it obvious which one a given shot actually calls for, instead of hitting the same chip regardless of the situation.",
-          "sticks": null
-        },
+        "chip": asFocus(GRIEVE.sameSpotThreeClubs),
         "putts": [
           {
             "name": "Eyes-closed feel putt",
@@ -316,11 +309,7 @@ export const PLAN_INTERMEDIATE: Week[] = [
           "how": "Address a mid-iron with your feet only about 6 inches apart and swing freely. If you lose balance, your body is doing too much and your arms too little. Keep going until you can swing smoothly without wobbling — it teaches your arms their proper active role.",
           "sticks": null
         },
-        "chip": {
-          "name": "Play off a hard surface for a clean strike",
-          "how": "Chip a few balls off a bare, hard surface like a path (use an old wedge you don't mind scratching). Ball back in stance, hands ahead. There's no margin for hitting the ground first, so it forces clean ball-first contact. Real chips off grass then feel easy.",
-          "sticks": null
-        },
+        "chip": asFocus(GRIEVE.leadArmOnly),
         "putts": [
           {
             "name": "Stand against a wall to groove the path",
@@ -349,11 +338,7 @@ export const PLAN_INTERMEDIATE: Week[] = [
           "how": "Pick a spot a few feet in front of the ball on your target line — a leaf, an old divot, a mark. Aim the clubface over that spot and swing to send the ball directly over it. Starting the ball on the right line is far easier over something close than aiming at a distant flag.",
           "sticks": "Lay a stick on your ball-to-target line pointing at the target; use its far tip as the intermediate reference."
         },
-        "chip": {
-          "name": "Throw some balls to feel height and roll",
-          "how": "Before chipping, underarm-throw a few balls at the flag — first low and running, then high and soft. Notice the low ones finish closer and more predictably. Then chip, picking clubs that recreate those throws: less loft for run, more for a soft landing.",
-          "sticks": null
-        },
+        "chip": asFocus(GRIEVE_BUNKER.setup),
         "putts": [
           {
             "name": "Match backswing length to the distance",
@@ -412,11 +397,7 @@ export const PLAN_INTERMEDIATE: Week[] = [
           "how": "Find a lie where the ball sits above your feet (up to a foot higher). Hit shots from there with a mid-iron — the slope naturally rounds your swing and encourages the inside path that cures a left-to-right curve. Then try to copy that feel on flat ground.",
           "sticks": null
         },
-        "chip": {
-          "name": "Rock the shaft — arm/body coordination",
-          "how": "From about 10 yards, make practice chipping swings while looking at the target, not the ground. Feel your arms and upper body move together as one unit. Trusting your natural hand-eye touch, then hitting while that feel is fresh, produces more consistent chips.",
-          "sticks": null
-        },
+        "chip": asFocus(GRIEVE.thumbsOff),
         "putts": [
           {
             "name": "Every putt is a straight putt",
@@ -480,11 +461,7 @@ export const PLAN_INTERMEDIATE: Week[] = [
           "how": "With the sun at your back, address so the ball sits in your shadow. Swing to the top — your shadow (and weight) should move right, putting the ball in sunlight. A helper can watch that your head stays level. Practice-swing drill only; you take your eyes off the ball.",
           "sticks": null
         },
-        "chip": {
-          "name": "Weak grip for a soft, floated chip",
-          "how": "Rotate your left hand weaker (so you barely see one knuckle) — this holds the face slightly open through impact for a higher, softer landing with less run. Alternate soft chips with normal ones to feel the difference in flight and roll.",
-          "sticks": null
-        },
+        "chip": asFocus(GRIEVE.trailArmOnly),
         "putts": [
           {
             "name": "Hit to a smaller target — a coin",
@@ -576,11 +553,7 @@ export const PLAN_PROFESSIONAL: Week[] = [
           "how": "Without changing your stance or ball position, hit one iron shot curving left-to-right and the next curving right-to-left using only face-to-path adjustments at setup. Isolating the change to setup, not an in-swing manipulation, makes the shape far more repeatable under pressure.",
           "sticks": null
         },
-        "chip": {
-          "name": "Tight lie, no margin for error",
-          "how": "Find the tightest lie you can on the practice area — bare ground or very short grass — and hit chips that demand ball-first contact with zero room for catching it heavy. This is deliberately harder than a normal lie so a normal lie starts to feel easy by comparison.",
-          "sticks": null
-        },
+        "chip": asFocus(GRIEVE_BUNKER.lines),
         "putts": [
           {
             "name": "Lag to a 3-foot circle from 30+ feet",
@@ -634,11 +607,7 @@ export const PLAN_PROFESSIONAL: Week[] = [
           "how": "Pick an exact yardage that sits between two clubs and hit it with a controlled, three-quarter swing on the longer club rather than a full swing on the shorter one. Owning the in-between numbers, not just full-swing yardages, is what separates scoring clubs from range clubs.",
           "sticks": null
         },
-        "chip": {
-          "name": "One-hop-and-stop from 20 yards",
-          "how": "From a slightly longer chip/pitch distance, try to land the ball so it takes one hop and stops close to where it lands, rather than releasing out. This usually means a steeper, more committed strike than feels natural at first.",
-          "sticks": null
-        },
+        "chip": asFocus(GRIEVE.trailArmOnly),
         "putts": [
           {
             "name": "Four around the world, must finish",

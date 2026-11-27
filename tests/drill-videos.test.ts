@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { VIDEOS, videoKeyFor, faultVideo, videoId, videoInfo, embedUrl } from "@/lib/drillVideos";
 import { CATALOG } from "@/lib/faults";
+import { GRIEVE, GRIEVE_BUNKER } from "@/lib/grieve";
 import { PLANS } from "@/lib/plan";
 import { LIBRARY } from "@/lib/library";
 
@@ -28,10 +29,26 @@ describe("drill videos", () => {
     expect(videoKeyFor("Same spot, three clubs")).toBe("grieveMistakes");
     expect(videoKeyFor("Pitch from a slight upslope and downslope")).toBe("grieveMistakes");
     expect(faultVideo("heavy-chip")).toBe(VIDEOS.grieveChipping.url);
-    const chipping = LIBRARY.find((a) => /chipping/i.test(a.area))!.drills;
+    const chipping = LIBRARY.find((a) => /^chipping/i.test(a.area))!.drills;
     const grieve = chipping.filter((d) => d.ref === "Dan Grieve, PGA Master Coach");
     expect(grieve.map((d) => d.name)).toEqual(["Trail foot back", "Lead arm only", "Thumbs off", "Trail arm only", "Same spot, three clubs"]);
     expect(grieve.every((d) => !!d.video)).toBe(true);
+  });
+
+  it("puts his drills into the plans, including a bunker session for intermediate and pro", () => {
+    const chips = (lvl: keyof typeof PLANS) => PLANS[lvl].flatMap((w) => w.sessions.map((s) => s.chip.name));
+    expect(chips("beginner")).toEqual(expect.arrayContaining([GRIEVE.trailFootBack.name, GRIEVE.sameSpotThreeClubs.name]));
+    expect(chips("intermediate")).toEqual(expect.arrayContaining([GRIEVE.leadArmOnly.name, GRIEVE.thumbsOff.name, GRIEVE.trailArmOnly.name, GRIEVE_BUNKER.setup.name]));
+    expect(chips("professional")).toEqual(expect.arrayContaining([GRIEVE.trailArmOnly.name, GRIEVE_BUNKER.lines.name]));
+    // every plan chip drill of his has a video
+    for (const w of PLANS.intermediate) for (const s of w.sessions)
+      if (Object.values({ ...GRIEVE, ...GRIEVE_BUNKER }).some((g) => g.name === s.chip.name)) expect(s.chip.video).toMatch(/youtube/);
+  });
+
+  it("has a bunker section, scored as chipping, with a video on every drill", () => {
+    const bunkers = LIBRARY.find((a) => /^bunkers/i.test(a.area))!;
+    expect(bunkers.drills).toHaveLength(4);
+    expect(bunkers.drills.every((d) => d.ref === "Dan Grieve, PGA Master Coach" && !!d.video)).toBe(true);
   });
 
   it("leaves a drill with no good match empty rather than guessing", () => {

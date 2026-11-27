@@ -161,12 +161,12 @@ export function detectFaults(s: {
     });
   }
 
-  // Chipping: mostly off the towel
+  // Chipping: mostly missing the landing spot
   const chipTotal = s.chipping.on + s.chipping.off;
   if (chipTotal >= 6 && s.chipping.off / chipTotal >= 0.6) {
     hits.push({
       fault: byId("heavy-chip"),
-      note: `Most chips missed the towel. If contact felt heavy, work the hands-ahead fix; otherwise revisit the height-and-roll focus drill.`,
+      note: `Most chips missed your landing spot. If contact felt heavy, work the hands-ahead fix; otherwise revisit the height-and-roll focus drill.`,
     });
   }
 

@@ -66,7 +66,7 @@ export function ironsByClub(history: SavedSession[]): IronClubStats[] {
 // ---- shared reads: per-area counts, distance, and "is this change real" --------
 
 /** made / of for one area of one session, matching how each logging band
- *  reads its success rate (on line, solid, on the towel, close, holed). */
+ *  reads its success rate (on line, solid, on the spot, close, holed). */
 export function areaCounts(s: SavedSession, a: AreaKey): { made: number; of: number } {
   switch (a) {
     case "driving": return { made: s.driving.fairway, of: s.driving.fairway + s.driving.left + s.driving.right };

@@ -838,7 +838,7 @@ type DistRead = (a: string, b: string) => string; // a/b: "90% from 3 ft"
 const DIST_META: Partial<Record<AreaKey, { title: string; unit: string; read: DistRead }>> = {
   putting: { title: "Putts by distance", unit: "ft", read: (a, b) => `You hole ${a} and ${b}.` },
   pitching: { title: "Pitches by distance", unit: "yd", read: (a, b) => `${a[0].toUpperCase() + a.slice(1)} finish close, against ${b}.` },
-  chipping: { title: "Chips by distance", unit: "yd", read: (a, b) => `${a[0].toUpperCase() + a.slice(1)} land on the towel, against ${b}.` },
+  chipping: { title: "Chips by distance", unit: "yd", read: (a, b) => `${a[0].toUpperCase() + a.slice(1)} land on the spot, against ${b}.` },
 };
 
 function ByDistance({ history, area }: { history: SavedSession[]; area: AreaKey }) {

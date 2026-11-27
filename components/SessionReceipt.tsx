@@ -39,7 +39,7 @@ export function SessionReceipt({
   };
   type Area = "chipping" | "pitching" | "irons" | "driving" | "putting";
   const rows: { area: Area; name: string; short: string; label: string; note?: string; made: number; of: number }[] = [
-    { area: "chipping" as Area, name: "Chipping", short: "on", label: "Chipping · on towel", note: tag("chipping"), made: session.chipping.on, of: session.chipping.on + session.chipping.off },
+    { area: "chipping" as Area, name: "Chipping", short: "on", label: "Chipping · on the spot", note: tag("chipping"), made: session.chipping.on, of: session.chipping.on + session.chipping.off },
     { area: "pitching" as Area, name: "Pitching", short: "close", label: "Pitching · close", note: tag("pitching"), made: p.close, of: p.close + p.short + p.long },
     { area: "irons" as Area, name: "Irons", short: "solid", label: "Irons · solid", note: tag("irons"), made: session.irons.solid, of: session.irons.solid + session.irons.fat + session.irons.thin },
     { area: "driving" as Area, name: "Driving", short: "on line", label: "Driving · on line", note: tag("driving"), made: session.driving.fairway, of: session.driving.fairway + session.driving.left + session.driving.right },

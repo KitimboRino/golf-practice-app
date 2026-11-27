@@ -62,7 +62,7 @@ function FlightPath({ id, size = 84 }: { id: string; size?: number }) {
 // be hardcoded here regardless of which fault actually matched, so a
 // putting or pitching fault would show a driving tee-shot stat next to it.
 // "heavy-chip" now fires only from chipping (fat irons have their own
-// "fat-iron" fault), but its chip-towel stat isn't about contact, so it still
+// "fat-iron" fault), but its landing-spot stat isn't about contact, so it still
 // falls back to "Your miss".
 function contextFor(fault: Fault, latest: SavedSession): string | null {
   if (fault.id === "slice" || fault.id === "hook") {

@@ -2933,6 +2933,8 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
 }
 .band-pct small { margin-top: 6px; letter-spacing: -0.02em; }
 /* before the first ball: a faint 0%, read with "No balls yet" beside it */
+/* how a ball is judged, above the outcome buttons (chipping's landing spot) */
+.band-scoring { margin: 0; font-size: 13px; line-height: 1.45; font-weight: 600; color: rgba(var(--on-band-rgb), 0.85); text-wrap: pretty; }
 .band-pct.empty { opacity: 0.28; }
 .band-pct-side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; padding-bottom: 6px; text-align: right; }
 .band-pct-side b { font-size: 15px; font-weight: 800; }

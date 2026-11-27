@@ -13,7 +13,7 @@ const AREA_NAME: Record<AreaKey, string> = {
   driving: "Driving", irons: "Irons", chipping: "Chipping", pitching: "Pitching", putting: "Putting",
 };
 const AREA_METRIC: Record<AreaKey, string> = {
-  driving: "started on line", irons: "struck solid", chipping: "on the towel",
+  driving: "started on line", irons: "struck solid", chipping: "on the spot",
   pitching: "finished close", putting: "holed",
 };
 

@@ -44,6 +44,9 @@ export const VIDEOS = {
   // Dan Grieve (PGA Master Coach, Woburn GC), the drills credited to him in lib/library.ts
   grieveChipping: yt("nnjfdfFmY4c", "Golf Monthly", "We Asked Dan Grieve For His 5 Best Chipping Drills"),
   grieveMistakes: yt("KLUFqb_yFao", "Golf Monthly", "Dan Grieve Fixes The 7 Biggest Short Game Mistakes Golfers Make"),
+  grieveBunkerSetup: yt("ntQ-YnlmyC4", "Golf Monthly", "LIVE BUNKER LESSON WITH DAN GRIEVE! 25 Handicap Golfer Fixed"),
+  grieveBunkerDistance: yt("UotuYHzWPEs", "Golf Monthly", "How To Hit Bunker Shots Close From Every Distance (By Dan Grieve)"),
+  grieveBunkerBasics: yt("saeKwfwHkyE", "TaylorMade Golf Europe", "How To Play Bunker Shots with Dan Grieve"),
   wedgeClock: yt("UeEkXxKSxzs", "SwingStation", "Distance Control With Wedges - Clock face System"),
   wristHinge: yt("K3edSt0pIo4", "GolfNow", "How to Set the Wrists on the Backswing"),
   // putting
@@ -83,6 +86,10 @@ const RULES: [RegExp, RuleKey][] = [
   [/straight putt|every putt is straight|pace and line/i, "straightPutts"],
   [/wall|stick path/i, "puttPath"],
   // chipping and pitching
+  // Dan Grieve's bunker drills
+  [/bunker: wriggle/i, "grieveBunkerSetup"],
+  [/bunker: three lines|bunker: three distances/i, "grieveBunkerDistance"],
+  [/bunker: sand on the face/i, "grieveBunkerBasics"],
   // Dan Grieve's drills, and the club-choice / slope drills his mistakes video covers
   [/trail foot back|lead arm only|thumbs off|trail arm only/i, "grieveChipping"],
   [/same spot, three clubs|3 club experimental|bump-and-run with more club|upslope and downslope|uneven lie/i, "grieveMistakes"],

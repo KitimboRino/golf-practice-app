@@ -15,7 +15,7 @@ const areaKeyFor = (raw: string): keyof DrillOverrides | null => {
   const a = raw.toLowerCase();
   if (a.startsWith("driv")) return "driving";
   if (a.startsWith("iron")) return "irons";
-  if (a.startsWith("chip")) return "chipping";
+  if (a.startsWith("chip") || a.startsWith("bunk")) return "chipping"; // bunker shots log as chips
   if (a.startsWith("pitch")) return "pitching";
   if (a.startsWith("putt")) return "putting";
   return null;
