@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { VIDEOS, videoKeyFor, faultVideo } from "@/lib/drillVideos";
+import { VIDEOS, videoKeyFor, faultVideo, videoId, videoInfo, embedUrl } from "@/lib/drillVideos";
 import { CATALOG } from "@/lib/faults";
 import { PLANS } from "@/lib/plan";
 import { LIBRARY } from "@/lib/library";
@@ -33,6 +33,15 @@ describe("drill videos", () => {
     expect(faultVideo("hook")).toBeUndefined();
     // every fault id it knows is a real one
     for (const id of ["slice", "fat-iron", "heavy-chip", "pitch-dig"]) expect(CATALOG.some((f) => f.id === id)).toBe(true);
+  });
+
+  it("plays in-app through the privacy-enhanced embed", () => {
+    expect(videoId("https://www.youtube.com/watch?v=YZA7DEt-MG4")).toBe("YZA7DEt-MG4");
+    expect(videoId("https://youtu.be/YZA7DEt-MG4")).toBe("YZA7DEt-MG4");
+    expect(videoId("https://example.com/not-a-video")).toBeNull();
+    expect(videoInfo(VIDEOS.puttGate.url)).toMatchObject({ id: "YZA7DEt-MG4", channel: "Back 2 Basics Golf" });
+    expect(videoInfo(VIDEOS.aimSpot.url)!.short).toBe(true);
+    expect(embedUrl("YZA7DEt-MG4")).toMatch(/^https:\/\/www\.youtube-nocookie\.com\/embed\/YZA7DEt-MG4\?/);
   });
 
   it("attaches links to the plans and the library", () => {

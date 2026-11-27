@@ -6,9 +6,8 @@
 import type { Level } from "@/lib/plan";
 import { attachVideos } from "./drillVideos";
 
-// video is optional and unset by default — a YouTube link, opened in the
-// system browser rather than embedded (the app stays usable with no
-// connection; video playback can't be). ref is a separate, existing field
+// video is optional — a YouTube link attached by name (lib/drillVideos.ts),
+// played in-app (components/VideoSheet.tsx). ref is a separate, existing field
 // (a short source citation, e.g. which book) — not a link.
 export type LibDrill = { name: string; how: string; why: string; ref: string; video?: string };
 export type LibArea = { area: string; drills: LibDrill[] };

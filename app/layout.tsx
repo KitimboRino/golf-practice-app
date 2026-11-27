@@ -3,6 +3,7 @@ import "./globals.css";
 import { manrope, archivo } from "./fonts";
 import { ToastProvider } from "@/components/Toast";
 import { ConfirmProvider } from "@/components/Confirm";
+import { VideoProvider } from "@/components/VideoSheet";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { RegisterSW } from "@/components/RegisterSW";
 
@@ -106,9 +107,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* <a href="#main" className="skip-link">Skip to content</a> */}
         <ToastProvider>
           <ConfirmProvider>
+           <VideoProvider>
             <div className="app">{children}</div>
             <InstallPrompt />
             <RegisterSW />
+           </VideoProvider>
           </ConfirmProvider>
         </ToastProvider>
       </body>

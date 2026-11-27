@@ -1,8 +1,8 @@
 // Ported directly from the 4-week Golf Training Plan spreadsheet (Intermediate track).
 // Beginner and Professional tracks are original content, same shape, written to match.
-// video is optional and unset by default — a YouTube link, opened in the
-// system browser rather than embedded (the app stays usable with no
-// connection; video playback can't be).
+// video is optional — a YouTube link, attached by name from lib/drillVideos.ts
+// and played in-app (components/VideoSheet.tsx); everything else stays usable
+// offline, video playback can't.
 import { attachVideos } from "./drillVideos";
 
 export type Focus = { name: string; how: string; sticks: string | null; video?: string };

@@ -6,6 +6,7 @@ import { SavedSession, SavedSwing } from "@/lib/db";
 import { SWING_BASELINE, statusFor } from "@/lib/swingBaseline";
 import { Icon } from "./Icon";
 import { faultVideo } from "@/lib/drillVideos";
+import { WatchButton } from "./VideoSheet";
 import { AreaIcon } from "./AreaIcon";
 import { PhotoHeader } from "./PhotoHeader";
 
@@ -198,9 +199,7 @@ export function Fixes({
               </div>
             )}
             {faultVideo(hero.id) && (
-              <a className="fault-hero-watch" href={faultVideo(hero.id)} target="_blank" rel="noopener noreferrer">
-                <Icon name="smart_display" size={16} />Watch how the fix is done
-              </a>
+              <WatchButton url={faultVideo(hero.id)!} label="Watch how the fix is done" className="fault-hero-watch" />
             )}
             <div className="fault-hero-actions">
               {onPractice && (

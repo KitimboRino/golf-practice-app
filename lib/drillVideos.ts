@@ -5,13 +5,14 @@
 // Every link was checked against YouTube's oEmbed endpoint (title and channel
 // below are what it returned) and chosen for showing the drill itself, from
 // coaching channels where possible. Drills with no rule here get no video:
-// a missing link is better than a wrong one. Opens in the system browser
-// (see lib/plan.ts), never embedded.
+// a missing link is better than a wrong one. Plays in-app through YouTube's
+// privacy-enhanced embed (components/VideoSheet.tsx), loaded only on tap.
 
-export type DrillVideo = { url: string; title: string; channel: string };
+// short: a vertical YouTube Short, played 9:16 instead of 16:9
+export type DrillVideo = { url: string; title: string; channel: string; short?: boolean };
 
-const yt = (id: string, channel: string, title: string): DrillVideo =>
-  ({ url: `https://www.youtube.com/watch?v=${id}`, channel, title });
+const yt = (id: string, channel: string, title: string, short = false): DrillVideo =>
+  ({ url: `https://www.youtube.com/watch?v=${id}`, channel, title, ...(short ? { short } : {}) });
 
 export const VIDEOS = {
   // setup and full swing
@@ -25,7 +26,7 @@ export const VIDEOS = {
   armDrop: yt("iyH3JMdcT2c", "Kerrod Gray Golf", "DROP THE ARMS! Downswing Sequence Drill That Instantly Improves Ball Striking"),
   backToTarget: yt("iwbHIX3IlhA", "mygolfinstructor", "Back to the Target Drill"),
   tempo: yt("i9H2jtwqHT4", "Larry Cheung", "Finding Good Tempo - Slow Fast Slow"),
-  aimSpot: yt("0b8Kufz-agM", "Shawn Clement's Wisdom in Golf Lessons", "Golf Swing: Master the Intermediate Point for Accuracy!"),
+  aimSpot: yt("0b8Kufz-agM", "Shawn Clement's Wisdom in Golf Lessons", "Golf Swing: Master the Intermediate Point for Accuracy!", true),
   drawFade: yt("xDS1u2uJ2m4", "Michael Breed", "How to Hit a Draw AND a Fade On Command"),
   knockdown: yt("mhTT_ACfalA", "Golf Digest", "How to Master the Low Punch Shot with David Leadbetter"),
   ballAboveFeet: yt("Nprsmeto2Nk", "John Hughes Golf", "Mastering Uneven Lies - How to Hit a Ball Above Your Feet"),
@@ -37,7 +38,7 @@ export const VIDEOS = {
   landingSpot: yt("KZH7GTUspSg", "SwingStation", "Chipping Drill - Hit Your Landing Spot"),
   chipLadder: yt("Q3DOS1U5oPI", "Golfshake.com", "Chipping Tips - Ladder Drill and Game"),
   puttChip: yt("2Qu7oRUDkeg", "GolfWRX", "Stickney: Use your putting stroke when chipping"),
-  throwFeel: yt("3JztOhy4Xhk", "Sunshine Coast Golf Centre", "Mastering the Short Game: The Underarm Throw Technique"),
+  throwFeel: yt("3JztOhy4Xhk", "Sunshine Coast Golf Centre", "Mastering the Short Game: The Underarm Throw Technique", true),
   softChip: yt("ggMFuuhg_vs", "True Swing by Erika Larkin", "How to hit an open face pitch shot with Erika Larkin, PGA"),
   upAndDown: yt("vjXAIwK6NTs", "Titleist", "Short Game Practice: Can You Shoot 21?"),
   wedgeClock: yt("UeEkXxKSxzs", "SwingStation", "Distance Control With Wedges - Clock face System"),
@@ -142,3 +143,23 @@ export function attachVideos<T>(data: T): T {
   walk(data);
   return data;
 }
+
+// ---- in-app playback ------------------------------------------------------------
+
+/** The 11-character video id from a youtube.com/watch or youtu.be link. */
+export function videoId(url: string): string | null {
+  const m = url.match(/(?:[?&]v=|youtu\.be\/|\/shorts\/|\/embed\/)([\w-]{11})/);
+  return m ? m[1] : null;
+}
+
+/** Title and channel for a link, when it's one of ours; a bare entry otherwise. */
+export function videoInfo(url: string): DrillVideo & { id: string } | null {
+  const id = videoId(url);
+  if (!id) return null;
+  const known = Object.values(VIDEOS).find((x) => videoId(x.url) === id);
+  return { id, ...(known ?? { url, title: "Drill video", channel: "YouTube" }) };
+}
+
+/** YouTube's privacy-enhanced embed: no cookies until the viewer plays. */
+export const embedUrl = (id: string) =>
+  `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&playsinline=1&modestbranding=1`;

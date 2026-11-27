@@ -36,8 +36,11 @@ const csp = [
   // back from a MediaRecorder blob; blob: is the recorded clip itself, never a
   // remote source.
   "media-src 'self' blob:",
-  "frame-src 'none'",
-  "child-src 'none'",
+  // drill videos play in-app through YouTube's privacy-enhanced embed
+  // (components/VideoSheet.tsx), loaded only when a Watch button is tapped.
+  // That one host, nothing else, may be framed.
+  "frame-src https://www.youtube-nocookie.com",
+  "child-src https://www.youtube-nocookie.com",
   "object-src 'none'",
   "base-uri 'none'",
   "form-action 'none'",
@@ -46,13 +49,15 @@ const csp = [
 ].join("; ");
 
 const permissionsPolicy = [
-  "accelerometer=()", "autoplay=()", "camera=(self)", "display-capture=()",
-  "encrypted-media=()", "fullscreen=(self)", "geolocation=(self)", "gyroscope=()",
+  // the video embed needs autoplay, encrypted media, fullscreen and PiP,
+  // granted to the YouTube embed host only
+  "accelerometer=()", 'autoplay=(self "https://www.youtube-nocookie.com")', "camera=(self)", "display-capture=()",
+  'encrypted-media=(self "https://www.youtube-nocookie.com")', 'fullscreen=(self "https://www.youtube-nocookie.com")', "geolocation=(self)", "gyroscope=()",
   "magnetometer=()",
   // self, not () — Chromium gates the Web Speech API (components/VoiceLog.tsx)
   // on the microphone policy, so () silently breaks voice logging in production.
   "microphone=(self)", "midi=()", "payment=()",
-  "picture-in-picture=()", "publickey-credentials-get=()", "screen-wake-lock=()",
+  'picture-in-picture=(self "https://www.youtube-nocookie.com")', "publickey-credentials-get=()", "screen-wake-lock=()",
   "usb=()", "xr-spatial-tracking=()",
 ].join(", ");
 

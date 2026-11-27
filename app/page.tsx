@@ -76,6 +76,7 @@ import { useCountUp } from "@/lib/useCountUp";
 import { DispersionFan } from "@/components/DispersionFan";
 import { loadDemo, exitDemo } from "@/lib/demo";
 import { faultVideo } from "@/lib/drillVideos";
+import { WatchButton } from "@/components/VideoSheet";
 import { BackupState, backupDue, loadBackupState, saveBackup, snoozeBackup } from "@/lib/backup";
 
 type Tab = "home" | "session" | "trends" | "more" | "warmup" | "welcome" | "receipt" | "quickpick" | "firstrun" | "round" | "planreport";
@@ -1798,11 +1799,7 @@ function SessionScreen({
             <span>
               <b>{live.focus.title}</b>
               <small>{live.focus.body}</small>
-              {live.focus.video && (
-                <a className="drill-video" href={live.focus.video} target="_blank" rel="noopener noreferrer">
-                  <Icon name="smart_display" size={15} />Watch on YouTube
-                </a>
-              )}
+              {live.focus.video && <WatchButton url={live.focus.video} label="Watch the drill" size={15} />}
             </span>
           </div>
         )}
@@ -2061,11 +2058,7 @@ function DrillCard({ how, name, video }: { how: string; name?: string; video?: s
     <div className="drill">
       <div className="drill-t"><Icon name="bolt" size={18} color="var(--green)" />{name ?? "Focus drill"}</div>
       <div className="drill-b">{how}</div>
-      {video && (
-        <a className="drill-video" href={video} target="_blank" rel="noopener noreferrer">
-          <Icon name="smart_display" size={16} />Watch on YouTube
-        </a>
-      )}
+      {video && <WatchButton url={video} label="Watch the drill" />}
     </div>
   );
 }

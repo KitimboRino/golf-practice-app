@@ -5,6 +5,7 @@ import { LIBRARY } from "@/lib/library";
 import { DrillOverrides, DrillOverride } from "@/lib/db";
 import { Fault } from "@/lib/faults";
 import { Icon } from "./Icon";
+import { WatchButton } from "./VideoSheet";
 import { GlareToggle } from "./GlareToggle";
 import { AreaIcon } from "./AreaIcon";
 
@@ -178,11 +179,7 @@ export function Library({
                     </div>
                     <div className="lib-how"><span className="lib-tag do">Do</span>{d.how}</div>
                     {d.why && <div className="lib-why"><span className="lib-tag why">Why</span>{d.why}</div>}
-                    {d.video && (
-                      <a className="drill-video" href={d.video} target="_blank" rel="noopener noreferrer">
-                        <Icon name="smart_display" size={16} />Watch on YouTube
-                      </a>
-                    )}
+                    {d.video && <WatchButton url={d.video} label="Watch the drill" />}
                     {onSwap && ak && (
                       <button className={"lib-swap" + (active ? " on" : "")}
                               onClick={() => onSwap(ak, active ? null : { name: d.name, how: d.how, video: d.video })}>

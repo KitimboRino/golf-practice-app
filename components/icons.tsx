@@ -55,6 +55,8 @@ export const GLYPHS: Record<string, Glyph> = {
   delete: { d: p("M4 7h16M9 7V4.5h6V7M6 7l1 13h10l1-13M10 11v6M14 11v6") },
   upload: { d: p("M12 15V4M7 9l5-5 5 5M4 15v4.5h16V15") },
   download: { d: p("M12 4v11M7 10l5 5 5-5M4 15v4.5h16V15") },
+  cloud_off: { d: p("M3 3l18 18M7.4 7.5A5.5 5.5 0 0 0 7 18.5h10.5M10.4 5.3A6 6 0 0 1 17.6 10a4 4 0 0 1 3 6.6") },
+  open_in_new: { d: p("M14 4h6v6M20 4l-8.5 8.5M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5") },
   ios_share: { d: p("M12 3v12M8 7l4-4 4 4M7.5 11H5v10h14V11h-2.5") },
   save: { d: p("M5 4h11l3 3v13H5zM8 4v5h7V4M8 20v-6h8v6") },
   bookmark: { d: p("M6 4h12v17l-6-4-6 4z"), fill: <path d="M6 4h12v17l-6-4-6 4z" fill="currentColor" /> },
