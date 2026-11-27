@@ -1830,7 +1830,9 @@ function SessionScreen({
                       Club{cur && <span className="setup-sel"> · {cur}</span>}
                     </div>
                     <div className="chips">
-                      {step.clubs!.map((v) => (
+                      {/* a club pre-picked from elsewhere (the round report's
+                          tee clubs include Hybrid) joins the row so it shows lit */}
+                      {(cur && !step.clubs!.includes(cur) ? [...step.clubs!, cur] : step.clubs!).map((v) => (
                         <button key={v} className={"chip-btn" + (cur === v ? " on" : "")}
                                 aria-pressed={cur === v}
                                 onClick={() => setSetup(step.area, { club: cur === v ? undefined : v })}>
@@ -1976,8 +1978,8 @@ function Block({
 function BandPct({ value }: { value: number | null }) {
   const shown = useCountUp(value ?? 0, 420);
   return (
-    <span className="band-pct num" aria-label={value === null ? "no balls yet" : `${value}%`}>
-      {value === null ? "–" : shown}{value !== null && <small>%</small>}
+    <span className={"band-pct num" + (value === null ? " empty" : "")} aria-label={value === null ? "no balls yet" : `${value}%`}>
+      {value === null ? 0 : shown}<small>%</small>
     </span>
   );
 }

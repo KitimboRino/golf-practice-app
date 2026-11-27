@@ -2871,6 +2871,8 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
   display: flex; align-items: flex-start;
 }
 .band-pct small { margin-top: 6px; letter-spacing: -0.02em; }
+/* before the first ball: a faint 0%, read with "No balls yet" beside it */
+.band-pct.empty { opacity: 0.28; }
 .band-pct-side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; padding-bottom: 6px; text-align: right; }
 .band-pct-side b { font-size: 15px; font-weight: 800; }
 .band-pct-side span { font-size: 13px; font-weight: 700; color: rgba(var(--on-band-rgb), 0.85); }

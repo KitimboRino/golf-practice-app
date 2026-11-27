@@ -168,6 +168,17 @@ function RoundSetup({
 
   const recent = [...rounds].reverse().slice(0, 6);
 
+  // courses typed on earlier rounds (not the presets above), newest first, so
+  // the next round here uses the same name and hole history can find it
+  const norm = (c: string) => c.trim().toLowerCase().replace(/\s+/g, " ");
+  const presetKeys = new Set(COURSES.map((c) => norm(c.name)));
+  const played: string[] = [];
+  for (const r of [...rounds].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.createdAt - a.createdAt))) {
+    const name = (r.course ?? "").trim();
+    if (name && !presetKeys.has(norm(name)) && !played.some((p) => norm(p) === norm(name))) played.push(name);
+    if (played.length === 4) break;
+  }
+
   // scoring trend — to-par normalised to 18 holes so 9s and 18s sit on one axis
   const scoredRounds = rounds
     .map((r) => ({ r, s: roundStats(r.holeData) }))
@@ -221,6 +232,17 @@ function RoundSetup({
               </button>
             ))}
           </div>
+          {played.length > 0 && (
+            <div className="chips" role="group" aria-label="Courses you've played">
+              {played.map((name) => (
+                <button key={name} className={"chip-btn" + (!courseId && norm(course) === norm(name) ? " on" : "")}
+                        aria-pressed={!courseId && norm(course) === norm(name)}
+                        onClick={() => { setCourse(name); setCourseId(null); }}>
+                  <Icon name="history" size={14} />{name}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="field">
             <Icon name="golf_course" size={19} color="var(--icon-muted)" />
             <input
