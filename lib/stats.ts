@@ -1,4 +1,4 @@
-import { SavedSession } from "./db";
+import { SavedSession, AreaKey } from "./db";
 
 // Derived metrics, per the handoff spec.
 // solid strike % = (driving.fairway + irons.solid) / all logged strikes
@@ -61,4 +61,51 @@ export function ironsByClub(history: SavedSession[]): IronClubStats[] {
     return a.club.localeCompare(b.club);
   });
   return rows;
+}
+
+// ---- shared reads: per-area counts, distance, and "is this change real" --------
+
+/** made / of for one area of one session, matching how each logging band
+ *  reads its success rate (on line, solid, on the towel, close, holed). */
+export function areaCounts(s: SavedSession, a: AreaKey): { made: number; of: number } {
+  switch (a) {
+    case "driving": return { made: s.driving.fairway, of: s.driving.fairway + s.driving.left + s.driving.right };
+    case "irons": return { made: s.irons.solid, of: s.irons.solid + s.irons.fat + s.irons.thin };
+    case "chipping": return { made: s.chipping.on, of: s.chipping.on + s.chipping.off };
+    case "pitching": {
+      const p = s.pitching ?? { close: 0, short: 0, long: 0 };
+      return { made: p.close, of: p.close + p.short + p.long };
+    }
+    case "putting": return { made: s.putting.in, of: s.putting.in + s.putting.out };
+  }
+}
+
+/** Areas whose success rate depends on the target distance picked: a 3 ft
+ *  putt and a 10 ft putt aren't the same test, so they're only compared at
+ *  the same distance. */
+export const DISTANCE_AREAS: AreaKey[] = ["putting", "pitching", "chipping"];
+export const distOf = (s: SavedSession, a: AreaKey): number | undefined => s.setup?.[a]?.dist;
+/** Two sessions are comparable in an area when they share its distance (or
+ *  neither picked one). Areas without distances always compare. */
+export const sameDistance = (x: SavedSession, y: SavedSession, a: AreaKey) =>
+  !DISTANCE_AREAS.includes(a) || distOf(x, a) === distOf(y, a);
+
+export type Pooled = { made: number; of: number };
+export const pool = (rows: Pooled[]): Pooled =>
+  rows.reduce((t, r) => ({ made: t.made + r.made, of: t.of + r.of }), { made: 0, of: 0 });
+
+/**
+ * The change in points between two pooled rates, and whether it's bigger than
+ * luck: 10 balls can swing 15 points between two identical sessions. A change
+ * is "real" at 1.5 standard errors of the difference for that many balls, and
+ * never under `floor` points.
+ */
+export function rateChange(before: Pooled, after: Pooled, floor = 5): { delta: number; real: boolean; needed: number; from: number; to: number } {
+  const from = Math.round((before.made / before.of) * 100);
+  const to = Math.round((after.made / after.of) * 100);
+  const p = (before.made + after.made) / (before.of + after.of);
+  const se = Math.sqrt(p * (1 - p) * (1 / before.of + 1 / after.of)) * 100;
+  const needed = Math.max(floor, Math.round(1.5 * se));
+  const delta = to - from;
+  return { delta, real: Math.abs(delta) >= needed, needed, from, to };
 }

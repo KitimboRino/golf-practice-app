@@ -29,6 +29,8 @@ const FLIGHT: Record<string, { d: string; end: [number, number] }> = {
   sky:          { d: "M50 90 C46 60 48 40 50 22", end: [50, 22] },
   top:          { d: "M50 90 C60 89 72 87 84 85", end: [84, 85] },
   "heavy-chip": { d: "M50 90 C55 82 60 78 64 80", end: [64, 80] },
+  // heavy iron: some height, but the ground took the speed, so it falls well short
+  "fat-iron":   { d: "M50 90 C52 72 54 60 56 54", end: [56, 54] },
   shank:        { d: "M50 90 L88 58", end: [88, 58] },
   pull:         { d: "M50 90 L34 12", end: [34, 12] },
   // some height, but the dig costs enough energy that it comes up well short
@@ -57,9 +59,9 @@ function FlightPath({ id, size = 84 }: { id: string; size?: number }) {
 // Scoped per fault id rather than always reading driving data: that used to
 // be hardcoded here regardless of which fault actually matched, so a
 // putting or pitching fault would show a driving tee-shot stat next to it.
-// "heavy-chip" is left out on purpose — it's reused for both an irons- and
-// a chipping-triggered pattern, so there's no single area to report here
-// without knowing which one actually fired; falls back to "Your miss".
+// "heavy-chip" now fires only from chipping (fat irons have their own
+// "fat-iron" fault), but its chip-towel stat isn't about contact, so it still
+// falls back to "Your miss".
 function contextFor(fault: Fault, latest: SavedSession): string | null {
   if (fault.id === "slice" || fault.id === "hook") {
     const d = latest.driving;
@@ -68,6 +70,11 @@ function contextFor(fault: Fault, latest: SavedSession): string | null {
     return total >= 4 && missed
       ? `${missed} of ${total} tee shots missed ${d.right >= d.left ? "right" : "left"} last session`
       : null;
+  }
+  if (fault.id === "fat-iron") {
+    const i = latest.irons;
+    const total = i.solid + i.fat + i.thin;
+    return total >= 4 ? `${i.fat} of ${total} iron shots fat last session` : null;
   }
   if (fault.id === "pitch-dig") {
     const p = latest.pitching ?? { close: 0, short: 0, long: 0 };

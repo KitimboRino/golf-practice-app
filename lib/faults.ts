@@ -75,6 +75,15 @@ export const CATALOG: Fault[] = [
     ref: "",
   },
   {
+    id: "fat-iron",
+    area: "irons",
+    name: "Fat irons",
+    pattern: "Irons hitting the ground before the ball",
+    fault: "The low point of the swing falling behind the ball: weight hanging back, or the hands releasing early.",
+    fix: "Start with a touch more weight on your lead foot and keep it there through impact, so the divot starts just after the ball. Ball in the middle of your stance for mid irons.",
+    ref: "",
+  },
+  {
     id: "shank",
     area: "irons",
     name: "Shank",
@@ -147,8 +156,8 @@ export function detectFaults(s: {
   const ironTotal = s.irons.solid + s.irons.fat + s.irons.thin;
   if (ironTotal >= 8 && s.irons.fat / ironTotal >= 0.4) {
     hits.push({
-      fault: byId("heavy-chip"),
-      note: `Fat strikes made up a big share of this session. Keeping the hands ahead of the clubhead is the usual fix.`,
+      fault: byId("fat-iron"),
+      note: `${s.irons.fat} of ${ironTotal} iron shots were fat, hitting the ground first.`,
     });
   }
 

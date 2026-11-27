@@ -1,5 +1,6 @@
 import { SavedSession, AreaKey } from "./db";
 import { AREA_RATES } from "./verdict";
+import { DISTANCE_AREAS, distOf } from "./stats";
 
 export type Goal = { area: AreaKey; targetPct: number; byDate?: string; createdAt: number };
 
@@ -7,17 +8,24 @@ export type GoalProgress = {
   currentPct: number | null; // null when the goal's area has never been logged
   met: boolean;
   daysLeft: number | null;   // null when no by-date was set; negative once overdue
+  dist?: number;             // putting / pitching / chipping: the distance "current" is read at
 };
 
 // "Current" is the average of the last 3 sessions that logged the goal's
 // area, not just the latest one — a goal is about a trend, and a single
 // session swings too much to tell someone they've already hit (or missed)
-// a target they set for themselves.
+// a target they set for themselves. Putting, pitching and chipping read the
+// last 3 sessions at the distance most recently practised, since a 70% goal
+// means something different from 3 ft than from 10 ft.
 export function goalProgress(history: SavedSession[], goal: Goal): GoalProgress {
   const def = AREA_RATES.find((a) => a.key === goal.area);
-  const vals = def
-    ? history.map((s) => def.rate(s)).filter((v): v is number => v !== null).slice(-3)
-    : [];
+  let logged = def ? history.filter((s) => def.rate(s) !== null) : [];
+  let dist: number | undefined;
+  if (DISTANCE_AREAS.includes(goal.area) && logged.length) {
+    dist = distOf(logged[logged.length - 1], goal.area);
+    logged = logged.filter((s) => distOf(s, goal.area) === dist);
+  }
+  const vals = def ? logged.map((s) => def.rate(s) as number).slice(-3) : [];
   const currentPct = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
   const met = currentPct !== null && currentPct >= goal.targetPct;
 
@@ -26,5 +34,5 @@ export function goalProgress(history: SavedSession[], goal: Goal): GoalProgress 
     const ms = new Date(goal.byDate + "T00:00:00").getTime() - new Date().setHours(0, 0, 0, 0);
     daysLeft = Math.round(ms / 86_400_000);
   }
-  return { currentPct, met, daysLeft };
+  return { currentPct, met, daysLeft, ...(dist != null ? { dist } : {}) };
 }

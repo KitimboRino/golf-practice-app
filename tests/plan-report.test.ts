@@ -64,6 +64,20 @@ describe("planReport", () => {
     expect(r.best!.area).toBe("putting");
   });
 
+  it("compares putting at test day's distance, never 3 ft against 6 ft", () => {
+    const putt = (inN: number, dist: number, over: Parameters<typeof session>[0]) =>
+      session({ putting: { in: inN, out: 10 - inN }, setup: { putting: { dist } }, ...over });
+    const s1 = putt(8, 3, { weekId: w1.id, sessionLabel: w1.sessions[0].label });
+    const test = putt(7, 6, { weekId: w4.id, sessionLabel: testLabel });
+    // only a 3 ft session before: shown, labelled, not counted
+    const only = planReport([s1, test], "intermediate")!.rows.find((x) => x.area === "putting")!;
+    expect(only).toMatchObject({ from: 80, to: 70, delta: null, otherDistance: true });
+    // with an earlier 6 ft session, that's the comparison: 40% to 70%, a gain
+    const s2 = putt(4, 6, { weekId: w1.id, sessionLabel: w1.sessions[1].label });
+    const both = planReport([s1, s2, test], "intermediate")!.rows.find((x) => x.area === "putting")!;
+    expect(both).toMatchObject({ from: 40, to: 70, delta: 30, tone: "up", dist: 6, otherDistance: false });
+  });
+
   it("suggests running the plan again when little moved", () => {
     const r = planReport([
       all([5, 5, 5, 5, 5], { weekId: w1.id, sessionLabel: w1.sessions[0].label }),

@@ -518,7 +518,7 @@ function GoalCard({
             <div className="goal-fill" style={{ width: `${fillPct}%` }} />
           </div>
           <div className="goal-meta">
-            <span>{pct}% current</span>
+            <span>{pct}% current{prog.dist != null && ` from ${prog.dist} ${goal.area === "putting" ? "ft" : "yd"}`}</span>
             <span>{goal.targetPct}% target</span>
           </div>
         </>

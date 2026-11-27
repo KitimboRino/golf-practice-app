@@ -1,5 +1,5 @@
-import { SavedSession, SavedRound, countIn } from "./db";
-import { solidPct } from "./stats";
+import { SavedSession, SavedRound, AreaKey, countIn } from "./db";
+import { areaCounts, distOf, pool, rateChange, sameDistance, type Pooled } from "./stats";
 import { detectFaults } from "./faults";
 import { leakReport } from "./round";
 
@@ -30,38 +30,53 @@ export type Verdict = {
   note: string;
 };
 
-// a session counts toward the solid-rate verdict only if it logged tee or iron shots
+// a session counts toward the verdict only if it logged tee or iron shots
 const hasStrikes = (s: SavedSession) =>
   s.driving.fairway + s.driving.left + s.driving.right +
   s.irons.solid + s.irons.fat + s.irons.thin > 0;
 
+// ball-striking: fairways found plus solid irons, over every tee and iron shot
+const strikes = (s: SavedSession): Pooled => {
+  const d = areaCounts(s, "driving"), i = areaCounts(s, "irons");
+  return { made: d.made + i.made, of: d.of + i.of };
+};
+
+/**
+ * Is the practice working? Pools the earlier half of the last six strike
+ * sessions against the recent half and only calls it up or down when the
+ * change is bigger than luck with that many balls (lib/stats rateChange).
+ * Comparing two single sessions, as this used to, read 10-15 points of
+ * ordinary session-to-session swing as a trend and flipped week to week.
+ */
 export function verdict(history: SavedSession[]): Verdict | null {
   const strikeHist = history.filter(hasStrikes);
   if (strikeHist.length < 2) return null;
-  const window = strikeHist.slice(-4);
-  const vals = window.map(solidPct);
-  const change = vals[vals.length - 1] - vals[0];
-  const span = window.length;
-  const confidence = Math.min(4, span);
-  const note =
-    confidence >= 4
-      ? "Confident. Four sessions of signal."
-      : `Confidence ${confidence} of 4 · ${4 - confidence} more session${4 - confidence === 1 ? "" : "s"} to be certain.`;
+  const window = strikeHist.slice(-6);
+  const half = Math.floor(window.length / 2);
+  const early = pool(window.slice(0, half).map(strikes));
+  const recent = pool(window.slice(-half).map(strikes));
+  const c = rateChange(early, recent);
+  const balls = early.of + recent.of;
+  const confidence = Math.max(1, Math.min(4, Math.floor(Math.min(early.of, recent.of) / 15)));
+  const note = confidence >= 4
+    ? `Confident. ${balls} balls behind this read.`
+    : `Early read · ${balls} balls. More sessions sharpen it.`;
+  const span = `${c.from}% over your earlier sessions, ${c.to}% lately`;
 
-  if (change >= 5) {
+  if (c.real && c.delta > 0) {
     return {
       tone: "up",
       headline: "It's working.",
-      detail: `Your solid rate has climbed ${change} points over ${span} sessions, past the noise in your own numbers. Keep the plan.`,
+      detail: `Your ball-striking is up ${c.delta} points: ${span}. That's more than a good day explains. Keep the plan.`,
       confidence,
       note,
     };
   }
-  if (change <= -5) {
+  if (c.real && c.delta < 0) {
     return {
       tone: "down",
       headline: "Something slipped.",
-      detail: `Your solid rate is down ${Math.abs(change)} points over ${span} sessions. Worth changing one thing. Check the miss pattern below.`,
+      detail: `Your ball-striking is down ${Math.abs(c.delta)} points: ${span}. More than a bad day explains, so it's worth changing one thing. Check the miss pattern below.`,
       confidence,
       note,
     };
@@ -69,7 +84,7 @@ export function verdict(history: SavedSession[]): Verdict | null {
   return {
     tone: "flat",
     headline: "Holding steady.",
-    detail: `Solid rate has moved ${change >= 0 ? "+" : ""}${change} points over ${span} sessions, inside the noise. Give the plan a couple more sessions before you judge it.`,
+    detail: `Ball-striking: ${span}. With this many balls, a move under ${c.needed} points is ordinary up-and-down. Give the plan a couple more sessions before you judge it.`,
     confidence,
     note,
   };
@@ -79,6 +94,14 @@ export function verdict(history: SavedSession[]): Verdict | null {
 
 export type AreaMove = { label: string; note: string; delta: number };
 
+const UNIT: Partial<Record<AreaKey, string>> = { putting: "ft", pitching: "yd", chipping: "yd" };
+
+/**
+ * The latest session against your earlier ones, per area, flagged only when
+ * the move is bigger than luck. Putting, pitching and chipping compare only
+ * sessions at the same target distance: holing fewer 10 ft putts than 3 ft
+ * putts isn't slipping.
+ */
 export function areaMoves(history: SavedSession[]): { gaining?: AreaMove; slipping?: AreaMove } {
   if (history.length < 2) return {};
   const latest = history[history.length - 1];
@@ -86,17 +109,19 @@ export function areaMoves(history: SavedSession[]): { gaining?: AreaMove; slippi
 
   const moves: AreaMove[] = [];
   for (const a of AREA_RATES) {
-    const now = a.rate(latest);
-    if (now === null) continue;
-    const prevVals = earlier.map(a.rate).filter((v): v is number => v !== null);
-    if (!prevVals.length) continue;
-    const base = Math.round(prevVals.reduce((x, y) => x + y, 0) / prevVals.length);
-    const delta = now - base;
-    if (Math.abs(delta) >= 6) {
+    const key = a.key as AreaKey;
+    const now = areaCounts(latest, key);
+    if (!now.of) continue;
+    const before = pool(earlier.filter((s) => sameDistance(s, latest, key)).map((s) => areaCounts(s, key)));
+    if (!before.of) continue;
+    const c = rateChange(before, now, 10);
+    if (c.real) {
+      const d = distOf(latest, key);
+      const at = d != null && UNIT[key] ? ` from ${d} ${UNIT[key]}` : "";
       moves.push({
         label: a.label,
-        delta,
-        note: delta > 0 ? `Up ${delta} points on your average` : `Down ${Math.abs(delta)} points on your average`,
+        delta: c.delta,
+        note: c.delta > 0 ? `Up ${c.delta} points on your average${at}` : `Down ${Math.abs(c.delta)} points on your average${at}`,
       });
     }
   }
@@ -116,9 +141,18 @@ export type OneThing = { title: string; body: string; source: string };
 // two systems never talked to each other before: Trends only ever read
 // session data, Round only ever read round data, and the one thing a player
 // actually sees first (this card, on Home) only knew about the range side.
+//
+// Whichever happened last leads: after a round, the course leak; after a range
+// session, what that session showed. Leading with the leak forever (as this
+// did) left the card saying the same thing for weeks while the range told a
+// different story. When the session leads, the leak still gets one line.
 export function todaysOneThing(history: SavedSession[], rounds: SavedRound[], plannedMiss?: string): OneThing | null {
   const leak = leakReport(rounds);
-  if (leak?.worstKey) {
+  const lastRoundAt = Math.max(0, ...rounds.map((r) => r.createdAt));
+  const lastSessionAt = Math.max(0, ...history.map((s) => s.createdAt));
+  const leakTop = leak?.worstKey ? leak.categories.find((c) => c.key === leak.worstKey)! : null;
+  const courseLine = leakTop ? ` On the course, ${leakTop.label.toLowerCase()} is still your biggest leak.` : "";
+  if (leak?.worstKey && lastRoundAt >= lastSessionAt) {
     const top = leak.categories.find((c) => c.key === leak.worstKey)!;
     return {
       title: `${top.label} is costing you the most.`,
@@ -155,7 +189,7 @@ export function todaysOneThing(history: SavedSession[], rounds: SavedRound[], pl
     const h = hits[0];
     return {
       title: h.fault.pattern + ".",
-      body: h.note + " " + firstSentence(h.fault.fix),
+      body: h.note + " " + firstSentence(h.fault.fix) + courseLine,
       source: "From your last session",
     };
   }
@@ -168,14 +202,14 @@ export function todaysOneThing(history: SavedSession[], rounds: SavedRound[], pl
   if (weakest && weakest.r < 55) {
     return {
       title: `${weakest.label} is the soft spot.`,
-      body: `You were at ${weakest.r}% there last time. Give it your full attention early in the session, while you're fresh.`,
+      body: `You were at ${weakest.r}% there last time. Give it your full attention early in the session, while you're fresh.${courseLine}`,
       source: "From your last session",
     };
   }
 
   return {
     title: "Repeat what worked.",
-    body: "Nothing's clearly broken. Run the same session, same targets, and see if the numbers hold.",
+    body: "Nothing's clearly broken. Run the same session, same targets, and see if the numbers hold." + courseLine,
     source: "From your last session",
   };
 }

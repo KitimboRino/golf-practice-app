@@ -53,6 +53,7 @@ const FAULT_CUES: Record<string, RegExp> = {
   sky: /width|arc|sweep|low|turn your back|tee-height/i,
   top: /spine|posture|height|shadow|balance/i,
   "heavy-chip": /brush|hard-surface|ball position|hands ahead|strike|clean|putting technique/i,
+  "fat-iron": /low point|divot|weight|ball-first|ball position|strike|contact/i,
   shank: /path|inside|feet together|elbow|sync/i,
   pull: /inside|path|feet together|intermediate|shadow/i,
 };

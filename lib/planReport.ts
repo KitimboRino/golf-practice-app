@@ -6,21 +6,8 @@
 import type { AreaKey, SavedSession } from "./db";
 import { isAdhoc } from "./db";
 import { isTestDay, levelOfWeek, type Level } from "./plan";
-
-// made / of for one area of one session, matching how each logging band
-// reads its success rate (on line, solid, on the towel, close, holed)
-export function areaCounts(s: SavedSession, a: AreaKey): { made: number; of: number } {
-  switch (a) {
-    case "driving": return { made: s.driving.fairway, of: s.driving.fairway + s.driving.left + s.driving.right };
-    case "irons": return { made: s.irons.solid, of: s.irons.solid + s.irons.fat + s.irons.thin };
-    case "chipping": return { made: s.chipping.on, of: s.chipping.on + s.chipping.off };
-    case "pitching": {
-      const p = s.pitching ?? { close: 0, short: 0, long: 0 };
-      return { made: p.close, of: p.close + p.short + p.long };
-    }
-    case "putting": return { made: s.putting.in, of: s.putting.in + s.putting.out };
-  }
-}
+import { areaCounts, distOf, sameDistance } from "./stats";
+export { areaCounts };
 
 const pct = (made: number, of: number) => (of ? Math.round((made / of) * 100) : 0);
 
@@ -59,6 +46,10 @@ export type ReportRow = {
   delta: number | null;   // null when there's no second session, or too few balls to compare
   tone: "up" | "down" | "flat" | "na";
   thin: boolean;          // a side has under MIN_BALLS balls: shown, not counted
+  // putting / pitching / chipping: no earlier session at test day's distance,
+  // so the first-session figure is from another distance and isn't compared
+  otherDistance: boolean;
+  dist?: number;          // the distance both figures are from, when there is one
 };
 
 export type PlanReport = {
@@ -88,17 +79,23 @@ export function planReport(history: SavedSession[], level: Level): PlanReport | 
 
   const rows: ReportRow[] = AREA_ORDER.map((area) => {
     const logged = plan.filter((s) => areaCounts(s, area).of > 0);
-    const first = logged[0];
     const lastOne = test && areaCounts(test, area).of > 0 ? test : logged[logged.length - 1];
+    // compare like with like: the first session at the same target distance
+    const first = lastOne ? logged.find((s) => sameDistance(s, lastOne, area)) : logged[0];
+    if (lastOne && logged[0] && (!first || first.id === lastOne.id) && logged[0].id !== lastOne.id) {
+      const other = areaCounts(logged[0], area), now = areaCounts(lastOne, area);
+      return { area, from: pct(other.made, other.of), to: pct(now.made, now.of), delta: null, tone: "na", thin: false, otherDistance: true };
+    }
     if (!first || !lastOne || first.id === lastOne.id) {
-      const only = first ? pct(areaCounts(first, area).made, areaCounts(first, area).of) : null;
-      return { area, from: only, to: null, delta: null, tone: "na", thin: false };
+      const only = logged[0] ? pct(areaCounts(logged[0], area).made, areaCounts(logged[0], area).of) : null;
+      return { area, from: only, to: null, delta: null, tone: "na", thin: false, otherDistance: false };
     }
     const a = areaCounts(first, area), b = areaCounts(lastOne, area);
     const from = pct(a.made, a.of), to = pct(b.made, b.of);
-    if (a.of < MIN_BALLS || b.of < MIN_BALLS) return { area, from, to, delta: null, tone: "na", thin: true };
+    const dist = distOf(lastOne, area);
+    if (a.of < MIN_BALLS || b.of < MIN_BALLS) return { area, from, to, delta: null, tone: "na", thin: true, otherDistance: false, dist };
     const delta = to - from;
-    return { area, from, to, delta, tone: delta >= MOVE ? "up" : delta <= -MOVE ? "down" : "flat", thin: false };
+    return { area, from, to, delta, tone: delta >= MOVE ? "up" : delta <= -MOVE ? "down" : "flat", thin: false, otherDistance: false, dist };
   });
 
   const scored = rows.filter((r) => r.delta !== null);

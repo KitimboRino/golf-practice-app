@@ -73,7 +73,7 @@ export function PlanReport({
                 <div className="compare-row" key={x.area}>
                   <div className="compare-label rep-area">
                     <AreaIcon area={x.area} size={15} />
-                    <span>{AREA_NAME[x.area]}<small>{AREA_METRIC[x.area]}</small></span>
+                    <span>{AREA_NAME[x.area]}<small>{AREA_METRIC[x.area]}{x.dist != null && ` · ${x.dist} ${x.area === "putting" ? "ft" : "yd"}`}</small></span>
                   </div>
                   <div className="compare-nums num">
                     <span className="from">{x.from !== null ? `${x.from}%` : "–"}</span>
@@ -81,7 +81,7 @@ export function PlanReport({
                     <span className="to">{x.to !== null ? `${x.to}%` : "–"}</span>
                   </div>
                   <div className={"compare-delta " + (x.tone === "na" ? "flat" : x.tone)}>
-                    {x.thin ? "few balls" : x.delta === null ? "once" : `${x.delta > 0 ? "+" : x.delta < 0 ? "−" : "±"}${Math.abs(x.delta)}`}
+                    {x.otherDistance ? "other distance" : x.thin ? "few balls" : x.delta === null ? "once" : `${x.delta > 0 ? "+" : x.delta < 0 ? "−" : "±"}${Math.abs(x.delta)}`}
                   </div>
                 </div>
               ))}
