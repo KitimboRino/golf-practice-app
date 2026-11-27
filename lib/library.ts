@@ -176,6 +176,36 @@ export const LIBRARY: LibArea[] = [
         "how": "Rotate your lead hand weaker on the grip — until you can barely see one knuckle — then chip normally.",
         "why": "A weaker lead hand adds loft, so the ball lands softly and stops quickly with little roll-out.",
         "ref": ""
+      },
+      {
+        "name": "Trail foot back",
+        "how": "Slide your trail foot back and come up onto its toes so nearly all your weight sits on the lead leg. Make a few practice swings: if your weight drifts back you'll wobble or the heel will drop. Then hit chips, feeling the lead leg stay loaded.",
+        "why": "Leaning back moves the bottom of the swing behind the ball, so the club hits the ground first. Pinning your weight forward keeps the low point at or just past the ball.",
+        "ref": "Dan Grieve, PGA Master Coach"
+      },
+      {
+        "name": "Lead arm only",
+        "how": "Take the trail hand off and make chipping swings with the lead arm alone, first without a ball, then with one. Let the shaft extend through the arm so the end of the grip points at your lead hip in the finish. Put the trail hand back on and copy that finish.",
+        "why": "Flipping with the trail hand is what sends chips thin or heavy. One arm can't flip, so you learn the release that keeps the leading edge down.",
+        "ref": "Dan Grieve, PGA Master Coach"
+      },
+      {
+        "name": "Thumbs off",
+        "how": "Make a few chipping swings with both thumbs off the grip, feeling the weight of the clubhead swing. Then put the thumbs back on as lightly as you can and hit chips with that same light feel.",
+        "why": "Nerves make the thumbs squeeze at the top, which turns a smooth swing into a hit at the ball. Taking them off removes that tension and brings back touch.",
+        "ref": "Dan Grieve, PGA Master Coach"
+      },
+      {
+        "name": "Trail arm only",
+        "how": "Ball level with your lead heel on a lie the club can slide under. Rest your lead hand on your trail shoulder and hold the club in the trail hand only. Keep that shoulder snug to your body and let the club swing past your hands, so the end of the grip points at your belt buckle after impact.",
+        "why": "Softer, higher chips need the clubhead to release past the hands. Keeping the trail arm connected to your body lets it release without the wrists taking over.",
+        "ref": "Dan Grieve, PGA Master Coach"
+      },
+      {
+        "name": "Same spot, three clubs",
+        "how": "Pick one landing area on the green. Chip to it with a 7-iron, then a 9-iron, then a 52° wedge, and watch how far each one runs out after landing. Repeat until you can predict the roll before you hit.",
+        "why": "Most golfers chip everything with one favourite wedge. Knowing how each loft lands and rolls lets you pick the club that makes the shot easy.",
+        "ref": "Dan Grieve, PGA Master Coach"
       }
     ]
   },

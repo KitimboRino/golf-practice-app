@@ -22,6 +22,18 @@ describe("drill videos", () => {
     expect(videoKeyFor("Check aim and stroke — brush vs full swing")).toBe("puttLength");
   });
 
+  it("links Dan Grieve's drills to his videos, and his club-choice video to the slope drills", () => {
+    expect(videoKeyFor("Trail foot back")).toBe("grieveChipping");
+    expect(videoKeyFor("Thumbs off")).toBe("grieveChipping");
+    expect(videoKeyFor("Same spot, three clubs")).toBe("grieveMistakes");
+    expect(videoKeyFor("Pitch from a slight upslope and downslope")).toBe("grieveMistakes");
+    expect(faultVideo("heavy-chip")).toBe(VIDEOS.grieveChipping.url);
+    const chipping = LIBRARY.find((a) => /chipping/i.test(a.area))!.drills;
+    const grieve = chipping.filter((d) => d.ref === "Dan Grieve, PGA Master Coach");
+    expect(grieve.map((d) => d.name)).toEqual(["Trail foot back", "Lead arm only", "Thumbs off", "Trail arm only", "Same spot, three clubs"]);
+    expect(grieve.every((d) => !!d.video)).toBe(true);
+  });
+
   it("leaves a drill with no good match empty rather than guessing", () => {
     expect(videoKeyFor("Three trajectories to one target")).toBeNull();
     expect(videoKeyFor("Play the hole in your head, one tee shot")).toBeNull();

@@ -41,6 +41,9 @@ export const VIDEOS = {
   throwFeel: yt("3JztOhy4Xhk", "Sunshine Coast Golf Centre", "Mastering the Short Game: The Underarm Throw Technique", true),
   softChip: yt("ggMFuuhg_vs", "True Swing by Erika Larkin", "How to hit an open face pitch shot with Erika Larkin, PGA"),
   upAndDown: yt("vjXAIwK6NTs", "Titleist", "Short Game Practice: Can You Shoot 21?"),
+  // Dan Grieve (PGA Master Coach, Woburn GC), the drills credited to him in lib/library.ts
+  grieveChipping: yt("nnjfdfFmY4c", "Golf Monthly", "We Asked Dan Grieve For His 5 Best Chipping Drills"),
+  grieveMistakes: yt("KLUFqb_yFao", "Golf Monthly", "Dan Grieve Fixes The 7 Biggest Short Game Mistakes Golfers Make"),
   wedgeClock: yt("UeEkXxKSxzs", "SwingStation", "Distance Control With Wedges - Clock face System"),
   wristHinge: yt("K3edSt0pIo4", "GolfNow", "How to Set the Wrists on the Backswing"),
   // putting
@@ -80,6 +83,9 @@ const RULES: [RegExp, RuleKey][] = [
   [/straight putt|every putt is straight|pace and line/i, "straightPutts"],
   [/wall|stick path/i, "puttPath"],
   // chipping and pitching
+  // Dan Grieve's drills, and the club-choice / slope drills his mistakes video covers
+  [/trail foot back|lead arm only|thumbs off|trail arm only/i, "grieveChipping"],
+  [/same spot, three clubs|3 club experimental|bump-and-run with more club|upslope and downslope|uneven lie/i, "grieveMistakes"],
   [/weak.grip|float|spin it|spin control|tight lie|one-hop/i, "softChip"],
   [/putting technique|rock the shaft|pendulum — weight forward|bump-and-run/i, "puttChip"],
   [/throw|low-and-running/i, "throwFeel"],
@@ -118,7 +124,7 @@ export function videoKeyFor(drillName: string): VideoKey | null {
 const FAULT_VIDEO: Partial<Record<string, VideoKey>> = {
   slice: "pathGate",          // alignment-stick path drill, out-to-in fix
   "fat-iron": "ballFirst",    // ball-first contact
-  "heavy-chip": "brushGrass", // find the low point
+  "heavy-chip": "grieveChipping", // Dan Grieve: weight on the lead leg, no flip
   "pitch-dig": "softChip",    // open-face pitch that uses the bounce
 };
 
