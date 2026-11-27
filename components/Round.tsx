@@ -1301,6 +1301,20 @@ const PAR_READ: Record<3 | 4 | 5, string> = {
   5: "Usually the lay-up and the wedge in, more than the drive.",
 };
 
+// card header: what the pattern is built from, flagged as an early read when
+// that's still thin, so 4 tee shots don't look as solid as 40
+function PatHead({ title, basis, early }: { title: string; basis: string; early: boolean }) {
+  return (
+    <div className="pat-th">
+      <h3 className="pat-t">{title}</h3>
+      <span className="pat-sub">
+        {early && <span className="pat-early">Early read</span>}
+        {basis}
+      </span>
+    </div>
+  );
+}
+
 // which practice areas a par type points at, matching PAR_READ above
 const PAR_AREAS: Record<3 | 4 | 5, AreaKey[]> = { 3: ["irons"], 4: ["driving", "irons"], 5: ["irons", "pitching"] };
 
@@ -1351,7 +1365,8 @@ function RoundPatterns({ rounds, history, onPractice }: {
         const max = Math.max(1, ...par.rows.map((r) => r.avgOver));
         return (
           <div className="pat">
-            <h3 className="pat-t">Scoring by par</h3>
+            <PatHead title="Scoring by par" basis={`${par.rows.reduce((n, r) => n + r.holes, 0)} holes`}
+                     early={par.rows.some((r) => r.holes < 6)} />
             {par.rows.map((r) => (
               <div className="pat-row" key={r.par}>
                 <span className="pat-lbl">Par {r.par}</span>
@@ -1383,7 +1398,7 @@ function RoundPatterns({ rounds, history, onPractice }: {
 
       {blow && (
         <div className="pat">
-          <div className="pat-th"><h3 className="pat-t">Big numbers</h3><span className="pat-sub">per 18 holes</span></div>
+          <PatHead title="Big numbers" basis={`per 18 · from ${blow.holes} holes`} early={blow.holes < 27} />
           <div className="pat-stats">
             <div><b className="num">{blow.doublesPerRound}</b><span>doubles or worse a round</span></div>
             <div><b className="num">{blow.costPerRound}</b><span>shots beyond bogey</span></div>
@@ -1411,7 +1426,8 @@ function RoundPatterns({ rounds, history, onPractice }: {
         const side = miss.rightPct >= 60 ? "right" : miss.rightPct <= 40 ? "left" : null;
         return (
           <div className="pat">
-            <h3 className="pat-t">Tee-shot misses</h3>
+            <PatHead title="Tee-shot misses" basis={`${miss.left + miss.right} missed fairways`}
+                     early={miss.left + miss.right < 8} />
             <div className="pat-split" role="img" aria-label={`${leftPct}% of missed fairways went left, ${miss.rightPct}% right`}>
               <span className="pat-split-l" style={{ flexBasis: `${leftPct}%` }} />
               <span className="pat-split-r" style={{ flexBasis: `${miss.rightPct}%` }} />
@@ -1444,7 +1460,8 @@ function RoundPatterns({ rounds, history, onPractice }: {
         const best = clubs[0], worst = clubs[clubs.length - 1];
         return (
           <div className="pat">
-            <h3 className="pat-t">Fairways by tee club</h3>
+            <PatHead title="Fairways by tee club" basis={`${clubs.reduce((n, c) => n + c.of, 0)} tee shots`}
+                     early={clubs.some((c) => c.of < 6)} />
             {clubs.map((c) => (
               <div className="pat-row" key={c.club}>
                 <span className="pat-lbl">{c.club}</span>
@@ -1477,7 +1494,7 @@ function RoundPatterns({ rounds, history, onPractice }: {
 
       {nines && (
         <div className="pat">
-          <h3 className="pat-t">Front nine vs back nine</h3>
+          <PatHead title="Front nine vs back nine" basis={`${nines.rounds} rounds of 18`} early={nines.rounds < 3} />
           <div className="pat-stats two">
             <div><b className="num">{fmtOver(nines.front)}</b><span>front nine</span></div>
             <div><b className="num">{fmtOver(nines.back)}</b><span>back nine</span></div>
@@ -1488,7 +1505,6 @@ function RoundPatterns({ rounds, history, onPractice }: {
               : nines.diff <= -1.5
                 ? `You start slow: the front nine costs about ${Math.abs(nines.diff).toFixed(1)} more. A proper warm-up before the first tee would help.`
                 : "Steady across both nines."}
-            {" "}From {nines.rounds} rounds of 18 holes.
           </p>
         </div>
       )}

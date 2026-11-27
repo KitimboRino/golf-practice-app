@@ -911,8 +911,17 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   padding: 16px; display: flex; flex-direction: column; gap: 10px;
   box-shadow: var(--card-shadow);
 }
-.pat-th { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
-.pat-sub { font-size: 12px; font-weight: 700; color: var(--hint); }
+.pat-th { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 4px 10px; }
+.pat-th .pat-t { white-space: nowrap; }
+.pat-th .pat-sub { margin-left: auto; }
+.pat-sub {
+  display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end;
+  font-size: 12px; font-weight: 700; color: var(--hint); text-align: right;
+}
+.pat-early {
+  font-size: 10.5px; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase;
+  color: var(--text-2); background: var(--track); border-radius: 999px; padding: 2px 7px;
+}
 .pat-t { margin: 0; font-size: 17px; font-weight: 800; letter-spacing: -0.02em; }
 .pat-read { margin: 0; font-size: 14px; line-height: 1.5; color: var(--text-2); text-wrap: pretty; }
 .pat-row {
@@ -2988,6 +2997,18 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
 .plan-banner-x {
   width: 56px; flex: none; border-radius: 22px; background: var(--card); color: var(--muted);
   display: flex; align-items: center; justify-content: center;
+}
+/* narrow phones: the action drops under the message, so the message gets the
+   full width and stays on two lines instead of four */
+@media (max-width: 400px) {
+  .plan-banner {
+    display: grid; grid-template-columns: auto 1fr; column-gap: 11px; row-gap: 3px;
+    align-content: center; padding: 11px 15px;
+  }
+  .plan-banner > .ico { grid-row: 1 / span 2; align-self: start; margin-top: 1px; }
+  .plan-banner > span:not(.ico) { padding: 0; }
+  .plan-banner b { grid-column: 2; font-size: 13.5px; color: var(--green); }
+  .plan-banner-x { width: 46px; }
 }
 
 .plan-hero {
