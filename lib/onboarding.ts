@@ -66,7 +66,7 @@ export function readFrom(shots: Shot[]): Read {
       counts,
       explanation:
         `${right} of ${total} leaked right.${fadesLate ? " The last few were the worst, so it's a slice that grows as you tire." : ""} One fault, not five.`,
-      provenance: "Field guide p.162 · slice",
+      provenance: "Most likely a slice",
       early,
       confident,
     };
@@ -78,7 +78,7 @@ export function readFrom(shots: Shot[]): Read {
     counts,
     explanation:
       `${left} of ${total} leaked left${fadesLate ? ", worse as the session went on" : ""}. A hook that curves or a pull that starts there. Either way it's one start-line fault.`,
-    provenance: "Field guide p.163 · hook",
+    provenance: "Most likely a hook",
     early,
     confident,
   };
@@ -89,19 +89,20 @@ export function planFraming(miss: Read["miss"]): { thesis: string; rows: [string
   if (miss === "right" || miss === "left") {
     return {
       thesis: "Square the start line, then hold it when you're tired.",
+      // what each block does, not a name: the level (picked next) names the weeks
       rows: [
-        ["Weeks 1-2 · Aim", "4 sessions"],
-        ["Week 3 · Path", "2 sessions"],
-        ["Week 4 · Re-test", "Same ten balls"],
+        ["Weeks 1–2", "Square your start line · 4 sessions"],
+        ["Week 3", "Hold it under pressure · 2 sessions"],
+        ["Week 4", "Re-test · the same ten balls"],
       ],
     };
   }
   return {
     thesis: "Groove clean contact and a repeatable start line across every area.",
     rows: [
-      ["Weeks 1-2 · Foundations", "4 sessions"],
-      ["Week 3 · Pressure", "2 sessions"],
-      ["Week 4 · Re-test", "Same ten balls"],
+      ["Weeks 1–2", "Clean contact, a repeatable start line · 4 sessions"],
+      ["Week 3", "Hold it under pressure · 2 sessions"],
+      ["Week 4", "Re-test · the same ten balls"],
     ],
   };
 }

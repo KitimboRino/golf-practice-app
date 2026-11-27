@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   OnbStage, Shot, READ_TARGET, READ_MIN, readFrom, planFraming,
 } from "@/lib/onboarding";
@@ -47,6 +47,9 @@ export function FirstRun({
 }) {
   const [picker, setPicker] = useState<null | { prefill?: string }>(null);
   const [resolvedMiss, setResolvedMiss] = useState<string>("varies");
+  // each step starts at the top: the read is long, and the level question
+  // used to open scrolled past its own heading
+  useEffect(() => { window.scrollTo(0, 0); }, [stage]);
 
   const toLevel = (m: string) => {
     setResolvedMiss(m);
@@ -110,7 +113,7 @@ function LevelPicker({ onPick }: { onPick: (level: Level) => void }) {
         <header className="fr-head bare">
           <div>
             <h1 className="fr-head-title">One more thing — what&apos;s your level?</h1>
-            <div className="fr-head-sub">Decides which drills you&apos;ll see. Change it anytime in Settings.</div>
+            <div className="fr-head-sub">Decides which drills you&apos;ll see. Change it anytime under More, Training level.</div>
           </div>
         </header>
 
@@ -160,7 +163,7 @@ function Deal({ onStart, onKnowMiss, onDemo }: { onStart: () => void; onKnowMiss
 
         <div className="payoff">
           <span className="payoff-ic"><Icon name="trending_up" size={22} /></span>
-          <span>A plan built around your one miss, and a solid-strike number you watch move.</span>
+          <span>A plan built around your one miss, and a ball-striking number you watch move.</span>
         </div>
 
         <button className="fr-cta" onClick={onStart}>
@@ -251,7 +254,7 @@ function LogButtons({
           <Icon name="check_circle" size={26} fill color="var(--green)" />
           <span className="logbtn-txt">
             <b>On my line</b>
-            <small>{spotlight === "fairway" ? "Tap me" : "Volume up logs this"}</small>
+            <small>{spotlight === "fairway" ? "Tap me" : "started at your target"}</small>
           </span>
         </span>
         <span className="logbtn-n num">{counts.fairway}</span>

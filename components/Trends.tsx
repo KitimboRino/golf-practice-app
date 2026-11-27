@@ -270,7 +270,7 @@ export function Trends({
           <Compare baseline={baseline} target={target} isTest={testIdx >= 0} onReport={testIdx >= 0 ? onOpenReport : undefined} />
         )}
 
-        <ChartCard title="Solid strike %" icon="sports_golf" data={solid} band="irons" />
+        <ChartCard title="Ball-striking %" icon="sports_golf" data={solid} band="irons" />
         <ChartCard title="Fairways found %" icon="golf_course" data={fair} band="driving" />
         {pitchLogged && <ChartCard title="Pitch accuracy %" icon="arrow_outward" data={pitch} band="pitching" />}
         <ChartCard title="Putts made %" icon="adjust" data={putt} band="putting" />
@@ -728,7 +728,7 @@ function Compare({
   // is "–", not 0%, and gets no delta (otherwise a chipping-only session
   // reads as "solid strike 41% → 0%, −41")
   const rows: { name: string; fn: (s: SavedSession) => number; has: (s: SavedSession) => boolean }[] = [
-    { name: "Solid strike", fn: solidPct,
+    { name: "Ball-striking", fn: solidPct,
       has: (s) => s.driving.fairway + s.driving.left + s.driving.right + s.irons.solid + s.irons.fat + s.irons.thin > 0 },
     { name: "Fairways found", fn: fairwayPct, has: (s) => s.driving.fairway + s.driving.left + s.driving.right > 0 },
     { name: "Putts made", fn: puttPct, has: (s) => s.putting.in + s.putting.out > 0 },

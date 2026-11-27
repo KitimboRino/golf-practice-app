@@ -57,7 +57,7 @@ export function SessionReceipt({
     ? [...rows].sort((a, b) => b.of - a.of)[0]
     : null;
   const solidNow = headRow ? Math.round((headRow.made / headRow.of) * 100) : solidPct(session);
-  const headCap = headRow ? headRow.label.replace(/^(\w+) · /, "$1 ").toLowerCase() : "solid strike rate";
+  const headCap = headRow ? headRow.label.replace(/^(\w+) · /, "$1 ").toLowerCase() : "ball-striking";
 
   // delta only for the solid-rate case, against previous sessions that logged strikes
   const strikeHist = history.filter((s) =>
@@ -86,7 +86,7 @@ export function SessionReceipt({
           ? `${balls} ball${balls === 1 ? "" : "s"}${mins ? ` · ${mins} min` : ""}`
           : `${ownWeek ? ownWeek.title : ""} · ${balls} balls${mins ? ` · ${mins} min` : ""}`,
         big: delta === null ? `${solidNow}%` : `${delta >= 0 ? "+" : ""}${delta}`,
-        bigCap: delta === null ? headCap : "points of solid rate",
+        bigCap: delta === null ? headCap : "points of ball-striking",
         bigSub: best ? "your best session yet" : delta !== null && delta >= 0 ? "moving the right way" : delta !== null ? "off your recent best" : "logged",
         rows: rows.map((r) => ({ label: r.name, value: `${r.made}/${r.of}`, sub: [r.label.split(" · ")[1], r.note].filter(Boolean).join(" · "), area: r.area })),
         note: session.notes.trim() || undefined,
@@ -107,8 +107,8 @@ export function SessionReceipt({
   const movedLine = delta === null
     ? `${headCap[0].toUpperCase() + headCap.slice(1)}: ${solidNow}%.`
     : best
-    ? `Solid strike ${solidNow}%, your best session yet.`
-    : `Solid strike ${solidNow}%, ${delta >= 0 ? "up" : "down"} ${Math.abs(delta)} on last time.`;
+    ? `Ball-striking ${solidNow}%, your best session yet.`
+    : `Ball-striking ${solidNow}%, ${delta >= 0 ? "up" : "down"} ${Math.abs(delta)} on last time.`;
   const weak = worst && worst.made / worst.of < 0.5 ? worst : null;
 
   return (
@@ -169,15 +169,25 @@ export function SessionReceipt({
             <small>All five areas</small>
           </button>
         )}
-        <button className={planComplete && onReport ? "receipt-ghost receipt-wide" : "receipt-next"} onClick={onNext}>
-          <span>{planComplete ? "Keep practising" : quick ? "Back to your plan" : "Next session"}</span>
-          <small>{nextWeek.short} · {nextSession.label.replace(/ —.*/, "")}</small>
-        </button>
+        {/* after a session, finishing is the common choice; starting the next
+            one straight away is there, but not the loudest button */}
+        {!(planComplete && onReport) && (
+          <button className="receipt-next" onClick={onDone}>
+            <span>Done</span>
+            <small>Back to your plan</small>
+          </button>
+        )}
         <div className="receipt-row2">
           <button className="receipt-ghost" onClick={share}>
             <Icon name="ios_share" size={19} />Share card
           </button>
-          <button className="receipt-ghost" onClick={onDone}>Done</button>
+          {planComplete && onReport ? (
+            <button className="receipt-ghost" onClick={onDone}>Done</button>
+          ) : (
+            <button className="receipt-ghost" onClick={onNext}>
+              {quick ? "Back to plan" : `Next: ${nextWeek.short} · ${nextSession.label.replace(/ —.*/, "").replace("Session ", "S")}`}
+            </button>
+          )}
         </div>
       </div>
     </div>

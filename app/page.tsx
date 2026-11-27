@@ -1441,7 +1441,8 @@ function Home({
     .filter((b) => !v.areas.length || v.areas.includes(b.area as keyof Strips))
     .map((b) => ({ ...b, drill: overrides[b.area]?.name ?? planned[b.area] }));
 
-  const title = firstRun ? "Baseline." : `${week.title}.`;
+  // the week's real name, as the log screen and timeline show it
+  const title = `${week.title}.`;
   const sessionNo = curIdx + 1;
 
   // the one contextual card, most urgent first
@@ -1482,7 +1483,7 @@ function Home({
 
       <section className="home-hero" aria-labelledby="home-title">
         <span className="home-kicker">
-          Week {cursor.week + 1} · Session {sessionNo} of {flat.length} · ~{bands.length * 10} balls
+          {firstRun ? "Your baseline · " : ""}Week {cursor.week + 1} · Session {sessionNo} of {flat.length} · ~{bands.length * 10} balls
         </span>
         <h1 id="home-title" className={"home-title" + (title.length > 11 ? " long" : "")}>{title}</h1>
         {firstRun ? (

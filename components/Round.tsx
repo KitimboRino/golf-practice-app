@@ -140,9 +140,9 @@ function RoundSetup({
   const pickHoles = (n: 9 | 18) => {
     tapFx();
     setHoles(n);
-    // a preset that doesn't cover this many holes can't stay selected —
-    // Jinja's card, for one, is only corroborated for 9
-    if (preset && preset.holes !== n) { setCourseId(null); setCourse(""); }
+    // a preset shorter than this many holes can't stay selected (Jinja's card
+    // is only corroborated for 9); a longer one plays its front nine
+    if (preset && preset.holes < n) { setCourseId(null); setCourse(""); }
   };
 
   const pickCourse = (c: CoursePreset) => {
@@ -150,10 +150,10 @@ function RoundSetup({
     if (courseId === c.id) { setCourseId(null); setCourse(""); return; }
     setCourseId(c.id);
     setCourse(c.name);
-    // the course drives hole count here, not the other way round — picking
-    // Jinja (9 holes only) should just take you to a 9-hole round, not hide
-    // the chip until you've guessed to switch hole count first
-    setHoles(c.holes);
+    // a 9-hole course brings an 18-hole choice down to 9; an 18-hole course
+    // keeps a 9-hole choice (the front nine), so the order you tap in doesn't
+    // matter
+    if (c.holes < holes) setHoles(c.holes);
   };
 
   const start = () => {
@@ -161,7 +161,7 @@ function RoundSetup({
       date: today(),
       course: course.trim(),
       holes,
-      holeData: preset ? holesForPreset(preset) : freshHoles(holes),
+      holeData: preset ? holesForPreset(preset).slice(0, holes) : freshHoles(holes),
       current: 0,
       startedAt: Date.now(),
     });
@@ -229,7 +229,7 @@ function RoundSetup({
             {COURSES.map((c) => (
               <button key={c.id} className={"chip-btn" + (courseId === c.id ? " on" : "")}
                       aria-pressed={courseId === c.id} onClick={() => pickCourse(c)}>
-                {c.name}{c.holes !== holes && <span className="chip-note"> · {c.holes} holes</span>}
+                {c.name}{c.holes < holes && <span className="chip-note"> · {c.holes} holes</span>}
               </button>
             ))}
           </div>
@@ -257,7 +257,7 @@ function RoundSetup({
           {preset && (
             <div className="course-preset-note">
               <Icon name="info" size={14} />
-              Par pre-filled from public scorecards, not the club&apos;s own card — worth checking hole by hole as you play.
+              {holes < preset.holes ? "Front nine. " : ""}Par pre-filled from public scorecards, not the club&apos;s own card — worth checking hole by hole as you play.
             </div>
           )}
         </div>
