@@ -8,8 +8,8 @@ type BIPEvent = Event & {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
 
-// inline: rendered in the home screen's card slot instead of floating over
-// the tab bar (the floating one is hidden on home, see globals.css)
+// inline: rendered in the home screen's card slot. That is the only place it
+// shows; the floating version is hidden everywhere (see globals.css).
 export function InstallPrompt({ inline = false }: { inline?: boolean }) {
   const cls = "install" + (inline ? " inline" : "");
   const [deferred, setDeferred] = useState<BIPEvent | null>(null);

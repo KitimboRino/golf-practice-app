@@ -550,8 +550,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 .delta.down { background: var(--clay-face); border-color: var(--clay-border); color: var(--clay); }
 
-/* ---------- first-session hero (Plan) ---------- */
-
 /* ---------- today's one thing (Plan) ---------- */
 .onething {
   background: var(--glass-glow); border: 1px solid var(--edge-glow); border-radius: 20px;
@@ -560,8 +558,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 .onething .lbl { display: flex; align-items: center; gap: 8px; }
 .onething-body { font-size: 14.5px; line-height: 1.5; color: var(--text-2); text-wrap: pretty; }
-
-/* ---------- focus card ---------- */
 
 /* ---------- groups / session grid ---------- */
 .grp { display: flex; flex-direction: column; gap: 12px; }
@@ -584,18 +580,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 .cta:disabled:hover { filter: none; }
 
-/* venue picker (Plan) — "I've only got a putting green today" */
-.venue { border-radius: 12px; }
-.venue > summary {
-  list-style: none; cursor: pointer;
-  display: flex; align-items: center; gap: 8px;
-  min-height: 44px; padding: 0 12px;
-  font-size: 13px; font-weight: 600; color: var(--muted);
-}
-.venue > summary::-webkit-details-marker { display: none; }
-.venue > summary .msr:first-child { color: var(--icon-muted); }
-.venue-chev { margin-left: auto; transition: transform var(--dur-base) var(--ease-out); }
-.venue[open] .venue-chev { transform: rotate(180deg); }
+/* venue picker (home, under the timeline's Change) — "I've only got a putting green today" */
 .venue-opts { display: flex; flex-direction: column; gap: 6px; padding: 4px 0 2px; }
 .venue-opt {
   display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
@@ -3026,53 +3011,8 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
   :root:not([data-theme="light"]) { --hero-face: #1C2436; }
 }
 :root[data-theme="dark"] { --hero-face: #1C2436; }
-
-.plan-screen {
-  padding: calc(14px + env(safe-area-inset-top)) 12px 24px;
-  display: flex; flex-direction: column; gap: 12px;
-}
-.plan-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 8px; min-height: 44px; }
-.plan-greet {
-  display: flex; align-items: center; gap: 6px; min-width: 0; min-height: 44px;
-  font-size: 15px; font-weight: 800; color: var(--text);
-}
-.plan-greet .msr { color: var(--muted); }
-.plan-top-actions { display: flex; align-items: center; gap: 8px; flex: none; }
-
-.plan-banner-row { display: flex; gap: 8px; }
-.plan-banner {
-  flex: 1; min-width: 0; min-height: 56px; border-radius: 22px;
-  background: var(--card); color: var(--text);
-  display: flex; align-items: center; gap: 12px; padding: 0 18px; text-align: left;
-  font-size: 14.5px; font-weight: 700;
-}
-.plan-banner > span:not(.msr) { flex: 1 1 auto; min-width: 0; text-align: left; line-height: 1.3; padding: 10px 0; }
-.plan-banner b { font-weight: 800; flex: none; }
-.plan-banner-x {
-  width: 56px; flex: none; border-radius: 22px; background: var(--card); color: var(--muted);
-  display: flex; align-items: center; justify-content: center;
-}
 /* narrow phones: the action drops under the message, so the message gets the
    full width and stays on two lines instead of four */
-@media (max-width: 400px) {
-  .plan-banner {
-    display: grid; grid-template-columns: auto 1fr; column-gap: 11px; row-gap: 3px;
-    align-content: center; padding: 11px 15px;
-  }
-  .plan-banner > .ico { grid-row: 1 / span 2; align-self: start; margin-top: 1px; }
-  .plan-banner > span:not(.ico) { padding: 0; }
-  .plan-banner b { grid-column: 2; font-size: 13.5px; color: var(--green); }
-  .plan-banner-x { width: 46px; }
-}
-
-.plan-hero {
-  background: var(--hero-face); color: #FFFFFF; border-radius: 32px;
-  padding: 24px 20px 20px; display: flex; flex-direction: column; gap: 16px;
-}
-.plan-hero-text { display: flex; flex-direction: column; gap: 10px; }
-.plan-hero-kicker { color: #96D6E2; }
-.plan-hero-title { letter-spacing: -0.035em; }
-.plan-hero-p { margin: 2px 0 0; font-size: 15px; font-weight: 600; line-height: 1.42; color: rgba(255, 255, 255, 0.76); text-wrap: pretty; }
 
 .plan-slots { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 5px; margin-top: 2px; }
 .plan-slot {
@@ -3085,54 +3025,11 @@ body:has(.install-ios) .app { padding-bottom: calc(210px + env(safe-area-inset-b
 .plan-slot.cur { box-shadow: inset 0 0 0 2px #FFFFFF; color: #FFFFFF; }
 .plan-slot.done.cur { box-shadow: inset 0 0 0 2px #FFFFFF, inset 0 0 0 4px #0F1321; color: #0F1321; }
 .plan-slot:focus-visible { outline: 3px solid #96D6E2; outline-offset: 2px; }
-.plan-slots-foot { display: flex; justify-content: space-between; margin-top: -8px; font-size: 12px; font-weight: 700; color: rgba(255, 255, 255, 0.62); }
-
-.plan-start-row { display: flex; gap: 8px; }
-.plan-start {
-  flex: 1; height: 60px; border-radius: 30px; background: #FFFFFF; color: #0F1321;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  font-size: 17px; font-weight: 800; transition: transform var(--dur-fast) var(--ease-out);
-}
-.plan-start:active, .plan-quick:active { transform: scale(0.97); }
-.plan-quick {
-  width: 60px; height: 60px; flex: none; border-radius: 30px;
-  background: rgba(255, 255, 255, 0.14); color: #FFFFFF;
-  display: flex; align-items: center; justify-content: center;
-}
-.plan-start:focus-visible, .plan-quick:focus-visible { outline: 3px solid #96D6E2; outline-offset: 2px; }
-.plan-venue { margin-top: -4px; color: rgba(255, 255, 255, 0.8); background: transparent; border: 0; }
-.plan-venue summary { color: rgba(255, 255, 255, 0.8); }
-.plan-venue .venue-opt { background: rgba(255, 255, 255, 0.1); border: 0; color: #FFFFFF; }
-.plan-venue .venue-opt.on { background: #FFFFFF; color: #0F1321; }
-.plan-venue .venue-opt small { color: inherit; opacity: 0.75; }
-
-.plan-onething {
-  background: var(--band); color: var(--on-band); border-radius: 32px;
-  padding: 20px 22px; display: flex; flex-direction: column; gap: 10px;
-}
-.plan-onething .kicker { color: #1E3E47; }
-.plan-onething-title {
-  margin: 0; font-family: var(--font-display); font-stretch: 112%; font-weight: 800;
-  font-size: 26px; line-height: 1.05; letter-spacing: -0.02em; text-wrap: balance;
-}
-.plan-onething-body { margin: 0; font-size: 14.5px; font-weight: 600; line-height: 1.45; color: #1E3E47; text-wrap: pretty; }
-.plan-onething-src { font-size: 12.5px; font-weight: 700; color: #1E3E47; }
-
-.plan-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 6px 10px 0; }
-.plan-stat { display: flex; flex-direction: column; gap: 4px; }
-.plan-stat-val {
-  font-family: var(--font-display); font-stretch: 112%; font-weight: 900; line-height: 0.9; letter-spacing: -0.03em;
-}
-.plan-stat-val small { font-size: 20px; }
-.plan-stat-lbl { font-size: 13px; font-weight: 700; color: var(--muted); }
-.plan-venue > summary .msr:first-child { color: inherit; }
 
 /* ---------- install prompt ----------
-   Only on the Plan screen: never over a session being logged or a round in
-   progress. While it's up, the Plan screen reserves room for it so it never
-   sits on top of content. */
-body:not(:has(.plan-screen)) .install { display: none; }
-body:has(.plan-screen):has(.install-card) .app { padding-bottom: calc(176px + env(safe-area-inset-bottom)); }
+   Only ever inline in the home screen's card slot (.install.inline): never
+   floating over a session being logged or a round in progress. */
+.install:not(.inline) { display: none; }
 .install-card { border: 0; border-radius: 22px; background: var(--card); box-shadow: 0 10px 30px -14px rgba(15, 19, 33, 0.35); }
 .install-txt { color: var(--text); font-size: 13.5px; font-weight: 700; }
 .install-go { border-radius: 20px; background: var(--cta-face); color: var(--on-ink); font-weight: 800; }
@@ -3579,18 +3476,13 @@ body:has(.plan-screen):has(.install-card) .app { padding-bottom: calc(176px + en
 .fr-wrap.practice .logbtn.inert, .fr-wrap.practice .undo-btn.inert { opacity: 0.5; }
 
 /* 4. the greeting wraps to two lines instead of being cut off */
-.plan-greet > span { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.3; text-align: left; }
 
 /* 5. headings: balanced wrapping (no single stranded word) and enough line
    height that two wrapped lines of the extended display face don't touch */
-h1, h2, h3, .display-xl, .hdr-title, .plan-hero-title, .deal-h, .reveal-verdict,
-.coach-head, .verdict-h, .band-title, .more-tile-t, .plan-onething-title,
-.routine-stage-title, .warm-now-name, .fault-hero-pat, .photo-hdr-title,
-.receipt-title, .round-sum-course, .game-row-name { text-wrap: balance; }
+h1, h2, h3, .display-xl, .hdr-title, .deal-h, .reveal-verdict, .coach-head, .verdict-h, .band-title, .more-tile-t, .routine-stage-title, .warm-now-name, .fault-hero-pat, .photo-hdr-title, .receipt-title, .round-sum-course, .game-row-name { text-wrap: balance; }
 .display-xl, .hdr-title, .deal-h, .reveal-verdict, .photo-hdr-title,
 .trends-screen .verdict-h, .warm-now-name, .routine-stage-title, .receipt-title { line-height: 1; }
-.plan-hero-title { line-height: 0.95; }
-.fault-hero-pat, .more-tile-t, .plan-onething-title { line-height: 1.05; }
+.fault-hero-pat, .more-tile-t { line-height: 1.05; }
 .rbtn-std { font-size: 11px; }
 .welcome-lbl { font-size: 11px; }
 /* area tags on a coloured game card: an inverted pill, so the small
@@ -3622,7 +3514,6 @@ h1, h2, h3, .display-xl, .hdr-title, .plan-hero-title, .deal-h, .reveal-verdict,
    "Control", "Course management" and the receipt's ball count ran off
    their boxes or under neighbouring buttons.
    ========================================================================= */
-.plan-hero-title { font-size: clamp(44px, 16.4vw, 64px); }
 .display-xl { font-size: clamp(34px, 11.8vw, 46px); }
 .hdr-title, .hdr-row:has(> .icon-btn:first-child) .hdr-title.sm { font-size: clamp(28px, 9.2vw, 36px); }
 .hdr-title.sm { font-size: clamp(25px, 7.7vw, 30px); }
@@ -3641,15 +3532,13 @@ h1, h2, h3, .display-xl, .hdr-title, .plan-hero-title, .deal-h, .reveal-verdict,
 .routine-stage-title { font-size: clamp(27px, 8.7vw, 34px); }
 .fault-hero-pat { font-size: clamp(27px, 8.7vw, 34px); }
 .fr-head.bare .fr-head-title { font-size: clamp(25px, 7.7vw, 30px); }
-.plan-stat-val { font-size: clamp(32px, 10.3vw, 40px); }
 .log-balls b { font-size: clamp(28px, 8.7vw, 34px); }
 .hole-running b { font-size: clamp(24px, 7.7vw, 30px); }
 .round-sum-side b { font-size: clamp(26px, 8.2vw, 32px); }
 
 /* a single word longer than the line (e.g. a long week or course name) may
    break with a hyphen rather than run off the screen */
-h1, h2, .display-xl, .hdr-title, .plan-hero-title, .photo-hdr-title,
-.band-title, .fault-hero-pat, .warm-now-name, .routine-stage-title {
+h1, h2, .display-xl, .hdr-title, .photo-hdr-title, .band-title, .fault-hero-pat, .warm-now-name, .routine-stage-title {
   hyphens: auto; -webkit-hyphens: auto; overflow-wrap: break-word;
 }
 
@@ -3715,12 +3604,6 @@ html:has(.fr-wrap.practice), html:has(.fr-wrap.practice) body::before { backgrou
 
 /* Plan arrives in order too */
 @keyframes rise-in { from { opacity: 0; transform: translateY(18px); } }
-.plan-screen > * { animation: rise-in 520ms var(--settle) backwards; }
-.plan-screen > :nth-child(2) { animation-delay: 50ms; }
-.plan-screen > :nth-child(3) { animation-delay: 100ms; }
-.plan-screen > :nth-child(4) { animation-delay: 150ms; }
-.plan-screen > :nth-child(5) { animation-delay: 200ms; }
-.plan-screen > :nth-child(n+6) { animation-delay: 240ms; }
 .plan-slot { animation: rise-in 420ms var(--settle) backwards; }
 .plan-slot:nth-child(1) { animation-delay: 180ms; } .plan-slot:nth-child(2) { animation-delay: 205ms; }
 .plan-slot:nth-child(3) { animation-delay: 230ms; } .plan-slot:nth-child(4) { animation-delay: 255ms; }
@@ -3730,7 +3613,7 @@ html:has(.fr-wrap.practice), html:has(.fr-wrap.practice) body::before { backgrou
 /* screen changes (View Transitions): the old screen fades, the new one
    rises; the session title morphs from the Plan hero into the Log header,
    and the nav pill stays put */
-.plan-hero-title, .log-hdr .display-xl { view-transition-name: session-title; }
+.log-hdr .display-xl { view-transition-name: session-title; }
 .navpill { view-transition-name: navpill; }
 @keyframes vt-out { to { opacity: 0; } }
 @keyframes vt-in { from { opacity: 0; transform: translateY(16px); } }
@@ -3758,7 +3641,7 @@ html:has(.fr-wrap.practice), html:has(.fr-wrap.practice) body::before { backgrou
 
 @media (prefers-reduced-motion: reduce) {
   .band-body-wrap, .band-body, .band-head, .band-title { transition: none; }
-  .bands .band, .plan-screen > *, .plan-slot, .band-dot.good, .band-dot.miss, .log-balls b { animation: none; }
+  .bands .band, .plan-slot, .band-dot.good, .band-dot.miss, .log-balls b { animation: none; }
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
 }
 
@@ -4053,9 +3936,6 @@ h1.hdr-title, h1.fr-head-title, h1.coach-head { margin: 0; }
    ========================================================================= */
 .home { display: flex; flex-direction: column; padding: calc(14px + env(safe-area-inset-top)) 0 0; }
 body:has(.home) .app { padding-bottom: calc(184px + env(safe-area-inset-bottom)); }
-/* the floating install banner would sit on the pinned buttons: home shows
-   it as a card in its slot instead */
-body:has(.home) .install:not(.inline) { display: none; }
 
 .home-top { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 20px; }
 .home-word { flex: 1; font-family: var(--font-display); font-stretch: 118%; font-weight: 800; font-size: 17px; letter-spacing: -0.02em; }
